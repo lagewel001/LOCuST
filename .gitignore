@@ -1,0 +1,92 @@
+# IDE
+.idea/
+.vs/
+*.pyproj
+*.sln
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv*/
+ENV/
+env.bak/
+venv.bak/
+
+# Logs
+*.log
+*.pid
+
+# Unit test / coverage reports
+TestResults/
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+test-output.xml
+
+# Documentation
+docs/build/
+
+# Research
+notebooks/*
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Data and model files
+scripts/*
+data/*
+odata_graph/graphs/*
+models/retrievers/colbert/experiments
+
+# Misc. data files by extensions
+*.pk
+*.pkl
+*.pt
+*.bin
+*.csv
+*.ttl
+*.nt
+*.trig
+*.h5
+*.zip
+*.png
+
+# Specific exceptions
+!data/tests
+!data/qa_pairs
+!experiments/
+!evaluation/results/
+!odata_graph/graphs/ut_graph.trig
+!odata_graph/graphs/qudt3.1.7-all.ttl
+!odata_graph/graphs/frequenties.ttl
+!scripts/theme_analysis.py
+
+# Frontend
+.DS_Store
+node_modules
+/dist
+
+# local env files
+.env.local
+.env.*.local
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

@@ -1,0 +1,63 @@
+[SYSTEM]
+You are a helpful assistant that generates SQL queries.
+
+[USER]
+**Given a natural language question, generate an SQL query.**
+
+# INSTRUCTION
+Generate an SQL query that can answer the given question. ONLY generate the SQL query and nothing else.
+You are provided with the natural language question and example tables with measures and dimensions from
+a retriever. For each table, measure and dimensions, scores are given. For each measure, the unit is also
+given. Note that the 'Periods' and 'Region' dimensions are never shown for brevity, regardless if they are
+part of the table.
+
+Use the following instructions to write your SQL queries:
+- The tables can be referenced to using `FROM "data/en/odata3/<table-id>.parquet"`
+- The SQL answers must result in pivoted tables over measures. To achieve this broadly, queries
+  should be structured as follows:
+```
+SELECT
+    *
+FROM (
+  SELECT <select cols>
+  FROM "data/en/odata3/<table id>.parquet"
+  UNPIVOT(Value FOR Measure IN (<measures>))
+  WHERE <where clause>
+)
+PIVOT(<pivot function>(Value) FOR
+  <dimensions>
+)
+```
+
+Here follows an example:
+
+- **Example question:** "How many kilos of concentrated milk were produced in 1998?"
+- **Top example tables:**
+
+Table: 7425eng (label: "Milk supply and dairy production by dairy factories") (score: 96.125)
+Nodes:
+- Dimension: Periods (label: "Periods")
+- Measure: Volume_1 (label: "Volume") (unit: KiloGM)
+- Measure: FatContent_2 (label: "Fat content") (unit: PERCENT)
+- Measure: ProteinContent_3 (label: "Protein content") (unit: PERCENT)
+- Measure: Butter_4 (label: "Butter") (unit: KiloGM)
+- Measure: Cheese_5 (label: "Cheese") (unit: KiloGM)
+- Measure: TotalMilkPowder_6 (label: "Total Milk powder") (unit: KiloGM)
+- Measure: WholeMilkPowder_7 (label: "Whole milk powder") (unit: KiloGM)
+- Measure: SkimmedMilkPowder_8 (label: "Skimmed-milk powder") (unit: KiloGM)
+- Measure: ConcentratedMilk_9 (label: "Concentrated milk") (unit: KiloGM)
+- Measure: WheyPowder_10 (label: "Whey powder") (unit: KiloGM)
+
+**EXAMPLE ANSWER:**
+SELECT * FROM (SELECT Measure, Value, Periods FROM "data/en/odata3/7425eng.parquet" UNPIVOT(Value FOR Measure IN ('ConcentratedMilk_9'))) PIVOT(MAX(Value) FOR Periods IN ('1998JJ00'))
+
+# INPUT
+You are provided with the following context for generating the SQL:
+- The question: "{question}"
+- Top retrieved tables:
+
+{table_info}
+
+Please generate a SQL query that answers the question.
+
+**ANSWER:**

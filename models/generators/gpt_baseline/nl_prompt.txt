@@ -1,0 +1,86 @@
+[SYSTEM]
+Je bent een behulpzame assistent die SQL query's genereert.
+
+[USER]
+**Genereer een SQL-query op basis van een vraag in natuurlijke taal.**
+
+# INSTRUCTIE:
+Genereer een SQL-query die de vraag beantwoordt. Genereer ALLEEN de SQL-query, en geen enkele andere tekens.
+Als input krijg je de vraag en voorbeeldtabellen met de bijbehorende measures en dimensions. Indien in een
+retrieval-stap scores zijn berekend van tabellen of measures/dimensions worden die ook meegegeven. Voor elke
+measure wordt ook de eenheid meegegeven. De dimensies voor 'Perioden' en 'RegioS' worden hier niet getoond
+omwille van de beknoptheid, ongeacht of ze onderdeel zijn van een tabel.
+
+Gebruik de volgende instructies voor het schrijven van SQL query's:
+- Tabellen kunnen naar gerefereerd worden door middel van `FROM "data/nl/odata3/<table-id>.parquet"`
+- De SQL antwoorden moeten resulteren in een draaitabel over de measures. Om dit grofweg te bereiken,
+  kunnen query's als volgt gestructureerd worden:
+```
+SELECT
+    *
+FROM (
+  SELECT <select cols>
+  FROM "data/nl/odata3/<table id>.parquet"
+  UNPIVOT(Value FOR Measure IN (<measures>))
+  WHERE <where clause>
+)
+PIVOT(<pivot function>(Value) FOR
+  <dimensions>
+)
+```
+
+Hieronder volgt een voorbeeld.
+
+- **Voorbeeldvraag:** "Welke van de twee, rijksoverheid of waterschappen, had in 2001 de laagste waarde voor uitkeringen in natura?"
+- **Top voorbeeld tabellen:**
+
+Table: 86003NED (label: "Personen met een uitkering; soort uitkering, wijken en buurten 2024") (score: 45.24559775749761)
+Nodes:
+- MEASURE: M006098	(label: "Overheidsproductie en -consumptie") (unit: CCY_EUR)
+- DIMENSION: Perioden (label: "Perioden")
+- DIMENSION: A044434 (label: "P11 Marktoutput")
+- DIMENSION: TransactiesEnSaldi (label: "Transacties en saldi")
+- DIMENSION: A044938 (label: "Overheid")
+- DIMENSION: InstitutioneleSectoren (label: "Institutionele sectoren")
+- DIMENSION: A028903 (label: "Gemeenschappelijke regelingen")
+- DIMENSION: A044436 (label: "P131 Betalingen voor niet-marktoutput")
+- DIMENSION: A044942 (label: "Lokale overheid")
+- DIMENSION: A048156 (label: "B1g Bruto toegevoegde waarde")
+- DIMENSION: A048153 (label: "P132 Overige niet-marktoutput")
+- DIMENSION: A048157 (label: "B1n Netto toegevoegde waarde")
+- DIMENSION: A046349 (label: "P31 Individuele consumptieve bestedingen")
+- DIMENSION: A044940 (label: "Rijksoverheid")
+- DIMENSION: A044944 (label: "Socialezekerheidsfondsen")
+- DIMENSION: A046348 (label: "P3 Consumptieve bestedingen")
+- DIMENSION: A044478 (label: "D632 Uitkeringen in natura (aangekocht)")
+- DIMENSION: A044939 (label: "Centrale overheid")
+- DIMENSION: A044437 (label: "P2 Intermediair verbruik")
+- DIMENSION: A046350 (label: "P32 Collectieve consumptieve bestedingen")
+- DIMENSION: A044438 (label: "D1 Beloning van werknemers")
+- DIMENSION: A044941 (label: "Overige centrale overheid")
+- DIMENSION: A044491 (label: "P51c Verbruik van vaste activa")
+- DIMENSION: A048152 (label: "P13 Niet-marktoutput")
+- DIMENSION: A044435 (label: "P12A Investeringen in eigen beheer")
+- DIMENSION: A044440 (label: "D12 Sociale premies t.l.v. werkgevers")
+- DIMENSION: A044943 (label: "Overige lokale overheden")
+- DIMENSION: A028902 (label: "Waterschappen")
+- DIMENSION: A044439 (label: "D11 Lonen")
+- DIMENSION: A048158 (label: "B2n Netto exploitatieoverschot")
+- DIMENSION: A028870 (label: "Gemeente")
+- DIMENSION: A044451 (label: "D39 Niet-productgebonden subsidies")
+- DIMENSION: A044447 (label: "D29 Niet-productgebonden belastingen")
+- DIMENSION: A048155 (label: "D631 Overdrachten niet-marktproducten")
+- DIMENSION: A028869 (label: "Provincies")
+- DIMENSION: A048151 (label: "P1 Output")
+
+**ANTWOORD:**
+SELECT * FROM (SELECT Measure, Value, InstitutioneleSectoren, Perioden, TransactiesEnSaldi FROM "data/nl/odata3/84576NED.parquet" UNPIVOT(Value FOR Measure IN ('M006098')) WHERE InstitutioneleSectoren IN ('A028902', 'A044940')) PIVOT(MIN(Value) FOR Perioden IN ('2001JJ00') TransactiesEnSaldi IN ('A044478') GROUP BY Measure)
+
+# INPUT
+Je krijgt de volgende context voor het genereren van de SQL-query:
+- De vraag: "{question}"
+- Top opgehaalde tabellen:
+
+{table_info}
+
+**ANTWOORD:**
