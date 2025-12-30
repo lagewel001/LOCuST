@@ -112,7 +112,8 @@ class SimpleAggregator(Expression):
             FROM (
                 SELECT Measure, Value, Perioden, BestemmingEnSeizoen, Marges, Vakantiekenmerken
                 FROM '<parquet_file>'
-                WHERE Measure IN ('D004645') AND Perioden IN ('2021JJ00', '2022JJ00'))
+                WHERE Measure IN ('D004645') AND Perioden IN ('2021JJ00', '2022JJ00')
+            )
             PIVOT (
                 SUM(Value)
                 FOR BestemmingEnSeizoen IN ('L008691', 'L999996')

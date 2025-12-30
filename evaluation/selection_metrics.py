@@ -108,7 +108,7 @@ def extract_sexp_components(query: Union[str, SExpression]) -> Tuple[Set[str], S
     return {str(m) for m in measures}, {str(d) for d in dimensions}
 
 
-def get_selection_metrics(predicted_query: str, ground_truth_query: str, query_type: str) -> dict:
+def get_selection_metrics(predicted_query: str, ground_truth_query: str, query_type: str) -> Tuple[dict, dict]:
     """Calculates all selection-based F1 metrics."""
     if query_type == 'sql':
         pred_measures, pred_dims = extract_sql_components(predicted_query)
@@ -121,6 +121,14 @@ def get_selection_metrics(predicted_query: str, ground_truth_query: str, query_t
 
     measure_f1 = calculate_f1(pred_measures, gt_measures)
     dimension_f1 = calculate_f1(pred_dims, gt_dims)
+
+    # For error analysis, check if there are too many/little measures or dimensions
+    error_scores = {
+        'extra_measures': len(pred_measures - gt_measures),
+        'missing_measures': len(gt_measures - pred_measures),
+        'extra_dimensions': len(pred_dims - gt_dims),
+        'missing_dimensions': len(gt_dims - pred_dims),
+    }
 
     # If the measures do not match, the observation F1 is 0.
     if measure_f1 <= 0.0:
@@ -148,4 +156,4 @@ def get_selection_metrics(predicted_query: str, ground_truth_query: str, query_t
         'measure_f1': measure_f1,
         'dimension_f1': dimension_f1,
         'observation_f1': observation_f1,
-    }
+    }, error_scores

@@ -117,9 +117,9 @@ class Value(Expression):
                 )
             )
             PIVOT(MAX(Value) FOR
-              ArableCrops IN ('A042362', 'A042180')
-              Periods IN ('2013JJ00')
-              Regions IN ('PV29')
+                ArableCrops IN ('A042362', 'A042180')
+                Periods IN ('2013JJ00')
+                Regions IN ('PV29')
             );
         """
         measure_selector = any(s in map(str, self.measures) for s in self.selectors)

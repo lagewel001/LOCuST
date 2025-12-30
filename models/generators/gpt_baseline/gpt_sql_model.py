@@ -17,11 +17,12 @@ class GPTBaselineSQLModel(BaseGenerator):
     """A baseline model for generating SQL queries using a GPT model."""
     retriever: ColBERTRetriever
 
-    def __init__(self, checkpoint: str):
+    def __init__(self, checkpoint: str, reasoning: str = 'False'):
         super().__init__()
         self.retriever = ColBERTRetriever(checkpoint=checkpoint, mode='table')
+        self.reasoning = True if reasoning == 'True' else False
 
-        self.model_name = "gpt-4.1"
+        self.model_name = "gpt-5.1"
         self.ml_client = AzureOpenAI(
             api_version=config.AZURE_API_VERSION,
             azure_endpoint=config.AZURE_ENDPOINT,
@@ -40,7 +41,7 @@ class GPTBaselineSQLModel(BaseGenerator):
         for table_id, data in tables.items():
             # Get graph elements for tables
             table_node = Table(table_id)
-            # FIXME: for some reason when running the local graph, time and geo dims are returned. Dafuq.
+            # FIXME: for some reason when running the local graph, time and geo dims are returned. Using GraphDB this does work correctly
             table_graph = engine.get_table_graph(table_node, include_time_geo_dims=False)
 
             units = dict(map(lambda x: (uri_to_code(x[0]), x[1].split('/')[-1]), table_graph.subject_objects(QUDT.unit)))
@@ -100,17 +101,20 @@ class GPTBaselineSQLModel(BaseGenerator):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                temperature=1.0,
-                top_p=1.0,
                 model=self.model_name,
+                max_completion_tokens=10000,
+                reasoning_effort="high" if self.reasoning else NOT_GIVEN
             )
+
+            num_tokens = response.usage.completion_tokens
             response_data = response.choices[0].message.content
-            return response_data
+            response_data = response_data.replace('```sql\n', '').replace('\n```', '')
+            return response_data, num_tokens
         except Exception as e:
             print(f"An error occurred while calling the LLM: {e}")
             return ""
 
-    def generate_query(self, question: str, k: int = 5, golden_tables: Optional[List[str]] = None) -> str:
+    def generate_query(self, question: str, k: int = 5, golden_tables: Optional[List[str]] = None) -> Tuple[str, int]:
         """Generates a SQL query for the given question."""
         if golden_tables is None:
             retrieved_tables = self.retriever.retrieve_tables(question, k=k)
@@ -118,8 +122,8 @@ class GPTBaselineSQLModel(BaseGenerator):
             retrieved_tables = {t: {} for t in golden_tables}
 
         if not retrieved_tables:
-            return ""  # Cannot generate a query
+            return "", 0  # Cannot generate a query
 
         system_prompt, user_prompt = self._build_prompts(question, retrieved_tables)
-        sql_query = self._call_llm(system_prompt, user_prompt)
-        return sql_query
+        sql_query, num_tokens = self._call_llm(system_prompt, user_prompt)
+        return sql_query, num_tokens

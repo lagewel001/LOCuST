@@ -77,7 +77,10 @@ def get_pivot_components(expression: sqlglot.exp.Expression) -> Set[Tuple]:
 
     agg_func = pivot.expressions[0]
     agg_name = str(agg_func.key).lower()
-    agg_col = str(agg_func.this.this)
+    if not isinstance(agg_func.this, sqlglot.exp.Column):
+        agg_col = agg_func.this
+    else:
+        agg_col = str(agg_func.this.this)
 
     for field in pivot.args.get("fields", []):
         if isinstance(field, sqlglot.exp.In):

@@ -1,4 +1,5 @@
 import argparse
+import duckdb
 import json
 import os
 import pandas as pd
@@ -16,9 +17,27 @@ from pipeline.db_executor import DBExecutor
 from s_expression import Table, Expression
 from s_expression.parser import parse, eval
 from utils.answer_comparator import is_equal_frame
-from utils.custom_types import QueryType
+from utils.custom_types import QueryType, UnitCompatibilityError
 from utils.global_functions import load_dataset, load_model_from_path
 
+if config.LANGUAGE == 'en':
+    TEST_TABLES_PER_THEME = {
+        'Education': ['84312ENG', '84732ENG', '81850ENG', '80393eng', '80509eng', '03753eng', '37931eng', '81491ENG', '80006eng'],
+        'Energy': ['81154eng', '85799ENG', '81528ENG', '81528ENG', '83376ENG', '83374ENG', '82117ENG', '82538ENG', '82538ENG', '84918ENG', '84714ENG', '85899ENG', '82610ENG', '84917ENG', '85666ENG', '85666ENG', '85592ENG', '80416ENG', '81567ENG', '82374ENG', '82375ENG', '82369ENG', '82371ENG', '83406ENG', '80101eng', '82379ENG', '71456eng', '70789eng', '71457eng', '83109ENG', '7516eng', '70802eng', '84672ENG', '37621eng', '83325ENG', '80099eng', '00377eng', '71840eng', '72002eng', '37281eng', '70846eng', '80324eng', '83141ENG', '81163eng', '00372eng', '83403ENG', '80100eng', '37215eng', '81606ENG'],
+        'International trade': ['82659ENG', '82658ENG', '82616ENG'],
+        'Manufacturing': ['7425eng', '81156eng', '81234eng', '85209ENG', '85806ENG', '85798ENG', '85770ENG', '83935ENG', '85771ENG', '83936ENG', '80274eng', '71835eng', '81238eng', '7055eng', '80092eng', '83838ENG', '81810ENG', '81984ENG', '81166eng', '81159eng', '83876ENG', '82444ENG', '37991eng', '37350ENG', '70696eng'],
+        'Nature and environment': ['86242ENG', '86053ENG', '7477eng', '80408ENG', '82504ENG', '72002eng', '80370eng', '81010eng', '80447eng', '70946eng', '70947eng', '37221eng', '80448eng', '84735ENG', '83390ENG', '7063eng', '7467eng', '80138eng', '37687eng'],
+        'Security and justice': ['82557ENG', '82558ENG', '82559ENG', '82522ENG', '82243ENG', '80045eng', '80426eng', '71482eng', '72007eng', '37957ENG', '37340eng', '37167eng', '37632eng', '37488eng', '37685ENG'],
+    }
+else:
+    TEST_TABLES_PER_THEME = {
+        'Energie': ['81156ned', '81154ned', '85799NED', '82538NED', '85677NED', '85677NED', '85337NED', '85080NED', '85080NED', '84983NED', '84983NED', '84949NED', '84949NED', '84950NED', '84950NED', '86159NED', '86159NED', '85999NED', '85999NED', '85697NED', '85697NED', '85359NED', '85359NED', '85126NED', '85126NED', '84837NED', '84837NED', '84585NED', '84585NED', '84314NED', '84314NED', '83800NED', '83800NED', '83568NED', '83568NED', '83187NED', '83187NED', '83022NED', '83022NED', '83023NED', '83023NED', '83025NED', '83025NED', '83026NED', '83026NED', '81528NED', '85666NED', '85666NED', '85592NED', '85592NED', '80416ned', '80416ned', '84991NED', '84991NED', '81567NED', '81567NED', '85004NED', '70960ned', '86044NED', '85775NED', '85447NED', '85010NED', '84772NED', '84517NED', '84131NED', '85005NED', '85005NED', '82003NED', '70897NED', '81309NED', '81309NED', '37359', '37359', '81163ned', '70662ned', '71840ned', '70663ned', '70780ned', '72002ned', '70914ned', '70914ned', '84672NED', '84672NED', '7520', '7520', '7522', '7522', '37333', '37237', '37215', '7521', '7521', '7310SLEN', '07144', '07145', '37291', '37291', '7444', '83878NED', '83882NED', '7443', '37207', '7448', '82374NED', '7442', '7445', '82375NED', '7514', '7447', '7447', '82369NED', '7523', '82371NED', '7525', '7524', '7454', '70135ned', '80382ned', '80382ned', '83406NED', '80101ned', '82379NED', '70789ned', '83109NED', '7516', '71457ned', '71456ned', '82380NED', '70802ned', '84783NED', '84783NED', '84518NED', '84518NED', '84130NED', '84130NED', '70949ned', '71458ned', '37880klb', '71556ned'],
+        'Industrie': ['81234ned', '85209NED', '80728ned', '81156ned', '85798NED', '7425zuiv', '85806NED', '85363NED', '83115NED', '85770NED', '83935NED', '85771NED', '83936NED', '81238ned', '81238ned', '71835ned', '80324ned', '37215', '7055', '37759', '70661NED', '70035NED', '81166ned', '71847ned', '70036NED', '81984NED', '80273ned', '83876NED', '83838NED', '81810NED', '37350', '37991pvr', '80111ned', '37154', '37569', '37971lix', '82113NED', '81460NED', '81975NED', '81974NED', '71933ned', '70753ned', '71250NED', '70037PRC'],
+        'Internationale handel': ['82659NED', '82658NED'],
+        'Natuur en milieu': ['37687wat', '70695NED', '80182ned', '7219WEER', '37368', '7041BBOD', '7041BBOD'],
+        'Onderwijs': ['86223NED', '86087NED', '84973NED', '83861NED', '84732NED', '84312NED', '85356NED', '85353NED', '86052NED', '85740NED', '85372NED', '85051NED', '84773NED', '84947NED', '85702NED', '85702NED', '85525NED', '85525NED', '85701NED', '85701NED', '85489NED', '85489NED', '85490NED', '85490NED', '71478ned', '71478ned', '84780NED', '84274NED', '85907NED', '83966NED', '80393ned', '80509ned', '85453NED', '85313NED', '84337NED', '85834NED', '80384ned', '37220', '03753', '71517ned', '70896ned', '71562ned', '83873NED', '85511NED', '85820NED', '85214NED', '84972NED', '84696NED', '84455NED', '83969NED', '83663NED', '82859NED', '82252NED', '71822ned', '71822ned', '71229ned', '71042ned', '71042ned', '80171ned', '80171ned', '71043NED', '71043NED', '71890ned', '71890ned', '70637ned', '81869NED', '84311NED', '7523', '71796ned', '71825ned', '80468ned', '80284ned', '71493ned', '71493ned', '70134ned', '71450ned', '71450ned', '83295NED', '83295NED', '83296NED', '83296NED', '7265ONDW', '7265ONDW', '71294ned', '83393NED', '81788NED', '37846sol', '37746sol', '71202ned', '71247ned', '71199ned', '71073ned', '71074ned', '71201ned', '71200ned', '71054ned', '70962ned', '71172ned', '71113ned', '83894NED', '83893NED', '37379ou', '71535ned', '70901ned', '70901ned', '70222ned', '70222ned', '81491ned', '70903ned', '70902ned', '70902ned', '80197ned', '82299NED', '82298NED', '85184NED', '82816NED', '82275NED', '83324NED', '82123NED', '83613NED', '70762ned', '70761ned', '81473NED', '70630ned', '37182'],
+        'Veiligheid en recht': ['82558NED', '82557NED', '82559NED', '37900']
+    }
 
 def execute_query(query: str, query_type: QueryType) -> Tuple[Union[str, Expression], pd.DataFrame, float]:
     """Execute the given query and calculate its execution time"""
@@ -39,23 +58,63 @@ def execute_query(query: str, query_type: QueryType) -> Tuple[Union[str, Express
     return query, answer, execution_time
 
 
-def get_question_type(sexp: str) -> str:
+def get_question_type(query: str, query_type: QueryType) -> str:
     """Determines the question type from an S-expression."""
-    # The order of bins matters for questions with multiple aggregations
-    bins = ['PROP', 'SUM', 'AVG', 'MIN', 'MAX']
+    if query_type == 'sexp':
+        # The order of bins matters for questions with multiple aggregations
+        bins = ['PROP', 'SUM', 'AVG', 'MIN', 'MAX']
 
-    has_join = 'JOIN' in sexp
+        has_join = 'JOIN' in query
 
-    for agg in bins:
-        if agg in sexp:
-            if has_join:
+        for agg in bins:
+            if agg in query:
+                if has_join:
+                    return 'AGGJOIN'
+                return agg
+
+        if has_join:
+            return 'JOIN'
+
+        return 'VALUE'
+    elif query_type == 'sql':
+        try:
+            expression = sqlglot.parse_one(query, read='duckdb')
+        except Exception as e:
+            return ''
+
+        # PROP
+        if expression.find(sqlglot.exp.Div):
+            return 'PROP'
+
+        # JOIN / AGGJOIN
+        is_join = bool(expression.find(sqlglot.exp.Join))
+        if is_join:
+            is_aggjoin = any(
+                isinstance(s, (sqlglot.exp.Sum, sqlglot.exp.Avg, sqlglot.exp.Min, sqlglot.exp.Max))
+                for s in expression.selects
+            )
+            if is_aggjoin:
                 return 'AGGJOIN'
-            return agg
+            return 'JOIN'
 
-    if has_join:
-        return 'JOIN'
+        # PIVOT queries (VALUE, SUM, AVG, MIN, MAX)
+        pivot = expression.find(sqlglot.exp.Pivot)
+        if pivot:
+            agg_expr = pivot.args.get('expressions')[0]
+            has_groupby = bool(pivot.args.get('group'))
 
-    return 'VALUE'
+            if isinstance(agg_expr, sqlglot.exp.Sum):
+                return 'SUM'
+            if isinstance(agg_expr, sqlglot.exp.Avg):
+                return 'AVG'
+            if isinstance(agg_expr, sqlglot.exp.Min):
+                return 'MIN' if has_groupby else 'VALUE'
+            if isinstance(agg_expr, sqlglot.exp.Max):
+                return 'MAX' if has_groupby else 'VALUE'
+
+        return 'VALUE'
+    else:
+        raise ValueError(f"Unknown query type: {query_type}")
 
 
 def evaluate_query_generation(
@@ -89,42 +148,73 @@ def evaluate_query_generation(
         with open(output_path, "r") as f:
             generated_answers = json.load(f)
 
+    QUESTION_TYPES = ['VALUE', 'SUM', 'AVG', 'MIN', 'MAX', 'JOIN', 'PROP', 'AGGJOIN']
+
+    token_count = 0
     exact_match = 0
     execution_accuracy = 0
     component_scores = {'select_f1': 0.0, 'where_f1': 0.0, 'groupby_f1': 0.0, 'orderby_f1': 0.0, 'pivot_f1': 0.0}
     selection_scores = {'measure_f1': 0.0, 'dimension_f1': 0.0, 'observation_f1': 0.0}
+    error_scores = {
+        'syntax_error': {
+            'by_type': {q_type: 0 for q_type in QUESTION_TYPES},
+            'by_theme': {theme: 0 for theme in TEST_TABLES_PER_THEME.keys()}
+        },
+        'formatting_error': {
+            'by_type': {q_type: 0 for q_type in QUESTION_TYPES},
+            'by_theme': {theme: 0 for theme in TEST_TABLES_PER_THEME.keys()}
+        },
+        'wrong_agg_func': {q_type: 0 for q_type in QUESTION_TYPES},
+        'table_mismatch': 0,
+        'unit_compatability_errors': 0,
+        'extra_measures': 0, 'missing_measures': 0,
+        'extra_dimensions': 0, 'missing_dimensions': 0
+    }
+    if query_type == 'sql':
+        error_scores['missing_pivot'] = 0
     total = len(dataset)
 
-    question_types = ['VALUE', 'SUM', 'AVG', 'MIN', 'MAX', 'JOIN', 'PROP', 'AGGJOIN']
-    metrics_by_type = {q_type: {
-        "count": 0,
-        "exact_match": 0,
-        "execution_accuracy": 0,
-        "selection_scores": {'measure_f1': 0.0, 'dimension_f1': 0.0, 'observation_f1': 0.0}
-    } for q_type in question_types}
+    metrics_by_type = {
+        q_type: {
+            "count": 0,
+            "exact_match": 0,
+            "execution_accuracy": 0,
+            "selection_scores": {'measure_f1': 0.0, 'dimension_f1': 0.0, 'observation_f1': 0.0}
+        } for q_type in QUESTION_TYPES
+    }
 
     for item in tqdm(dataset, desc=f"Evaluating query generation (Task: {task})", bar_format=config.TQDM_BAR_FMT):
         question = item.question
         ground_truth_query = item[query_type]
+        golden_tables = parse_for_table_id(ground_truth_query, query_type)
 
         if question in generated_answers:
             predicted_query = generated_answers[question]
         else:
-            golden_tables = None
-            if task == 'query-only':
-                golden_tables = parse_for_table_id(ground_truth_query, query_type)
-            predicted_query = model.generate_query(question, golden_tables=golden_tables)
+            predicted_query, tokens = model.generate_query(question, golden_tables=golden_tables if task == 'query-only' else None)
+            token_count += tokens
 
             generated_answers[question] = predicted_query
             with open(output_path, "w") as f:
                 json.dump(generated_answers, f, indent=4)
 
         # Determine question type from s-expression
-        q_type = get_question_type(item.sexp)
+        q_type = get_question_type(item.sexp, query_type='sexp')
         metrics_by_type[q_type]["count"] += 1
 
         # Exact Match
-        em_reward = 1 if predicted_query == ground_truth_query else 0
+        if query_type == 'sql':
+            try:
+                normalized_predicted = sqlglot.transpile(predicted_query, read='duckdb', pretty=False)[0]
+                normalized_ground_truth = sqlglot.transpile(ground_truth_query, read='duckdb', pretty=False)[0]
+            except Exception:
+                normalized_predicted = ' '.join(predicted_query.split())
+                normalized_ground_truth = ' '.join(ground_truth_query.split())
+        else:  # sexp
+            normalized_predicted = ' '.join(predicted_query.replace('(', ' ( ').replace(')', ' ) ').split())
+            normalized_ground_truth = ' '.join(ground_truth_query.replace('(', ' ( ').replace(')', ' ) ').split())
+
+        em_reward = 1 if normalized_predicted == normalized_ground_truth else 0
         exact_match += em_reward
         metrics_by_type[q_type]["exact_match"] += em_reward
 
@@ -138,23 +228,66 @@ def evaluate_query_generation(
 
             _, predicted_result, _ = execute_query(predicted_query, query_type)
             _, ground_truth_result, _ = execute_query(ground_truth_query, query_type)
-            
-            if is_equal_frame(ground_truth_result, predicted_result):
+
+            # Checking frame equality clogs the system memory for enormous tables. Trust me, the EX is 0 if you return more than 1 000 rows
+            if len(predicted_result) < 1000 and is_equal_frame(ground_truth_result, predicted_result):
                 exec_acc_reward = 1
             else:
                 exec_acc_reward = 0
+        except UnitCompatibilityError:
+            # Units are not compatible
+            exec_acc_reward = 0
+            error_scores['unit_compatability_errors'] += 1
+        except duckdb.IOException:
+            # Table not found, will be added to the table_mismatch later
+            exec_acc_reward = 0
+        except (duckdb.BinderException, duckdb.ParserException, sqlglot.errors.SqlglotError, SyntaxError):
+            # Syntactical errors
+            exec_acc_reward = 0
+            error_scores['syntax_error']['by_type'][q_type] += 1
+            for table_id in golden_tables:
+                for theme, ids in TEST_TABLES_PER_THEME.items():
+                    if table_id in ids:
+                        error_scores['syntax_error']['by_theme'][theme] += 1
+                        break
+        except RuntimeError:
+            # Formatting from retrieved data is wrong (usually indicates no measure was returned)
+            exec_acc_reward = 0
+            error_scores['formatting_error']['by_type'][q_type] += 1
+            for table_id in golden_tables:
+                for theme, ids in TEST_TABLES_PER_THEME.items():
+                    if table_id in ids:
+                        error_scores['formatting_error']['by_theme'][theme] += 1
+                        break
         except Exception as e:
             print(e)
             exec_acc_reward = 0
 
         execution_accuracy += exec_acc_reward
-        metrics_by_type[q_type]["execution_accuracy"] += exec_acc_reward
+        metrics_by_type[q_type]['execution_accuracy'] += exec_acc_reward
+
+        # Error analysis for queries with correct syntax
+        predicted_tables = parse_for_table_id(predicted_query, query_type)
+        if set(golden_tables) != set(predicted_tables):
+            error_scores['table_mismatch'] += 1
+
+        predicted_agg_func = get_question_type(predicted_query, query_type=query_type)
+        if predicted_agg_func != '' and q_type not in predicted_agg_func:
+            error_scores['wrong_agg_func'][q_type] += 1
+
+        if query_type == 'sql' and 'PIVOT' not in predicted_query:
+            error_scores['missing_pivot'] += 1
 
         # Selection-based F1 scores
-        sel_scores = get_selection_metrics(predicted_query, ground_truth_query, query_type)
+        sel_scores, sel_errors = get_selection_metrics(predicted_query, ground_truth_query, query_type)
         for key, value in sel_scores.items():
             selection_scores[key] += value
             metrics_by_type[q_type]["selection_scores"][key] += value
+
+        error_scores['extra_measures'] += 1 if sel_errors['extra_measures'] > 0 else 0
+        error_scores['missing_measures'] += 1 if sel_errors['missing_measures'] > 0 else 0
+        error_scores['extra_dimensions'] += 1 if sel_errors['extra_dimensions'] > 0 else 0
+        error_scores['missing_dimensions'] += 1 if sel_errors['missing_dimensions'] > 0 else 0
 
         # Component Matching (SQL only)
         if query_type == 'sql':
@@ -162,6 +295,7 @@ def evaluate_query_generation(
             for key, value in comp_scores.items():
                 component_scores[key] += value
 
+    avg_token_count = token_count / total if total > 0 else 0
     em_accuracy = exact_match / total if total > 0 else 0
     ex_accuracy = (execution_accuracy / total) if total > 0 else 0
     avg_selection_scores = {key: value / total for key, value in selection_scores.items()}
@@ -183,11 +317,13 @@ def evaluate_query_generation(
         "dataset_path": dataset_path,
         "task": task,
         "query_type": query_type,
+        "avg_output_token_count": avg_token_count,
         "metrics": {
             "exact_match_accuracy": em_accuracy,
             "execution_accuracy": ex_accuracy,
             "selection_metrics": avg_selection_scores
         },
+        "error_analysis": error_scores,
         "metrics_by_question_type": avg_metrics_by_type,
         "total_questions": total
     }

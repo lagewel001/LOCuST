@@ -8,6 +8,7 @@ import pandas as pd
 import re
 from operator import itemgetter
 from rdflib import Graph, SKOS, QB, DCTERMS as DCT
+from sqlglot.errors import SqlglotError
 from time import time
 from typing import Set, FrozenSet, Tuple, List
 from traceback import format_exception
@@ -79,10 +80,7 @@ class DBExecutor(object):
             observations = duckdb.sql(query)
             execution_time = time() - t0
 
-            if observations.shape[0] == 0:
-                raise ValueError("Retrieved DB data is empty.")
-
-            result_df = None  # Return no answer if observations is empty
+            result_df = observations.df()
             if len(observations) > 0:
                 obs_df = observations.df()
                 # Drop all empty columns
@@ -174,10 +172,10 @@ class DBExecutor(object):
                 else:
                     obs_df.index = pd.Index(obs_df[index_cols].values.flatten())
                 result_df = obs_df.drop(index_cols, axis=1)
-        except (UnitCompatibilityError, duckdb.IOException) as e:
+        except (UnitCompatibilityError, duckdb.IOException, duckdb.ParserException, SqlglotError, duckdb.BinderException) as e:
             raise e
         except Exception as e:
-            raise RuntimeError(f"Failed to retrieve data from DuckDB request: {format_exception(e)}")
+            raise RuntimeError(f"Failed to process retrieved data: {format_exception(e)}")
 
         # As a last step, sort the columns. This is automatically done by the OData4 API, but not by SQL
         return result_df[sorted(result_df)], code_labels, execution_time

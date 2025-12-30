@@ -6,14 +6,14 @@ import numpy as np
 import operator
 import pandas as pd
 from rdflib import SKOS, QB, DCTERMS as DCT
-from typing import Set, FrozenSet, Tuple, List, Optional
+from typing import Set, FrozenSet, Tuple, Optional
 
 import config
 from odata_graph import engine
 from odata_graph.sparql_controller import QUDT
 from s_expression.mapper import CodeLabelMapper
 from s_expression import Table, Measure, Dimension, uri_to_code
-from utils.custom_types import ComparisonOperator
+from utils.custom_types import ComparisonOperator, UnitCompatibilityError
 from utils.global_functions import secure_request
 
 COMPARISON_OPERATORS = {
@@ -203,6 +203,8 @@ class ODataExecutor(object):
                 result_df = obs_df.pivot_table(index=index_cols,
                                                columns=[c for c in obs_df if c not in ['Value'] + list(index_cols)],
                                                values='Value')
+        except (UnitCompatibilityError, SyntaxError) as e:
+            raise e
         except Exception as e:
             raise RuntimeError(f"Failed to retrieve data from OData{'4' if self._odata4 else '3'} request: {str(e)}")
 

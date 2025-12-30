@@ -438,9 +438,9 @@ class SparqlEngine(object):
 
         # 1. Check if any measure's unit dimension is dimensionless, except for qudt:Num, which should give a warning
         #    Units with a dimensionless vector (e.g. qudt:PERCENT) are non-aggregatable
-        if any(d['is_dimensionless'] and d['unit'] != str(QUDT_UNIT.COUNT) for d in measure_units.values()):
+        if len(measure_units) > 1 and any(d['is_dimensionless'] and d['unit'] != str(QUDT_UNIT.COUNT) for d in measure_units.values()):
             raise UnitCompatibilityError(
-                f"Trying to aggregate over one or more measures with a dimensionless unit:\n{measure_units}"
+                f"Trying to aggregate over two or more measures with a dimensionless unit:\n{measure_units}"
             )
 
         # 2. Check if qudt:unit are present and equal for all measures
