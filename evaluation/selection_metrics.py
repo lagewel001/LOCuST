@@ -1,11 +1,14 @@
 """
 This module contains the code for the measure F1, dimension F1 and observation F1 metrics.
 """
+import regex as re
 import sqlglot
-from sqlglot.expressions import EQ, In, Column, Literal, Pivot, Where
+from rdflib.namespace import QB, SKOS
+from sqlglot.expressions import EQ, In, Column, Literal, Pivot, Where, Table
 from typing import Set, Tuple, Union
 
-from s_expression import Expression as SExpression
+from odata_graph import engine
+from s_expression import Expression as SExpression, Table as GraphTable, Dimension, uri_to_code
 from s_expression.operators import Value
 from s_expression.parser import parse, eval
 
@@ -30,49 +33,70 @@ def calculate_f1(predicted: set, ground_truth: set) -> float:
 
 def extract_sql_components(query: str) -> Tuple[Set[str], Set[str]]:
     """Extracts measures and dimension values from a SQL query."""
+    # Stored all selected and filtered cols and split them using the graph into measures and dimensions
+    selected_cols = set()
     measures = set()
     dims = set()
+
     try:
-        parsed = sqlglot.parse_one(query, read='duckdb')
+        parsed = sqlglot.parse_one(query, read='duckdb', error_level=sqlglot.ErrorLevel.IGNORE)
         if not parsed:
             return measures, dims
 
-        # 1. Find filters in WHERE clauses
+        # 1. Find columns referenced by the SQL globally
+        for col in parsed.find_all(Column):
+            vals = {col.this.this}
+            selected_cols |= vals
+
+        # 2. Find filters in WHERE clauses
         for where in parsed.find_all(Where):
             for condition in where.this.find_all(EQ, In):
                 if isinstance(condition.this, Column):
-                    col_name = condition.this.name
                     if isinstance(condition, EQ) and isinstance(condition.expression, Literal):
                         vals = {condition.expression.this}
                     elif isinstance(condition, In):
                         vals = {lit.this for lit in condition.expressions if isinstance(lit, Literal)}
                     else:
                         continue
-                    
-                    if col_name == 'Measure':
-                        measures.update(vals)
-                    else:
-                        dims.update(vals)
 
-        # 2. Find PIVOT and UNPIVOT clauses
+                    selected_cols |= vals
+
+        # 3. Find PIVOT and UNPIVOT clauses
         for pivot in parsed.find_all(Pivot):
-            is_unpivot = pivot.args.get('unpivot', False)
-            
             # The structure is Pivot(fields=[In(...)])
             for field in pivot.args.get('fields', []):
                 if isinstance(field, In) and isinstance(field.this, Column):
-                    col_name = field.this.name
                     vals = {lit.this for lit in field.expressions if isinstance(lit, Literal)}
-                    
-                    if is_unpivot:
-                        if col_name == 'Measure':
-                            measures.update(vals)
-                    else: # It's a PIVOT
-                        dims.update(vals)
+                    selected_cols |= vals
 
+        # 4. Determine for every referenced column if it is a measure or a dimension using the graph
+        tables = set()
+        for table in parsed.find_all(Table):
+            file = table.this.this
+            pattern = r"(?<=[\/\\])(?:.(?![\/\\]))+(?=\.parquet)"
+            table = re.search(pattern, file)
+            if not table:
+                continue
+            tables |= {table.group()}
+
+        for table_id in tables:
+            table_graph = engine.get_table_graph(GraphTable(table_id), include_time_geo_dims=True)
+
+            table_measures = set(uri_to_code(m) for m in table_graph.objects(GraphTable(table_id).uri, QB.measure))
+            measures |= table_measures & selected_cols
+
+            table_dim_groups = {uri_to_code(d) for d in table_graph.subjects(SKOS.narrower, None)}
+            for dim_group in table_dim_groups:
+                # If no specific filtering is done on a selected DIM group, all its children are queried
+                dim_group_children = {uri_to_code(d) for d in table_graph.objects(Dimension(dim_group).uri, SKOS.narrower)}
+                if len(selected_cols & dim_group_children) == 0:
+                    dims |= dim_group_children
+
+            table_dims = {uri_to_code(d) for d in table_graph.objects(GraphTable(table_id).uri, QB.dimension)} - table_dim_groups
+            dims |= table_dims & selected_cols
     except Exception:
         pass # Ignore parsing errors
-        
+
     return measures, dims
 
 
@@ -95,9 +119,20 @@ def extract_sexp_components(query: Union[str, SExpression]) -> Tuple[Set[str], S
 
     for sub_exp in sub_exps:  # Get inner VALUE expression(s)
         if isinstance(sub_exp, Value):
-            measures |= sub_exp.measures
+            measures |= set(map(str, sub_exp.measures))
+            selected_dim_groups = set()
             for dim_group, dim_codes in sub_exp.dimensions:
-                dimensions |= dim_codes
+                selected_dim_groups |= {dim_group}
+                dimensions |= set(map(str, dim_codes))
+
+            table_graph = engine.get_table_graph(sub_exp.table, include_time_geo_dims=True)
+            table_dim_groups = {uri_to_code(d) for d in table_graph.subjects(SKOS.narrower, None)}
+            for dim_group in table_dim_groups:
+                # If no specific filtering is done on a selected DIM group, all its children are queried
+                dim_group_children = {uri_to_code(d) for d in table_graph.objects(Dimension(dim_group).uri, SKOS.narrower)}
+                if len(dimensions & dim_group_children) == 0:
+                    dimensions |= dim_group_children
+
             continue
 
         if hasattr(sub_exp, 'sub_expressions'):
@@ -105,12 +140,12 @@ def extract_sexp_components(query: Union[str, SExpression]) -> Tuple[Set[str], S
         else:
             sub_exps.append(sub_exp.sub_expression)
 
-    return {str(m) for m in measures}, {str(d) for d in dimensions}
+    return {str(m) for m in measures}, dimensions
 
 
 def get_selection_metrics(predicted_query: str, ground_truth_query: str, query_type: str) -> Tuple[dict, dict]:
     """Calculates all selection-based F1 metrics."""
-    if query_type == 'sql':
+    if query_type in ['sql', 'simplified_sql']:
         pred_measures, pred_dims = extract_sql_components(predicted_query)
         gt_measures, gt_dims = extract_sql_components(ground_truth_query)
     elif query_type == 'sexp':

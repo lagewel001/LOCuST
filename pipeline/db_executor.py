@@ -6,6 +6,7 @@ import duckdb
 import numpy as np
 import pandas as pd
 import re
+import warnings
 from operator import itemgetter
 from rdflib import Graph, SKOS, QB, DCTERMS as DCT
 from sqlglot.errors import SqlglotError
@@ -18,7 +19,7 @@ from odata_graph import engine
 from odata_graph.sparql_controller import QUDT
 from s_expression.mapper import CodeLabelMapper
 from s_expression import Table, Measure, Dimension, uri_to_code
-from utils.custom_types import UnitCompatibilityError
+from utils.custom_types import UnitCompatibilityError, FormatWarning
 
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ class DBExecutor(object):
     def query_db(self,
                  query: str,
                  index_cols: FrozenSet = frozenset({'Measure', 'Unit'}),
+                 simplified: bool = False,
                  friendly_labels: bool = True) -> Tuple[pd.DataFrame, CodeLabelMapper, float]:
         """
             Retrieve values from OData4 and create a pivot table using table, measure and dimension selectors.
@@ -59,6 +61,8 @@ class DBExecutor(object):
             :param query: SQL query to execute on DuckDB
             :param index_cols: the columns to use as the MultiIndex for the output pivot tables.
                                Defaults to ['Measure', 'Unit']
+            :param simplified: if executing simplified queries, measure columns/pivots are not mandatory and
+                               units will be ignored.
             :param friendly_labels: map the OData4 codes in the output table to their friendly names.
                                     Set to False when wanting to JOIN the pivot tables at a later stage.
             :returns: tuple containing (a DataFrame pivot table, mapper for codes to labels, SQL execution time)
@@ -81,46 +85,35 @@ class DBExecutor(object):
             execution_time = time() - t0
 
             result_df = observations.df()
-            if len(observations) > 0:
-                obs_df = observations.df()
-                # Drop all empty columns
+            if len(observations) > 0 and not result_df.dropna(how='all', axis=1).empty:
+                obs_df = result_df.copy()
                 obs_df.dropna(how='all', axis=1, inplace=True)
+
                 # Drop all duplicate columns (can happen when performing JOINS)
                 obs_df = obs_df[[c for c in obs_df.columns if not ((match := re.match(r'^(.*)_(\d{,2})$', c))
                                                                    and match.group(1) in obs_df.columns)]]
                 obs_df.rename({'Dimension_Measure': 'Measure'}, axis=1, inplace=True)  # Only relevant for JOIN and PROP results
 
-                # Validate and add the relevant units for all measures
-                if self.operator_name in ['SUM', 'AVG', 'MIN', 'MAX']:
-                    # TODO: check if this doesn't throw errors when summing over dimensions instead of units.
-                    #  can we even check this?
-                    engine.validate_msr_unit_compatibility(self.measures, allow_different_scaling=False)
-                units = {uri_to_code(m): str(u) for m, u in self.graph.subject_objects(QUDT.unitOfSystem)}
-                if 'Measure' in obs_df.columns:
-                    obs_df['Unit'] = obs_df['Measure'].map(units)
-                    obs_df.loc[obs_df['Measure'].str.contains(', '), 'Unit'] = (  # also add units for aggregated measures
-                        obs_df[obs_df['Measure'].str.contains(', ')]['Measure'].apply(
-                            lambda msr: ', '.join([units[code] for code in msr.split(', ') if code in units])
+                if not simplified:
+                    # Validate and add the relevant units for all measures
+                    if self.operator_name in ['SUM', 'AVG', 'MIN', 'MAX']:
+                        # TODO: check if this doesn't throw errors when summing over dimensions instead of units.
+                        #  can we even check this?
+                        engine.validate_msr_unit_compatibility(self.measures, allow_different_scaling=False)
+                    units = {uri_to_code(m): str(u) for m, u in self.graph.subject_objects(QUDT.unitOfSystem)}
+                    if 'Measure' in obs_df.columns:
+                        obs_df['Unit'] = obs_df['Measure'].map(units)
+                        obs_df.loc[obs_df['Measure'].str.contains(', '), 'Unit'] = (  # also add units for aggregated measures
+                            obs_df[obs_df['Measure'].str.contains(', ')]['Measure'].apply(
+                                lambda msr: ', '.join([units[code] for code in msr.split(', ') if code in units])
+                            )
                         )
-                    )
-                    obs_df.replace({np.nan: ''}, inplace=True)
+                        obs_df['Unit'].replace({np.nan: ''}, inplace=True)
 
-                    # Give a warning if the aggregated units don't align
-                    if obs_df['Unit'].str.split(', ').apply(lambda l: len(set(l)) > 1).any():
-                        logger.warning("Aggregation done over measures with different units."
-                                       "Be sure to check the answer on correctness.")
-
-                # Check if selector is one of the measures and drop all non-related measures
-                # Note: only ONE measure can be a selector. Secondary measures as selector will be ignored
-                dim_groups = map(str, map(itemgetter(0), self.dims))
-                for i in index_cols:
-                    if i not in obs_df.columns and i not in dim_groups:  # i.e. if selector is a specific measure
-                        obs_df = obs_df[obs_df['Measure'] == i]
-                        if obs_df.empty:
-                            raise ValueError(f"Selector column '{i}' not found in data table "
-                                             f"with columns {obs_df.columns.values}.")
-                        else:
-                            index_cols = {'Measure', 'Unit'}
+                        # Give a warning if the aggregated units don't align
+                        if obs_df['Unit'].str.split(', ').apply(lambda l: len(set(l)) > 1).any():
+                            logger.warning("Aggregation done over measures with different units."
+                                           "Be sure to check the answer on correctness.")
 
                 # Put aggregated dimensions into a MultiIndex. Note: pivoted dimensions are separated by underscores _
                 # in DuckDB, but because our identifiers can also contain underscores, we have to do some trickery
@@ -156,22 +149,34 @@ class DBExecutor(object):
                         obs_df[c] = obs_df[c].replace(code_labels, regex=True)
                     index_cols = [code_labels.get(c, c) for c in index_cols]
 
-                for i in index_cols:
-                    if not (i in obs_df.columns or i in obs_df.columns.names):
-                        # Check if selector is one of the measures and drop all non-related
-                        # Note: only ONE measure can be a selector. Secondary measures as selector will be ignored
-                        obs_df = obs_df[obs_df['Measure'] == i]
-                        if obs_df.empty:
-                            raise ValueError(f"Selector column '{i}' not found in data table "
-                                             f"with columns {obs_df.columns.values}.")
-                        else:
-                            index_cols = {'Measure', 'Unit'}
+                if not simplified:
+                    try:
+                        for i in index_cols:
+                            dim_groups = map(str, map(itemgetter(0), self.dims))
+                            if not (i in obs_df.columns or i in obs_df.columns.names or i in dim_groups):
+                                # Check if selector is one of the measures and drop all non-related
+                                # Note: only ONE measure can be a selector. Secondary measures as selector will be ignored
+                                obs_df = obs_df[obs_df['Measure'] == i]
+                                if obs_df.empty:
+                                    warnings.warn(f"Selector column '{i}' not found in data table with columns "
+                                                  f"{obs_df.columns.values}. Continuing without indexing.", FormatWarning)
+                                    break
+                                else:
+                                    index_cols = {'Measure', 'Unit'}
 
-                if len(index_cols) > 1:
-                    obs_df.index = pd.MultiIndex.from_tuples(map(tuple, obs_df[index_cols].values), names=index_cols)
+                        if len(index_cols) > 1:
+                            obs_df.index = pd.MultiIndex.from_tuples(map(tuple, obs_df[index_cols].values), names=index_cols)
+                        else:
+                            obs_df.index = pd.Index(obs_df[index_cols].values.flatten())
+                        obs_df = obs_df.drop(index_cols, axis=1)
+                    except KeyError as e:
+                        warnings.warn(f"Indexing on columns that are not returned by the query: {e}. "
+                                      f"Continuing without indexing.", FormatWarning)
                 else:
-                    obs_df.index = pd.Index(obs_df[index_cols].values.flatten())
-                result_df = obs_df.drop(index_cols, axis=1)
+                    if 'rnk' in obs_df:
+                        obs_df = obs_df.drop(['rnk'], axis=1)  # Drop 'rnk' utility created for the MIN/MAX type queries
+
+                result_df = obs_df
         except (UnitCompatibilityError, duckdb.IOException, duckdb.ParserException, SqlglotError, duckdb.BinderException) as e:
             raise e
         except Exception as e:

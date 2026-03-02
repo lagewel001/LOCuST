@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 warnings.filterwarnings(action='ignore', category=FutureWarning)
 warnings.filterwarnings(action='ignore', category=PerformanceWarning)
 warning_level_loggers = ['urllib3', 'requests', 'elasticsearch', 'elastic_transport', 'elastic_transport.transport',
-                         'passlib.utils.compat', 'passlib.registry']
+                         'passlib.utils.compat', 'passlib.registry', 'anthropic._base_client', 'httpcore.http11',
+                         'httpcore.connection', 'httpx', 'google_genai.models', 'openai._base_client']
 for lgr in warning_level_loggers:
     logging.getLogger(lgr).setLevel(logging.WARNING)
 

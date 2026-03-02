@@ -1,7 +1,7 @@
 import datetime
 import inspect
 import os
-from rdflib import Graph, URIRef, RDF, RDFS, OWL, DCTERMS as DCT
+from rdflib import Graph, URIRef, RDF, RDFS, DCTERMS as DCT
 
 
 def generate_defined_namespace(ttl_file: str, py_file: str, ns_uri: str):

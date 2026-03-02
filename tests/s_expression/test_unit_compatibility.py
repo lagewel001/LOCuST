@@ -54,22 +54,22 @@ FAIL_ON_DIMENSIONLESS_SEXP = """
 
 def test_unit_dimensionless_sexp():
     with pytest.raises(UnitCompatibilityError,
-                       match="Trying to aggregate over one or more measures with a dimensionless unit"):
+                       match="Trying to aggregate over two or more measures with a dimensionless unit"):
         eval(parse(FAIL_ON_DIMENSIONLESS_SEXP))
 
 def test_unit_dimensionless_sexp_offline():
     with pytest.raises(UnitCompatibilityError,
-                       match="Trying to aggregate over one or more measures with a dimensionless unit"):
+                       match="Trying to aggregate over two or more measures with a dimensionless unit"):
         eval(parse(FAIL_ON_DIMENSIONLESS_SEXP), offline=True)
 
 def test_unit_dimensionless_odata3_sql():
     with pytest.raises(UnitCompatibilityError,
-                       match="Trying to aggregate over one or more measures with a dimensionless unit"):
+                       match="Trying to aggregate over two or more measures with a dimensionless unit"):
         eval(parse(FAIL_ON_DIMENSIONLESS_SEXP), sql=True, odata4=False)
 
 def test_unit_dimensionless_odata4_sql():
     with pytest.raises(UnitCompatibilityError,
-                       match="Trying to aggregate over one or more measures with a dimensionless unit"):
+                       match="Trying to aggregate over two or more measures with a dimensionless unit"):
         eval(parse(FAIL_ON_DIMENSIONLESS_SEXP), sql=True, odata4=True)
 
 

@@ -36,7 +36,7 @@ SUM_ON_MSR_ANSWER_DF_SQL.index.set_names('Unit', level=1, inplace=True)
 @pytest.mark.skipif(config.ENV == 'devops', reason="Test for local use only")
 def test_sum_on_msr_sexp():
     """For this test an internet connection is required and the OData4 API must be live"""
-    _, answer = eval(parse(SUM_ON_MSR_SEXP), verbose=True)
+    _, answer = eval(parse(SUM_ON_MSR_SEXP))
     assert_frame_equal_unordered(answer, SUM_ON_MSR_ANSWER_DF_SEXP)
 
 def test_sum_on_msr_sexp_offline():
@@ -50,6 +50,13 @@ def test_sum_on_msr_odata3_sql():
 def test_sum_on_msr_odata4_sql():
     _, answer = eval(parse(SUM_ON_MSR_SEXP), sql=True, odata4=True)
     assert_frame_equal_unordered(answer, SUM_ON_MSR_ANSWER_DF_SQL)
+
+def test_sum_on_msr_simplified_sql():
+    expected_answer = pd.DataFrame({'Perioden': ['2020', '2021', '2022'],
+                                    "Regio's": ['Nederland'] * 3,
+                                    'SUM': [48579668., 48329610., 47359417.]}, index=range(3))
+    _, answer = eval(parse(SUM_ON_MSR_SEXP), sql=True, simplified=True)
+    assert_frame_equal_unordered(answer, expected_answer)
 
 
 # == UNIT TESTS FOR SUM OVER DIMENSION GROUP ==
@@ -102,6 +109,15 @@ def test_sum_on_dim_odata3_sql():
 def test_sum_on_dim_odata4_sql():
     _, answer = eval(parse(SUM_ON_DIM_SEXP), sql=True, odata4=True)
     assert_frame_equal_unordered(answer, SUM_ON_DIM_ANSWER_DF)
+
+def test_sum_on_dim_simplified_sql():
+    expected_answer = pd.DataFrame({'Perioden': ['2021', '2021', '2022', '2022'],
+                                    'Bestemming en seizoen': ['Vakantiebestemming: Nederland', 'Vakantiebestemming: buitenland'] * 2,
+                                    'Marges': ['Waarde'] * 4,
+                                    'Vakantiekenmerken': ['Totaal vakanties'] * 4,
+                                    'SUM': [30397., 16743., 24290., 28608.]}, index=range(4))
+    _, answer = eval(parse(SUM_ON_DIM_SEXP), sql=True, simplified=True)
+    assert_frame_equal_unordered(answer, expected_answer)
 
 
 # == UNIT TESTS FOR SUM OVER COMPLEX INNER EXPRESSION ==

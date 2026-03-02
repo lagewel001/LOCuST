@@ -1,0 +1,189 @@
+[SYSTEM]
+You are a helpful assistant that generates SQL queries.
+
+[USER]
+**Given a natural language question, generate an SQL query.**
+
+# INSTRUCTION
+Generate an SQL query that can answer the given question. ONLY generate the SQL query and nothing else.
+
+You are provided with:
+- The natural language question
+- Example tables with measures and dimensions from a retriever
+  (multiple tables, scores, and many nodes per table; some may be irrelevant).
+- For each measure, the unit is given.
+
+Use the following instructions to write your SQL queries:
+- Tables can be referenced using: `FROM "data/en/odata3/<table-id>.parquet"`.
+- Use single quotes for measure names and dimension codes inside `IN (...)`.
+- Only use dimension codes and measure names that appear in the provided metadata. Do not invent columns, codes, or join keys.
+- Do not assume the highest-score table is correct; pick the table(s) whose measures + dimension groups match the question. Ignore irrelevant tables/codes.
+- Don't aggregate or combine measures with incompatible units (e.g. summing a currency with a weight).
+- Your primary tool for shaping the output is the `PIVOT` clause. The goal is a clean, pivoted table as the final result.
+  For some special query types (proportions, argmin/argmax), a different structure without `PIVOT` may be needed.
+
+**Core Query Structure (default):**
+Your queries will generally follow this UNPIVOT -> PIVOT structure:
+
+
+SELECT *
+FROM (
+SELECT <dims_in_output>, Measure, Value
+FROM "data/en/odata3/<table-id>.parquet"
+UNPIVOT(Value FOR Measure IN (<measures>))
+WHERE <filters>
+)
+PIVOT(
+<agg_fn>(Value)
+FOR <pivot_dims_in_columns>
+GROUP BY <grouping_dims_in_rows>
+);
+
+
+- First, `UNPIVOT` the measure columns into `Measure` and `Value`.
+- Then `PIVOT`:
+  - `<agg_fn>` is `SUM`, `AVG`, `MAX`, `MIN`, etc.
+  - `<pivot_dims_in_columns>` defines output columns. You may pivot on multiple dimensions; columns will have combined names.
+    Example: `FOR TypeOfBankruptcy IN ('A047597') Periods IN ('1993MM09')`
+  - `<grouping_dims_in_rows>` defines output rows.
+    - If the output should contain a `Measure` column (most common), include `GROUP BY Measure`.
+
+**To avoid formatting errors (very important):**
+- Most common mistake: extra columns/rows caused by selecting dimensions that are not used in `PIVOT`.
+- Rule: any dimension that should appear in the final output must be:
+  (a) selected in the inner query AND
+  (b) used in `PIVOT` either in a `FOR ... IN (...)` clause (as columns) or in `GROUP BY` (as rows).
+- Filtering-only dimensions: if a dimension is used only in `WHERE` to restrict data (you aggregate over it), DO NOT include it in the inner `SELECT`.
+  This prevents accidental extra columns/rows.
+
+**Special query types:**
+- **Totals rule:**
+  - If the question asks for a total and the metadata contains a measure whose name/label indicates it is already a total for that concept (e.g., starts with Total), prefer using that measure rather than summing over categories.
+- **Composite measure aggregation (combine multiple measures into one total/avg):**
+  - Allowed only if units are compatible.
+  - UNPIVOT multiple measures and aggregate across `Value`.
+  - Do NOT include `Measure` in the inner `SELECT`, and do NOT group by `Measure` (otherwise you get separate rows per measure).
+  - Optionally add a constant label column in the outer `SELECT` describing the combined measures.
+- **Proportion / ratio:**
+  - Use conditional aggregation (`SUM(CASE WHEN ...)`) and compute the percentage; `PIVOT` is usually omitted.
+- **Argmin/argmax ("which X has lowest/highest Y"):**
+  - Return the requested dimension value (X) and the min/max value using a window function (`ROW_NUMBER/RANK`) or `ORDER BY ... LIMIT 1`.
+  - If comparing across measures, UNPIVOT multiple measures so you can return `Measure` for the winning value.
+- **Joins across multiple tables:**
+  - Prefer a single table if it contains all needed measures/dimensions.
+  - If measures come from different tables, join only on shared dimension columns that exist in both tables (do not invent join keys).
+  - Prefer reduced per-table subqueries (filters + optional PIVOT to one row per join key), then join, then final shaping.
+
+Here follows an example of provided table information and two question-answer examples.
+
+- **Top example tables:**
+Table: 83652ENG (label: "Health care institutions; key figures, finance and personnel") (score: 96.125)
+Nodes:
+- DimensionGroup: Periods (label: "Periods")
+- Dimension: 2016JJ00 (label: "2016")
+- Dimension: 2017JJ00 (label: "2017")
+- Dimension: 2018JJ00 (label: "2018")
+- Dimension: 2019JJ00 (label: "2019")
+- Dimension: 2020JJ00 (label: "2020")
+- Dimension: 2021JJ00 (label: "2021")
+- Dimension: 2022JJ00 (label: "2022")
+- DimensionGroup: SIC2008 (label: "SIC 2008")
+- Dimension: 422800 (label: "86101 University hospitals ")
+- Dimension: 422900 (label: "86102 General hospitals ")
+- Dimension: 423000 (label: "86103 Specialised hospitals (not mental)")
+- Dimension: 423100 (label: "86104 Mental health hospitals")
+- Dimension: 800029 (label: "Care for disabled persons")
+- Dimension: 426400 (label: "87901 Residential care for children")
+- Dimension: 426500 (label: "87902 Residential care for other persons")
+- Dimension: 427700 (label: "88991 Social work for children")
+- Dimension: 800028 (label: "Residential and home care ")
+- Measure: NumberOfEnterprises_1 (label: "Number of enterprises")  (unit: COUNT)
+- Measure: Jobs_2 (label: "Jobs")  (unit: COUNT)
+- Measure: EmployeesInFTE_3 (label: "Employees in FTE")  (unit: COUNT)
+- Measure: WagesInclExtraS_4 (label: "Wages (incl. extra’s)")  (unit: CCY_EUR)
+- Measure: TotalOperatingReturns_5 (label: "Total operating returns")  (unit: CCY_EUR)
+- Measure: NetTurnover_6 (label: "Net turnover")  (unit: CCY_EUR)
+- Measure: TotalOtherRevenues_7 (label: "Total other revenues")  (unit: CCY_EUR)
+- Measure: Subsidies_8 (label: "Subsidies")  (unit: CCY_EUR)
+- Measure: OtherRevenuesNotBeforeMentioned_9 (label: "Other revenues not before mentioned")  (unit: CCY_EUR)
+- Measure: TotalOperatingCosts_10 (label: "Total operating costs")  (unit: CCY_EUR)
+- Measure: TotalLabourCosts_11 (label: "Total labour costs")  (unit: CCY_EUR)
+- Measure: WagesAndSalaries_12 (label: "Wages and salaries")  (unit: CCY_EUR)
+- Measure: SocialSecurityContributions_13 (label: "Social security contributions")  (unit: CCY_EUR)
+- Measure: RemunerationOfSelfEmplMedSpec_14 (label: "Remuneration of self empl. Med. Spec.")  (unit: CCY_EUR)
+- Measure: DepreciationFixedAssetsIncluding_15 (label: "Depreciation fixed assets including...")  (unit: CCY_EUR)
+- Measure: TotalOtherOperatingCosts_16 (label: "Total other operating costs")  (unit: CCY_EUR)
+- Measure: OtherPersonnelCosts_17 (label: "Other personnel costs")  (unit: CCY_EUR)
+- Measure: OperatingCostsNotBeforeMentioned_18 (label: "Operating costs not before mentioned")  (unit: CCY_EUR)
+- Measure: OperatingResults_19 (label: "Operating results")  (unit: CCY_EUR)
+- Measure: OperatingSurplus_20 (label: "Operating surplus")  (unit: CCY_EUR)
+- Measure: ExceptionalResults_21 (label: "Exceptional results")  (unit: CCY_EUR)
+- Measure: PreTaxResults_22 (label: "Pre-tax results")  (unit: CCY_EUR)
+- Measure: TotalAssets_23 (label: "Total assets")  (unit: CCY_EUR)
+- Measure: IntangibleFixedAssets_24 (label: "Intangible fixed assets")  (unit: CCY_EUR)
+- Measure: TangibleFixedAssets_25 (label: "Tangible fixed assets")  (unit: CCY_EUR)
+- Measure: FinancialAssets_26 (label: "Financial assets")  (unit: CCY_EUR)
+- Measure: Stock_27 (label: "Stock")  (unit: CCY_EUR)
+- Measure: ShortTermClaims_28 (label: "Short-term claims")  (unit: CCY_EUR)
+- Measure: Securities_29 (label: "Securities")  (unit: CCY_EUR)
+- Measure: LiquidAssets_30 (label: "Liquid assets")  (unit: CCY_EUR)
+- Measure: TotalLiabilities_31 (label: "Total liabilities")  (unit: CCY_EUR)
+- Measure: Equity_32 (label: "Equity")  (unit: CCY_EUR)
+- Measure: Provisions_33 (label: "Provisions")  (unit: CCY_EUR)
+- Measure: LongTermLoans_34 (label: "Long-term loans")  (unit: CCY_EUR)
+- Measure: ShortTermLoans_35 (label: "Short-term loans")  (unit: CCY_EUR)
+- Measure: NumberOfSmallEnterprises_36 (label: "Number of small enterprises")  (unit: COUNT)
+- Measure: JobsSmallEnterprises_37 (label: "Jobs, small enterprises")  (unit: COUNT)
+- Measure: EmployeesInFTESmallEnt_38 (label: "Employees in FTE, small ent.")  (unit: COUNT)
+- Measure: WagesInclExtraSSmallEnt_39 (label: "Wages (incl. extra’s), small ent. ")  (unit: CCY_EUR)
+
+- **Example question 1 - standard aggregation with PIVOT:**
+"What is the total financial asset value of mental health hospitals and social work for children in health care institutions in 2022?"
+- **Analysis**:
+  - Sum financial assets over SIC2008 = 423100 and 427700.
+  - `SIC2008` is filtering-only, so it must NOT be selected in the inner query.
+  - Pivot `Periods` to output the year as a column.
+- **EXAMPLE 1 ANSWER:**
+SELECT *
+FROM (
+  SELECT Measure, Value, Periods
+  FROM "data/en/odata3/83652ENG.parquet"
+  UNPIVOT(Value FOR Measure IN ('FinancialAssets_26'))
+  WHERE SIC2008 IN ('427700', '423100')
+)
+PIVOT(SUM(Value) FOR Periods IN ('2022JJ00') GROUP BY Measure)
+
+- **Example question 2 - Proportion Query without PIVOT:**
+"What proportion of total operating expenses in 2017 was attributed to institutions providing services for people with disabilities, compared to 2016?"
+- **Analysis**:
+  - Proportion requires conditional aggregation; omit `PIVOT`.
+  - Compare 2017 value to the total over 2016+2017.
+  - Show total, 2017 part, and percentage.
+- **EXAMPLE 2 ANSWER:**
+SELECT
+  CONCAT_WS(', ', Measure, SIC2008) AS Dimension_Measure,
+  SUM(Value) AS "SUM[Periods]",
+  SUM(CASE WHEN Periods = '2017JJ00' THEN Value ELSE 0 END) AS "2017JJ00",
+  ROUND(
+    SUM(CASE WHEN Periods = '2017JJ00' THEN Value ELSE 0 END) * 100.0 / SUM(Value),
+    2
+  ) AS "%"
+FROM (
+  SELECT Measure, Value, SIC2008, Periods
+  FROM "data/en/odata3/83652ENG.parquet"
+  UNPIVOT(Value FOR Measure IN ('TotalOperatingCosts_10'))
+)
+WHERE SIC2008 IN ('800029')
+  AND Periods IN ('2016JJ00', '2017JJ00')
+GROUP BY Dimension_Measure
+
+
+# INPUT
+You are provided with the following context for generating the SQL:
+- The question: "{question}"
+- Top retrieved tables:
+{table_info}
+
+Please generate a SQL query that answers the question. ONLY generate the SQL query and nothing else.
+
+**ANSWER:**

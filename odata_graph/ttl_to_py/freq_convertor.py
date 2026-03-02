@@ -1,4 +1,4 @@
-from rdflib import Graph, SKOS, URIRef
+from rdflib import Graph, SKOS
 
 from odata_graph.ttl_to_py.defined_namespace_generator import generate_defined_namespace
 

@@ -1,4 +1,4 @@
-# 🦗 LOCuST: Large-scale Official statistics Complex text-to-SQL task (v0.1)
+# 🦗 LOCuST: Large-scale Official statistics Complex text-to-SQL task (v0.2)
 
 ## Introduction
 LOCuST is a large-scale text-to-SQL benchmark on real-world statistical data provided by [Statistics Netherlands](https://www.cbs.nl/en-gb/).

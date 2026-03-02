@@ -1,0 +1,120 @@
+[SYSTEM]
+Je bent een behulpzame assistent die SQL-query's genereert.
+
+[USER]
+**Genereer een SQL-query op basis van een vraag in natuurlijke taal.**
+
+# INSTRUCTIE
+Genereer een SQL-query die de gegeven vraag kan beantwoorden. Genereer ALLEEN de SQL-query en niets anders.
+
+Je krijgt aangeleverd:
+- De vraag in natuurlijke taal
+- Voorbeeldtabellen met measures en dimensions van een retriever
+  (meerdere tabellen, scores en veel nodes per tabel; sommige kunnen irrelevant zijn).
+- Voor elke measure wordt de eenheid gegeven.
+
+Gebruik de volgende instructies om je SQL-query's te schrijven:
+- Er kan naar tabellen worden verwezen met: `FROM "data/nl/odata3/<tabel-id>.parquet"`.
+- Gebruik enkele aanhalingstekens voor measure-namen en dimensiecodes binnen `IN (...)`.
+- Gebruik alleen dimensiecodes en measure-namen die in de verstrekte metadata voorkomen. Verzin geen kolommen, codes of join-sleutels.
+- Ga er niet vanuit dat de tabel met de hoogste score correct is; kies de tabel(len) waarvan de measures + dimension groups overeenkomen met de vraag. Negeer irrelevante tabellen/codes.
+- Aggregeer of combineer geen measures met onverenigbare eenheden (bv. het optellen van een valuta met een gewicht).
+
+**Veelvoorkomende Querypatronen:**
+- **Totalen-regel:**
+  - Als de vraag om een totaal vraagt en de metadata een measure bevat waarvan de naam/label aangeeft dat het al een totaal voor dat concept is (bv. begint met 'Totaal'), geef dan de voorkeur aan het gebruik van die measure in plaats van te sommeren over categorieën.
+- **Samengestelde measure-aggregatie (meerdere measures combineren tot één totaal/gemiddelde):**
+  - Alleen toegestaan als de eenheden compatibel zijn.
+  - Voeg de measure-kolommen rechtstreeks toe in de aggregatiefunctie. Voorbeeld: `SELECT Periods, SUM(MeasureA + MeasureB) AS 'SUM' ...`
+- **Proportie / verhouding:**
+  - Dit is een speciaal query-type dat een `UNPIVOT` vereist.
+  - Gebruik voorwaardelijke aggregatie (`SUM(CASE WHEN ...)` ) om het percentage te berekenen.
+- **Argmin/argmax ("welke X heeft de laagste/hoogste Y"):**
+  - Geef de gevraagde dimensiewaarde (X) en de min/max-waarde terug met een window-functie zoals `RANK()` of `ROW_NUMBER()` in een CTE.
+  - Voorbeeld om de Period met de minimumwaarde voor `<measure>` te vinden:
+    ```
+    WITH RankedRows AS (
+        SELECT
+            RANK() OVER (ORDER BY <measure> ASC) as rnk,
+            Periods,
+            <measure>
+        FROM "data/nl/odata3/<table-id>.parquet"
+        WHERE <filters>
+    )
+    SELECT Periods, <measure>
+    FROM RankedRows
+    WHERE rnk = 1;
+    ```
+  - Als je **measures** vergelijkt, moet je mogelijk eerst `UNPIVOT` gebruiken om de relevante measure-naam te vinden.
+    Bijvoorbeeld `UNPIVOT(Value FOR Measure IN ('MeasureA, 'MeasureB'))`
+- **Joins over meerdere tabellen:**
+  - Geef de voorkeur aan een enkele tabel als deze alle benodigde measures/dimensies bevat.
+  - Als measures uit verschillende tabellen komen, join de tabellen dan op gedeelde dimensiekolommen. Subqueries moeten eenvoudige `SELECT * FROM ... WHERE ...`-statements zijn.
+  - Voorbeeld:
+    ```
+    SELECT COALESCE(t1.Periods, t2.Periods), t1.MeasureA, t2.MeasureB
+    FROM (SELECT * FROM "data/nl/odata3/table1.parquet" WHERE <filters1>) AS t1
+    FULL JOIN (SELECT * FROM "data/nl/odata3/table2.parquet" WHERE <filters2>) AS t2
+    ON t1.Periods = t2.Periods;
+    ```
+
+Hier volgt een voorbeeld van verstrekte tabelinformatie en twee vraag-antwoord voorbeelden.
+
+- **Top voorbeeld tabellen:**
+Table: 86003NED (label: "Personen met een uitkering; soort uitkering, wijken en buurten 2024") (score: 45.24559775749761)
+Nodes:
+- Measure: M006098	(label: "Overheidsproductie en -consumptie") (unit: CCY_EUR)
+- DimensionGroup: Perioden (label: "Perioden")
+- Dimension: 2001JJ00 (label: "2001")
+- Dimension: A044434 (label: "P11 Marktoutput")
+- DimensionGroup: TransactiesEnSaldi (label: "Transacties en saldi")
+- Dimension: A044938 (label: "Overheid")
+- DimensionGroup: InstitutioneleSectoren (label: "Institutionele sectoren")
+- Dimension: A028903 (label: "Gemeenschappelijke regelingen")
+- Dimension: A044436 (label: "P131 Betalingen voor niet-marktoutput")
+- Dimension: A044942 (label: "Lokale overheid")
+- Dimension: A048156 (label: "B1g Bruto toegevoegde waarde")
+- Dimension: A048153 (label: "P132 Overige niet-marktoutput")
+- Dimension: A048157 (label: "B1n Netto toegevoegde waarde")
+- Dimension: A046349 (label: "P31 Individuele consumptieve bestedingen")
+- Dimension: A044940 (label: "Rijksoverheid")
+- Dimension: A044944 (label: "Socialezekerheidsfondsen")
+- Dimension: A046348 (label: "P3 Consumptieve bestedingen")
+- Dimension: A044478 (label: "D632 Uitkeringen in natura (aangekocht)")
+- Dimension: A044939 (label: "Centrale overheid")
+- Dimension: A044437 (label: "P2 Intermediair verbruik")
+- Dimension: A046350 (label: "P32 Collectieve consumptieve bestedingen")
+- Dimension: A044438 (label: "D1 Beloning van werknemers")
+- Dimension: A044941 (label: "Overige centrale overheid")
+- Dimension: A044491 (label: "P51c Verbruik van vaste activa")
+- Dimension: A048152 (label: "P13 Niet-marktoutput")
+- Dimension: A044435 (label: "P12A Investeringen in eigen beheer")
+- Dimension: A044440 (label: "D12 Sociale premies t.l.v. werkgevers")
+- Dimension: A044943 (label: "Overige lokale overheden")
+- Dimension: A028902 (label: "Waterschappen")
+- Dimension: A044439 (label: "D11 Lonen")
+- Dimension: A048158 (label: "B2n Netto exploitatieoverschot")
+- Dimension: A028870 (label: "Gemeente")
+- Dimension: A044451 (label: "D39 Niet-productgebonden subsidies")
+- Dimension: A044447 (label: "D29 Niet-productgebonden belastingen")
+- Dimension: A048155 (label: "D631 Overdrachten niet-marktproducten")
+- Dimension: A028869 (label: "Provincies")
+- Dimension: A048151 (label: "P1 Output")
+
+- **Voorbeeldvraag 1:** "Welke van de twee, rijksoverheid of waterschappen, had in 2001 de laagste waarde voor uitkeringen in natura?"
+- **VOORBEELD 1 ANTWOORD:**
+WITH RankedRows AS (SELECT RANK() OVER (ORDER BY M006098 ASC) AS rnk, M006098, Perioden, TransactiesEnSaldi, InstitutioneleSectoren AS "MIN[InstitutioneleSectoren]" FROM "data/nl/odata3/84576NED.parquet" WHERE Perioden = '2001JJ00' AND TransactiesEnSaldi = 'A044478' AND InstitutioneleSectoren IN ('A044940', 'A028902')) SELECT  * FROM RankedRows WHERE rnk = 1
+
+- **Voorbeeldvraag 2:** "Wat was het aandeel van de 'Overheidsproductie en -consumptie' door de Rijksoverheid in 2002 ten opzichte van het totaal van Rijksoverheid en Waterschappen voor dat jaar?"                                                                                                                                                     │
+- **VOORBEELD 2 ANTWOORD:**
+SELECT CONCAT_WS(', ', Measure, Perioden) AS Dimension_Measure, SUM(Value) AS "SUM[InstitutioneleSectoren]", SUM(CASE WHEN InstitutioneleSectoren IN ('A044940') THEN Value ELSE 0 END) AS "A044940", ROUND(SUM(CASE WHEN InstitutioneleSectoren IN ('A044940') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS "%" FROM ( SELECT Measure, Value, InstitutioneleSectoren, Perioden FROM "data/nl/odata3/84576NED.parquet" UNPIVOT(Value FOR Measure IN ("M006098"))) WHERE Perioden IN ('2002JJ00') AND InstitutioneleSectoren IN ('A044940', 'A028902') GROUP BY Dimension_Measure
+
+# INPUT
+Je krijgt de volgende context voor het genereren van de SQL:
+- De vraag: "{question}"
+- Top opgehaalde tabellen:
+{table_info}
+
+Genereer een SQL-query die de vraag beantwoordt. Genereer ALLEEN de SQL-query en niets anders.
+
+**ANTWOORD:**

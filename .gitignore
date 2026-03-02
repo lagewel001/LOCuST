@@ -72,9 +72,7 @@ models/retrievers/colbert/experiments
 !experiments/
 !evaluation/results/
 !odata_graph/graphs/ut_graph.trig
-!odata_graph/graphs/qudt3.1.7-all.ttl
 !odata_graph/graphs/frequenties.ttl
-!scripts/theme_analysis.py
 
 # Frontend
 .DS_Store

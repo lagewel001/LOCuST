@@ -10,7 +10,7 @@ class BaseGenerator(BaseModel, ABC):
     def __init__(self):
         pass
 
-    def generate_query(self, question: str, golden_tables: Optional[List[str]] = None) -> Tuple[str, int]:
+    def generate_query(self, question: str, golden_tables: Optional[List[str]] = None) -> Tuple[str, Tuple[int, int]]:
         """
             Generate a logical query for the given question.
 

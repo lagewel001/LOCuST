@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from re import sub
 from typing import Tuple, List, Dict, Union, TypeVar, Callable
 
+import config
 from s_expression.mapper import CodeLabelMapper
 
 T = TypeVar("T")
@@ -25,8 +26,12 @@ class Expression(ABC):
         self.intermediate_results = []
 
     @abstractmethod
-    def __call__(self, sql: bool = False, odata4: bool = False, offline: bool = False, verbose: bool = False) -> \
-            Tuple[Expression, pd.DataFrame]:
+    def __call__(self,
+                 sql: bool = False,
+                 odata4: bool = False,
+                 simplified: bool = False,
+                 offline: bool = False,
+                 verbose: bool = False) -> Tuple[Expression, pd.DataFrame]:
         """
             The logic when executing the sub-expression. Every expression should return a DataFrame,
             i.e. the pivot table that is the actual answer, and a mapping dict where the friendly
@@ -34,6 +39,7 @@ class Expression(ABC):
 
             :param sql: flag whether to execute the query as SQL (True) or as native S-expression (False; default)
             :param odata4: flag indicating whether to search SQL using OData4 (True) of OData3 (False; default)
+            :param simplified: flag indicating whether to use simplified OData3 SQLs (True) or not (False; default)
             :param offline: flag indicating whether to use the OData API service (False; default) or offline evaluation
                             of VALUE expressions using SQL (True). Only relevant when sql=False.
             :param verbose: show the (intermediate) outputs of the executed expression/query
@@ -62,6 +68,8 @@ class Expression(ABC):
                 for msr, units in measure_units.items():
                     mask = table.index.get_level_values('Measure') == msr
                     table.loc[mask] *= int(units['multiplier'] or 1)
+                    new_multiplier = 'aantal' if config.LANGUAGE == 'nl' else 'number'
+                    table.index = table.index.set_levels([new_multiplier] * len(multipliers), level='Unit', verify_integrity=False)
 
         if len(groupby) == 0:
             # Aggregate over all measures when no selectors are given
@@ -133,13 +141,19 @@ class Expression(ABC):
 
     @property
     @abstractmethod
-    def _sql(self) -> str:
+    def odata3_sql(self) -> str:
         """Parsable and executable OData3 (=default) SQL version of this expression."""
         raise NotImplementedError()
 
     @property
     @abstractmethod
-    def _odata4_sql(self) -> str:
+    def odata3_sql_simplified(self) -> str:
+        """Simplified (non-pivoted) version of the OData3 SQL version of this expression."""
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def odata4_sql(self) -> str:
         """Parsable and executable OData4 SQL version of this expression."""
         raise NotImplementedError()
 

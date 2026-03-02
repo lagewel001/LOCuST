@@ -27,7 +27,7 @@ def parse_for_table_id(query: str, query_type: QueryType) -> List[str]:
     """
     if query_type == 'sexp':
         pattern = r"\(VALUE\s+([A-Z0-9]+)"
-    elif query_type == 'sql':
+    elif query_type in ['sql', 'simplified_sql']:
         pattern = r"FROM\s+['\"](?:[^/]+/)*?([A-Z0-9]+)\.parquet['\"]"
     else:
         raise ValueError(f"Unknown query type: {query_type}")
@@ -47,7 +47,7 @@ def evaluate_table_retrieval(
 
         :param model_path: path to the model
         :param dataset_path: path to the dataset file
-        :param query_type: type of query to evaluate ('sexp' or 'sql')
+        :param query_type: type of query to evaluate ('sexp', 'sql' or 'simplified_sql')
         :param k: The 'k' for accuracy@k calculation
         :param model_kwargs: optional keyword arguments for model instantiation
         :return: dictionary containing the used model, dataset, query_type and EM + Acc@K metrics
@@ -149,8 +149,8 @@ if __name__ == "__main__":
                         help="Path to the model.")
     parser.add_argument("--dataset_path", type=str, default=config.TEST_QA_FILE,
                         help="Path to the testing question-answer pairs set.")
-    parser.add_argument("--query_type", type=str, choices=get_args(QueryType), default='sexp',
-                        help="Type of query to evaluate: ['sexp', 'sql'].")
+    parser.add_argument("--query_type", type=str, choices=get_args(QueryType), default='sql',
+                        help="Type of query to evaluate.")
     parser.add_argument("--k", "-k", type=int, default=5,
                         help="Value of K for accuracy@K.")
     parser.add_argument("--output_path", type=str,

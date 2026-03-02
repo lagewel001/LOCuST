@@ -1,4 +1,3 @@
-from odata_graph.ttl_to_py.defined_namespace_generator import generate_defined_namespace
 from odata_graph.namespaces._QUDT_UNIT import QUDT_UNIT
 
 # Conversion dictionary for OData4 units to QUDT types
@@ -586,6 +585,7 @@ if __name__ == "__main__":
     import config
 
     # Uncomment when updating QUDT to a new version using a TTL file
+	# from odata_graph.ttl_to_py.defined_namespace_generator import generate_defined_namespace
     # generate_defined_namespace(ttl_file=config.QUDT_GRAPH,
     #                            py_file='./odata_graph/namespaces/_QUDT_UNIT.py',
     #                            ns_uri='http://qudt.org/schema/qudt/Unit')

@@ -81,6 +81,7 @@ class Value(Expression):
                  friendly_labels: bool = True,
                  sql: bool = False,
                  odata4: bool = False,
+                 simplified: bool = False,
                  offline: bool = False,
                  verbose: bool = False) -> Tuple[Value, pd.DataFrame]:
         """
@@ -92,8 +93,15 @@ class Value(Expression):
             db = DBExecutor(tables=[self.table], measures=self.measures, dims=self.dimensions,
                             operator_name=self._operator)
 
-            query = self._sql if not odata4 else self._odata4_sql
-            answer, code_labels, _ = db.query_db(query=query, index_cols=index_cols, friendly_labels=friendly_labels)
+            if odata4:
+                query = self.odata4_sql
+            elif simplified:
+                query = self.odata3_sql_simplified
+            else:
+                query = self.odata3_sql
+
+            answer, code_labels, _ = db.query_db(query=query, index_cols=index_cols,
+                                                 simplified=simplified, friendly_labels=friendly_labels)
         else:
             odata = ODataExecutor(self.table, self.measures, self.measure_filter, self.dimensions)
             answer, code_labels = odata.query_odata(index_cols=index_cols, friendly_labels=friendly_labels)
@@ -105,7 +113,7 @@ class Value(Expression):
         return self, answer
 
     @property
-    def _sql(self):
+    def odata3_sql(self):
         """
             === Example VALUE s-expression as OData3 SQL ===
             SELECT *
@@ -161,7 +169,47 @@ class Value(Expression):
         return sqlglot.parse_one(sql).sql(pretty=True)
 
     @property
-    def _odata4_sql(self):
+    def odata3_sql_simplified(self):
+        """
+            === Example simplified VALUE expression as OData3 SQL ===
+            SELECT Period, TypeOfBankruptcy, BankruptciesSessionDayCorrected_1
+            FROM '<parquet_file>'
+            WHERE TypeOfBankruptcy = 'A047597'
+            AND Periods = '1993MM09';
+        """
+        select_cols = ""
+        if self.dimensions:
+            select_cols += ", ".join(map(lambda d: str(d[0]), self.dimensions)) + ', '
+        select_cols += ', '.join(map(str, self.measures))
+
+        sql = f"""
+            SELECT {select_cols}
+            FROM '{os.path.relpath(config.DB_ODATA3_FILES)}/{self.table}.parquet'
+        """
+        where_statements = []
+        for group, codes in self.dimensions:
+            if len(codes) > 1:
+                where_statements.append(f"{group} IN ('{"', '".join({str(c) for c in codes})}')")
+            if len(codes) == 1:
+                where_statements.append(f"{group} = '{list(codes)[0]}'")
+
+        where = ""
+        if len(where_statements) > 0:
+            where += 'WHERE '
+            where += '\nAND '.join(where_statements)
+
+        # Comparison filters
+        if self.measure_filter:
+            if where != 'WHERE ':
+                where += ' AND '
+            msr, op, val = self.measure_filter
+            where += f"\"{msr}\" {op} {val}"
+
+        sql += where
+        return sqlglot.parse_one(sql).sql(pretty=True)
+
+    @property
+    def odata4_sql(self):
         """
             === Example VALUE s-expression as SQL ===
             SELECT *
@@ -196,7 +244,7 @@ class Value(Expression):
 if __name__ == '__main__':
     from s_expression.parser import parse, eval
 
-    eval(parse("""(VALUE 85302NED
+    s_expression, answer = eval(parse("""(VALUE 85302NED
         (MSR (D004645 < 35000))
         (DIM BestemmingEnSeizoen (T001047))
         (DIM Vakantiekenmerken (T001460))

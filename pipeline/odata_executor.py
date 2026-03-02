@@ -181,7 +181,6 @@ class ODataExecutor(object):
 
                 units = {uri_to_code(m): str(u) for m, u in self._graph.subject_objects(QUDT.unitOfSystem)}
                 obs_df['Unit'] = obs_df['Measure'].map(units).replace({np.nan: ''})
-                # obs_df.replace({np.nan: ''}, inplace=True)
 
                 if friendly_labels:
                     obs_df = obs_df.rename(columns=code_labels)

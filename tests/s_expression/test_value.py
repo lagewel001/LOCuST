@@ -34,22 +34,34 @@ def test_value_sexp():
     assert_frame_equal_unordered(answer, ANSWER_DF)
     assert sexp.mapper == MAPPER_RESULT
 
-
 def test_value_sexp_offline():
     sexp, answer = eval(parse(SEXP), offline=True)
     assert_frame_equal_unordered(answer, ANSWER_DF)
     assert sexp.mapper == MAPPER_RESULT
-
 
 def test_value_odata3_sql():
     sexp, answer = eval(parse(SEXP), sql=True, odata4=False)
     assert_frame_equal_unordered(answer, ANSWER_DF)
     assert sexp.mapper == MAPPER_RESULT
 
-
 def test_value_odata4_sql():
     sexp, answer = eval(parse(SEXP), sql=True, odata4=True)
     assert_frame_equal_unordered(answer, ANSWER_DF)
+    assert sexp.mapper == MAPPER_RESULT
+
+def test_value_simplified_sql():
+    expected_answer = pd.DataFrame({'Bestemming en seizoen': ['Totaal vakanties'] * 2, 'Perioden': ['2021', '2022'],
+                                    'Marges': ['Waarde'] * 2, 'Vakantiekenmerken': ['Totaal vakanties'] * 2,
+                                    'Totaal vakanties': [31685.0, 35933.0]})
+
+    # Check for identical tables with different ordering
+    expected_answer_changed_order = pd.DataFrame({'Bestemming en seizoen': ['Totaal vakanties'] * 2, 'Perioden': ['2022', '2021'],
+                                    'Marges': ['Waarde'] * 2, 'Vakantiekenmerken': ['Totaal vakanties'] * 2,
+                                    'Totaal vakanties': [35933.0, 31685.0]})
+
+    sexp, answer = eval(parse(SEXP), sql=True, simplified=True)
+    assert_frame_equal_unordered(answer, expected_answer)
+    assert_frame_equal_unordered(answer, expected_answer_changed_order)
     assert sexp.mapper == MAPPER_RESULT
 
 
@@ -73,5 +85,5 @@ COND_ANSWER_DF = pd.DataFrame(
 )
 
 def test_value_sexp_conditional_offline():
-    _, answer = eval(parse(COND_SEXP), verbose=True, sql=True)
+    _, answer = eval(parse(COND_SEXP), sql=True)
     assert_frame_equal_unordered(answer, COND_ANSWER_DF)

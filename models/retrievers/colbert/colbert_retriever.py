@@ -26,6 +26,7 @@ class ColBERTRetriever(BaseRetriever):
 
         self.index_colbert()
 
+
     def retrieve_tables(self, query: str, k: int) -> Dict:
         ranking = self.searcher.search(query, k=k)
         sorted_tables = {self.pid_node_map[pid]: {

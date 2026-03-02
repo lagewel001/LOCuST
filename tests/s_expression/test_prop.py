@@ -29,7 +29,7 @@ PROP_ANSWER_DF_SEXP = pd.DataFrame(
 )
 
 PROP_ANSWER_INDEX_SQL = [('Totaal vakanties, Waarde, Totaal vakanties, Totaal vakanties', 'x 1 000')]
-PROP_ANSWER_COLS_SQL = ["SUM['Perioden']", '2021', '%']
+PROP_ANSWER_COLS_SQL = ["SUM[Perioden]", '2021', '%']
 PROP_ANSWER_DF_SQL = pd.DataFrame(
     data=PROP_ANSWER_DATA,
     index=pd.MultiIndex.from_tuples(PROP_ANSWER_INDEX_SQL, names=['Measure', 'Unit']),

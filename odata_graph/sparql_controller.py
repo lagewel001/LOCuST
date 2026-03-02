@@ -258,7 +258,7 @@ class SparqlEngine(object):
     def get_table_graph(self, table: Table, include_time_geo_dims: bool = False) -> Graph:
         """
             Construct a subgraph from the GraphDB based a single given table. The graph
-            returned will contain all the measure/dimension-table  relations and the
+            returned will contain all the measure/dimension-table relations and the
             corresponding metadata of and hierarchies between all nodes.
 
             :param table: table node to construct graph for

@@ -32,6 +32,7 @@ class Prop(Expression):
     def __call__(self,
                  sql: bool = False,
                  odata4: bool = False,
+                 simplified: bool = False,
                  offline: bool = False,
                  verbose: bool = False) -> Tuple[Prop, pd.DataFrame]:
         if sql:
@@ -41,10 +42,15 @@ class Prop(Expression):
                     break
                 sub_exp = sub_exp.sub_expression
 
-            query = self._sql if not odata4 else self._odata4_sql
+            if odata4:
+                query = self.odata4_sql
+            elif simplified:
+                query = self.odata3_sql_simplified
+            else:
+                query = self.odata3_sql
             db = DBExecutor(tables=[sub_exp.table], measures=sub_exp.measures, dims=sub_exp.dimensions,
                             operator_name=self._operator)
-            answer, code_labels, _ = db.query_db(query=query)
+            answer, code_labels, _ = db.query_db(query=query, simplified=simplified)
             self.mapper = code_labels
         else:
             sub_exp, table = self.sub_expression(offline=offline, odata4=odata4, verbose=verbose)
@@ -67,11 +73,11 @@ class Prop(Expression):
         return self, answer
 
     @property
-    def _sql(self):
+    def odata3_sql(self):
         """
             === Example PROP s-expression as OData3 SQL ===
             SELECT CONCAT_WS(', ', BestemmingEnSeizoen, Marges, Measure, Vakantiekenmerken) AS Dimension_Measure,
-                   SUM(Value) AS "SUM['Perioden']",
+                   SUM(Value) AS 'SUM[Perioden]',
                    SUM(CASE WHEN Perioden IN ('2021JJ00') THEN Value ELSE 0 END) AS "2021JJ00",
                    ROUND(
                        SUM(CASE WHEN Perioden IN ('2021JJ00') THEN Value ELSE 0 END) * 100.0 / SUM(Value),
@@ -104,7 +110,7 @@ class Prop(Expression):
 
         sql = f"""
             SELECT CONCAT_WS(', ', {', '.join(group_by_cols)}) AS Dimension_Measure,
-                   SUM(Value) AS "SUM['{self.selector[0]}']",
+                   SUM(Value) AS 'SUM[{self.selector[0]}]',
                    SUM(CASE WHEN {self.selector[0]} IN ({selector_values}) THEN Value ELSE 0 END) AS \"{"_".join(self.selector[1])}\",
                    ROUND(
                        SUM(CASE WHEN {self.selector[0]} IN ({selector_values}) THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2
@@ -113,20 +119,20 @@ class Prop(Expression):
                 SELECT Measure, Value, {', '.join(str(g) for g, _ in sub_exp.dimensions)}
                 FROM '{os.path.relpath(config.DB_ODATA3_FILES)}/{sub_exp.table}.parquet'
                 UNPIVOT (
-                    Value FOR Measure IN ({', '.join(str(msr) for msr in sub_exp.measures)})
+                    Value FOR Measure IN ("{'", "'.join(str(msr) for msr in sub_exp.measures)}")
                 )
             )
-            WHERE {where_clauses}
+            {'WHERE ' + where_clauses if where_clauses else ''}
             GROUP BY Dimension_Measure;
         """
         return sqlglot.parse_one(sql).sql(pretty=True)
 
     @property
-    def _odata4_sql(self):
+    def odata4_sql(self):
         """
             === Example PROP s-expression as OData4 SQL ===
             SELECT CONCAT_WS(', ', Measure, Marges, Vakantiekenmerken, BestemmingEnSeizoen) AS Dimension_Measure,
-                   SUM(Value) AS "SUM['Perioden']",
+                   SUM(Value) AS 'SUM[Perioden]',
                    SUM(CASE WHEN Perioden IN ('2021JJ00') THEN Value ELSE 0 END) AS "2021JJ00",
                    ROUND(
                        SUM(CASE WHEN Perioden IN ('2021JJ00') THEN Value ELSE 0 END) * 100.0 / SUM(Value),
@@ -141,7 +147,7 @@ class Prop(Expression):
             GROUP BY Dimension_Measure
         """
         # Get inner select from sub expression to fetch data to aggregate
-        sub_sql = sqlglot.parse_one(self.sub_expression._odata4_sql)
+        sub_sql = sqlglot.parse_one(self.sub_expression.odata4_sql)
         select = sub_sql.find(sqlglot.exp.Subquery).find(sqlglot.exp.Select)
 
         # Copy existing PIVOT over from sub-expression
@@ -151,7 +157,7 @@ class Prop(Expression):
 
         sql = f"""
             SELECT CONCAT_WS(', ', {', '.join(set(for_statements.keys()) - {self.selector[0]})}) AS Dimension_Measure,
-                   SUM(Value) AS "SUM['{self.selector[0]}']",
+                   SUM(Value) AS 'SUM[{self.selector[0]}]',
                    SUM(CASE WHEN {self.selector[0]} IN ('{"', '".join({str(c) for c in self.selector[1]})}') THEN Value ELSE 0 END) AS '{"_".join(self.selector[1])}',
                    ROUND(
                        SUM(CASE WHEN {self.selector[0]} IN ('{"', '".join({str(c) for c in self.selector[1]})}') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2
@@ -162,14 +168,19 @@ class Prop(Expression):
         """
         return sqlglot.parse_one(sql).sql(pretty=True)
 
+    @property
+    def odata3_sql_simplified(self):
+        """There is no simplified version for the PROP type query. Defaults to the OData3 SQL implementation"""
+        return self.odata3_sql
+
 
 if __name__ == '__main__':
     from s_expression.parser import parse, eval
 
     # Multi dimension table example
-    eval(parse("""
-        (SUM (Regions) (VALUE 82061ENG (MSR (Guests_1)) (DIM Periods (2023JJ00 2024JJ00)) (DIM Regions (PV27 PV28)) (DIM CountryOfResidence (L008552))))
-    """), sql=True, odata4=False, verbose=True)
+    s, a = eval(parse("""
+    (PROP (DIM WijkenEnBuurten (WK037501)) (VALUE 84517NED (MSR (M002463 < 284)) (DIM WijkenEnBuurten ())))
+    """), sql=True, simplified=True, verbose=True)
 
     # Single dimension table example
     eval(parse("""

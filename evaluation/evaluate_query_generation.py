@@ -4,12 +4,14 @@ import json
 import os
 import pandas as pd
 import sqlglot
+import warnings
 from time import time
 from tqdm import tqdm
-from typing import get_args, Tuple, Dict, Union, Literal
+from typing import get_args, Tuple, Dict, Union, Literal, Optional
 
 import config
 from evaluation.component_match_metric import calculate_component_matching
+from evaluation.record_accuracy_metric import record_accuracy
 from evaluation.evaluate_table_retrieval import parse_for_table_id
 from evaluation.selection_metrics import get_selection_metrics
 from models.generators.base_generator import BaseGenerator
@@ -17,7 +19,7 @@ from pipeline.db_executor import DBExecutor
 from s_expression import Table, Expression
 from s_expression.parser import parse, eval
 from utils.answer_comparator import is_equal_frame
-from utils.custom_types import QueryType, UnitCompatibilityError
+from utils.custom_types import QueryType, UnitCompatibilityError, FormatWarning
 from utils.global_functions import load_dataset, load_model_from_path
 
 if config.LANGUAGE == 'en':
@@ -45,20 +47,21 @@ def execute_query(query: str, query_type: QueryType) -> Tuple[Union[str, Express
         t0 = time()
         query, answer = eval(parse(query), offline=True)
         execution_time = time() - t0
-    elif query_type == 'sql':
+    elif query_type in ['sql', 'simplified_sql']:
         db = DBExecutor(
             tables=[Table(t) for t in parse_for_table_id(query, query_type)],
             measures=set(),
             dims=set()
         )
-        answer, _, execution_time = db.query_db(query, friendly_labels=False)
+        simplified = query_type == 'simplified_sql'
+        answer, _, execution_time = db.query_db(query, friendly_labels=False, simplified=simplified)
     else:
         raise ValueError(f"Unknown query type: {query_type}")
 
     return query, answer, execution_time
 
 
-def get_question_type(query: str, query_type: QueryType) -> str:
+def get_question_type(query: str, query_type: QueryType) -> Optional[str]:
     """Determines the question type from an S-expression."""
     if query_type == 'sexp':
         # The order of bins matters for questions with multiple aggregations
@@ -76,18 +79,20 @@ def get_question_type(query: str, query_type: QueryType) -> str:
             return 'JOIN'
 
         return 'VALUE'
-    elif query_type == 'sql':
+    elif query_type in ['sql', 'simplified_sql']:
         try:
             expression = sqlglot.parse_one(query, read='duckdb')
         except Exception as e:
-            return ''
+            return None
 
         # PROP
         if expression.find(sqlglot.exp.Div):
             return 'PROP'
 
         # JOIN / AGGJOIN
-        is_join = bool(expression.find(sqlglot.exp.Join))
+        is_join = bool(expression.find((
+            sqlglot.exp.Join, sqlglot.exp.Union, sqlglot.exp.Intersect, sqlglot.exp.Except
+        )))
         if is_join:
             is_aggjoin = any(
                 isinstance(s, (sqlglot.exp.Sum, sqlglot.exp.Avg, sqlglot.exp.Min, sqlglot.exp.Max))
@@ -97,20 +102,39 @@ def get_question_type(query: str, query_type: QueryType) -> str:
                 return 'AGGJOIN'
             return 'JOIN'
 
-        # PIVOT queries (VALUE, SUM, AVG, MIN, MAX)
+        # Check aggregator in PIVOT to make distinction between VALUE and simple aggregators
         pivot = expression.find(sqlglot.exp.Pivot)
         if pivot:
             agg_expr = pivot.args.get('expressions')[0]
             has_groupby = bool(pivot.args.get('group'))
 
+            # For MIN/MAX, having a group by indicates an ARGMIN/MAX operation
+            if isinstance(agg_expr, sqlglot.exp.Min):
+                return 'MIN' if has_groupby else 'VALUE'
+            if isinstance(agg_expr, sqlglot.exp.Max):
+                return 'MAX' if has_groupby else 'VALUE'
+
+            # For SUM/AVG, if we pivot on one column, it's just selecting a value
+            in_clause = pivot.args.get('in')
+            num_pivot_values = len(in_clause.expressions) if in_clause else 0
+            if isinstance(agg_expr, (sqlglot.exp.Sum, sqlglot.exp.Avg)):
+                if num_pivot_values <= 1:
+                    return 'VALUE'
+                elif isinstance(agg_expr, sqlglot.exp.Sum):
+                    return 'SUM'
+                else:
+                    return 'AVG'
+
+        aggs = expression.find_all(sqlglot.exp.AggFunc)
+        for agg_expr in aggs:
             if isinstance(agg_expr, sqlglot.exp.Sum):
                 return 'SUM'
             if isinstance(agg_expr, sqlglot.exp.Avg):
                 return 'AVG'
             if isinstance(agg_expr, sqlglot.exp.Min):
-                return 'MIN' if has_groupby else 'VALUE'
+                return 'MIN'
             if isinstance(agg_expr, sqlglot.exp.Max):
-                return 'MAX' if has_groupby else 'VALUE'
+                return 'MAX'
 
         return 'VALUE'
     else:
@@ -131,7 +155,7 @@ def evaluate_query_generation(
         :param dataset_path: path to the dataset file
         :param output_path: path to the generated queries from the model to. If a generated query is present for all
                             QA-paris in dataset_path, this can also be used for just re-calculating the metrics.
-        :param query_type: type of query to evaluate ('sexp' or 'sql')
+        :param query_type: type of query to evaluate ('sexp', 'sql' or 'simplified_sql')
         :param task: type of task to evaluate ('end-to-end' or 'query-only')
         :param model_kwargs: optional keyword arguments for model instantiation
         :return: dictionary containing the used model, dataset and metrics
@@ -150,8 +174,10 @@ def evaluate_query_generation(
 
     QUESTION_TYPES = ['VALUE', 'SUM', 'AVG', 'MIN', 'MAX', 'JOIN', 'PROP', 'AGGJOIN']
 
-    token_count = 0
+    input_token_count = 0
+    output_token_count = 0
     exact_match = 0
+    rec_accuracy = 0
     execution_accuracy = 0
     component_scores = {'select_f1': 0.0, 'where_f1': 0.0, 'groupby_f1': 0.0, 'orderby_f1': 0.0, 'pivot_f1': 0.0}
     selection_scores = {'measure_f1': 0.0, 'dimension_f1': 0.0, 'observation_f1': 0.0}
@@ -170,7 +196,7 @@ def evaluate_query_generation(
         'extra_measures': 0, 'missing_measures': 0,
         'extra_dimensions': 0, 'missing_dimensions': 0
     }
-    if query_type == 'sql':
+    if query_type in ['sql', 'simplified_sql']:
         error_scores['missing_pivot'] = 0
     total = len(dataset)
 
@@ -178,6 +204,7 @@ def evaluate_query_generation(
         q_type: {
             "count": 0,
             "exact_match": 0,
+            "record_accuracy": 0,
             "execution_accuracy": 0,
             "selection_scores": {'measure_f1': 0.0, 'dimension_f1': 0.0, 'observation_f1': 0.0}
         } for q_type in QUESTION_TYPES
@@ -191,8 +218,14 @@ def evaluate_query_generation(
         if question in generated_answers:
             predicted_query = generated_answers[question]
         else:
-            predicted_query, tokens = model.generate_query(question, golden_tables=golden_tables if task == 'query-only' else None)
-            token_count += tokens
+            predicted_query, tokens = model.generate_query(question, golden_tables=golden_tables if task == 'query-only' else None, query_type=query_type)
+
+            if not predicted_query:
+                total -= 1
+                continue
+
+            input_token_count += tokens[0]
+            output_token_count += tokens[1]
 
             generated_answers[question] = predicted_query
             with open(output_path, "w") as f:
@@ -203,7 +236,7 @@ def evaluate_query_generation(
         metrics_by_type[q_type]["count"] += 1
 
         # Exact Match
-        if query_type == 'sql':
+        if query_type in ['sql', 'simplified_sql']:
             try:
                 normalized_predicted = sqlglot.transpile(predicted_query, read='duckdb', pretty=False)[0]
                 normalized_ground_truth = sqlglot.transpile(ground_truth_query, read='duckdb', pretty=False)[0]
@@ -218,65 +251,67 @@ def evaluate_query_generation(
         exact_match += em_reward
         metrics_by_type[q_type]["exact_match"] += em_reward
 
-        # Execution Accuracy
+        syntax_error = False
+        rec_acc_reward = 0
+        exec_acc_reward = 0
         try:
             # Check for query validity before execution
             if query_type == 'sexp':
                 parse(predicted_query)
-            elif query_type == 'sql':
+            elif query_type in ['sql', 'simplified_sql']:
                 sqlglot.parse_one(predicted_query, read='duckdb')
 
-            _, predicted_result, _ = execute_query(predicted_query, query_type)
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always", FormatWarning)
+                _, predicted_result, _ = execute_query(predicted_query, query_type)
+
+                if any(issubclass(warn.category, FormatWarning) for warn in w):
+                    # Formatting from retrieved data is wrong (usually indicates no measure was returned)
+                    error_scores['formatting_error']['by_type'][q_type] += 1
+                    for table_id in golden_tables:
+                        for theme, ids in TEST_TABLES_PER_THEME.items():
+                            if table_id in ids:
+                                error_scores['formatting_error']['by_theme'][theme] += 1
+                                break
+
             _, ground_truth_result, _ = execute_query(ground_truth_query, query_type)
 
+            # Record Accuracy
+            rec_acc_reward = record_accuracy(ground_truth_result, predicted_result)
+
+            # Execution Accuracy
             # Checking frame equality clogs the system memory for enormous tables. Trust me, the EX is 0 if you return more than 1 000 rows
             if len(predicted_result) < 1000 and is_equal_frame(ground_truth_result, predicted_result):
                 exec_acc_reward = 1
-            else:
-                exec_acc_reward = 0
         except UnitCompatibilityError:
             # Units are not compatible
-            exec_acc_reward = 0
             error_scores['unit_compatability_errors'] += 1
         except duckdb.IOException:
             # Table not found, will be added to the table_mismatch later
-            exec_acc_reward = 0
-        except (duckdb.BinderException, duckdb.ParserException, sqlglot.errors.SqlglotError, SyntaxError):
+            pass
+        except (duckdb.BinderException, duckdb.ParserException, sqlglot.errors.SqlglotError, SyntaxError) as e:
             # Syntactical errors
-            exec_acc_reward = 0
+            syntax_error = True
             error_scores['syntax_error']['by_type'][q_type] += 1
             for table_id in golden_tables:
                 for theme, ids in TEST_TABLES_PER_THEME.items():
                     if table_id in ids:
                         error_scores['syntax_error']['by_theme'][theme] += 1
                         break
-        except RuntimeError:
-            # Formatting from retrieved data is wrong (usually indicates no measure was returned)
-            exec_acc_reward = 0
-            error_scores['formatting_error']['by_type'][q_type] += 1
-            for table_id in golden_tables:
-                for theme, ids in TEST_TABLES_PER_THEME.items():
-                    if table_id in ids:
-                        error_scores['formatting_error']['by_theme'][theme] += 1
-                        break
-        except Exception as e:
-            print(e)
-            exec_acc_reward = 0
+        except (RuntimeError, Exception) as e:
+            print(f"Caught unexpected error: {e}")
+
+        rec_accuracy += rec_acc_reward
+        metrics_by_type[q_type]['record_accuracy'] += rec_acc_reward
 
         execution_accuracy += exec_acc_reward
         metrics_by_type[q_type]['execution_accuracy'] += exec_acc_reward
 
-        # Error analysis for queries with correct syntax
-        predicted_tables = parse_for_table_id(predicted_query, query_type)
-        if set(golden_tables) != set(predicted_tables):
-            error_scores['table_mismatch'] += 1
-
-        predicted_agg_func = get_question_type(predicted_query, query_type=query_type)
-        if predicted_agg_func != '' and q_type not in predicted_agg_func:
-            error_scores['wrong_agg_func'][q_type] += 1
-
-        if query_type == 'sql' and 'PIVOT' not in predicted_query:
-            error_scores['missing_pivot'] += 1
+        # Component Matching (SQL only)
+        if query_type in ['sql', 'simplified_sql']:
+            comp_scores = calculate_component_matching(predicted_query, ground_truth_query)
+            for key, value in comp_scores.items():
+                component_scores[key] += value
 
         # Selection-based F1 scores
         sel_scores, sel_errors = get_selection_metrics(predicted_query, ground_truth_query, query_type)
@@ -289,14 +324,25 @@ def evaluate_query_generation(
         error_scores['extra_dimensions'] += 1 if sel_errors['extra_dimensions'] > 0 else 0
         error_scores['missing_dimensions'] += 1 if sel_errors['missing_dimensions'] > 0 else 0
 
-        # Component Matching (SQL only)
-        if query_type == 'sql':
-            comp_scores = calculate_component_matching(predicted_query, ground_truth_query)
-            for key, value in comp_scores.items():
-                component_scores[key] += value
+        # Error analysis for queries with correct syntax
+        if not syntax_error:
+            predicted_tables = parse_for_table_id(predicted_query, query_type)
+            if set(golden_tables) != set(predicted_tables):
+                error_scores['table_mismatch'] += 1
 
-    avg_token_count = token_count / total if total > 0 else 0
+            if query_type in ['sql', 'simplified_sql'] and 'PIVOT' not in predicted_query:
+                error_scores['missing_pivot'] += 1
+
+            # Determine if the model attempted to answer the questions using the correct 'type' of query
+            predicted_agg_func = get_question_type(predicted_query, query_type=query_type)
+            if (exec_acc_reward != 1. and rec_acc_reward != 1. and sel_scores['observation_f1'] != 1. and
+                    predicted_agg_func is not None and q_type != predicted_agg_func):
+                error_scores['wrong_agg_func'][q_type] += 1
+
+    avg_input_token_count = input_token_count / total if total > 0 else 0
+    avg_output_token_count = output_token_count / total if total > 0 else 0
     em_accuracy = exact_match / total if total > 0 else 0
+    rec_accuracy = (rec_accuracy / total) if total > 0 else 0
     ex_accuracy = (execution_accuracy / total) if total > 0 else 0
     avg_selection_scores = {key: value / total for key, value in selection_scores.items()}
 
@@ -307,6 +353,7 @@ def evaluate_query_generation(
         if count > 0:
             avg_metrics_by_type[q_type] = {
                 "exact_match_accuracy": metrics["exact_match"] / count,
+                "record_accuracy": metrics["record_accuracy"] / count,
                 "execution_accuracy": metrics["execution_accuracy"] / count,
                 "selection_metrics": {key: value / count for key, value in metrics["selection_scores"].items()},
                 "total_questions": count
@@ -317,9 +364,11 @@ def evaluate_query_generation(
         "dataset_path": dataset_path,
         "task": task,
         "query_type": query_type,
-        "avg_output_token_count": avg_token_count,
+        "avg_input_token_count": avg_input_token_count,
+        "avg_output_token_count": avg_output_token_count,
         "metrics": {
             "exact_match_accuracy": em_accuracy,
+            "record_accuracy": rec_accuracy,
             "execution_accuracy": ex_accuracy,
             "selection_metrics": avg_selection_scores
         },
@@ -328,7 +377,7 @@ def evaluate_query_generation(
         "total_questions": total
     }
 
-    if query_type == 'sql':
+    if query_type in ['sql', 'simplified_sql']:
         avg_component_scores = {key: value / total for key, value in component_scores.items()}
         results["metrics"]["component_matching"] = avg_component_scores
 

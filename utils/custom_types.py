@@ -14,17 +14,25 @@ NonEmptyList = Annotated[List[T], NonEmpty]
 
 ComparisonOperator = Literal['<', '>', '!=', '<=', '>=', '=']
 
-QueryType = Literal['sexp', 'sql']
+QueryType = Literal['sexp', 'sql', 'simplified_sql']
+
+
+class FormatWarning(Warning):
+    """Raised when SQL output of a query is not correctly pivoted to our rules."""
+    pass
+
 
 class UnitCompatibilityError(TypeError):
     """Raised when units are not compatible for an aggregation operation."""
     pass
+
 
 @dataclass
 class QAPair(object):
     question: str
     sexp: str
     sql: str
+    simplified_sql: str
 
     def __getitem__(self, attr: str):
         return getattr(self, attr)

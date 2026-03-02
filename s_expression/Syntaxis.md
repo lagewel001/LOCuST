@@ -15,17 +15,17 @@ This document contains the syntax description of the custom S-expressions Lisp-b
 ## Syntax table
 
 | Sub-expression | Syntax                                                                                       |
-|:----:|:---------------------------------------------------------------------------------------------|
-| tab | `<code>`                                                                                     |
-| msrs | `(MSR (<code₁> <code>))` <br> `(MSR (<code₁> <op> <int/float>))`*                            |
-| dim | `(DIM <codegroup> (<code₁> <code>))` <br> `(DIM <codegroup> ())`                             |
-| dims | `(dim₁ ... dimn)`                                                                            |
-| val | `(VALUE tab msrs dims)`                                                                      |
-| sum | `(SUM () val)` <br> `(SUM <codegroup> val)`                                                  |
-| avg | `(AVG () val)` <br> `(AVG <codegroup> val)`                                                  |
-| max/min | `(MAX () val)` <br> `(MIN () val)` <br> `(MAX <codegroup> val)` <br> `(MIN <codegroup> val)` |
-| prop | `(PROP dim val)`                                                                             |
-| join | `(JOIN <codegroup> val₁ val₂)`                                                               |
+|:--------------:|:---------------------------------------------------------------------------------------------|
+|      tab       | `<code>`                                                                                     |
+|      msrs      | `(MSR (<code₁> <code>))` <br> `(MSR (<code₁> <op> <int/float>))`*                            |
+|      dim       | `(DIM <codegroup> (<code₁> <code>))` <br> `(DIM <codegroup> ())`                             |
+|      dims      | `(dim₁ ... dimn)`                                                                            |
+|      val       | `(VALUE tab msrs dims)`                                                                      |
+|      sum       | `(SUM () val)` <br> `(SUM <codegroup> val)`                                                  |
+|      avg       | `(AVG () val)` <br> `(AVG <codegroup> val)`                                                  |
+|    max/min     | `(MAX () val)` <br> `(MIN () val)` <br> `(MAX <codegroup> val)` <br> `(MIN <codegroup> val)` |
+|      prop      | `(PROP dim val)`                                                                             |
+|      join      | `(JOIN <codegroup> val₁ val₂)`                                                               |
 
 Aggregation functions = { `VALUE`, `SUM`, `AVG`, `MIN`, `MAX`, `PROP`, `JOIN` }
 
@@ -52,17 +52,17 @@ Aggregation functions = { `VALUE`, `SUM`, `AVG`, `MIN`, `MAX`, `PROP`, `JOIN` }
 ### Retrieval output:
 *VALUE*
 
-| GN | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal landen | Grensoverschrijving goederen; uitvoer Totale uitvoerwaarde Totaal landen |
-| :--- | :--- | :--- | :--- |
-| 01012990 Paarden, levend (m.u.v. fokp... | 2023** | 20 | 423 |
-| 01022910 Rundvee, levend, met een gew... | 2023** | 156 | 18 |
+| GN                                       | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal landen | Grensoverschrijving goederen; uitvoer Totale uitvoerwaarde Totaal landen |
+|:-----------------------------------------|:---------|:-----------------------------------------------------------------------|:-------------------------------------------------------------------------|
+| 01012990 Paarden, levend (m.u.v. fokp... | 2023**   | 20                                                                     | 423                                                                      |
+| 01022910 Rundvee, levend, met een gew... | 2023**   | 156                                                                    | 18                                                                       |
 
 ### Expression output:
 
-| MSR | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal Landen | Grensoverschrijving goederen; uitvoer Totale invoerwaarde Totaal landen |
-| :--- | :--- | :--- | :--- |
-| Paarden | 2023 | 20 | 423 |
-| Rundvee | 2023 | 156 | 18 |
+| MSR     | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal Landen | Grensoverschrijving goederen; uitvoer Totale invoerwaarde Totaal landen |
+|:--------|:---------|:-----------------------------------------------------------------------|:------------------------------------------------------------------------|
+| Paarden | 2023     | 20                                                                     | 423                                                                     |
+| Rundvee | 2023     | 156                                                                    | 18                                                                      |
 
 
 ## SUM
@@ -87,16 +87,16 @@ If selecting measure codes as a summation selector, the sum should only be possi
 ### Retrieval output:
 *VALUE*
 
-| GN | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal landen | Grensoverschrijving goederen; uitvoer Totale uitvoerwaarde Totaal landen |
-| :--- | :--- | :--- | :--- |
-| 01012990 Paarden, levend (m.u.v. fokp... | 2023** | 20 | 423 |
-| 01022910 Rundvee, levend, met een gew... | 2023** | 156 | 18 |
+| GN                                       | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal landen | Grensoverschrijving goederen; uitvoer Totale uitvoerwaarde Totaal landen |
+|:-----------------------------------------|:---------|:-----------------------------------------------------------------------|:-------------------------------------------------------------------------|
+| 01012990 Paarden, levend (m.u.v. fokp... | 2023**   | 20                                                                     | 423                                                                      |
+| 01022910 Rundvee, levend, met een gew... | 2023**   | 156                                                                    | 18                                                                       |
 
 ### Expression output:
 
 | MSR | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal Landen | Grensoverschrijving goederen; uitvoer Totale invoerwaarde Totaal landen |
-|:----| :--- | :--- | :--- |
-| SUM | 2023 | 176 | 441 |
+|:----|:---------|:-----------------------------------------------------------------------|:------------------------------------------------------------------------|
+| SUM | 2023     | 176                                                                    | 441                                                                     |
 
 ---
 *SUM Example 2*
@@ -115,22 +115,22 @@ If selecting measure codes as a summation selector, the sum should only be possi
 ### Retrieval output:
 *VALUE*
 
-| GN | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal landen | Grensoverschrijving goederen; uitvoer Totale uitvoerwaarde Totaal landen |
-| :--- | :--- | :--- | :--- |
-| 01012990 Paarden, levend (m.u.v. fokp... | 2021 | | |
-| | 2022 | 11 | 411 |
-| | 2023** | 20 | 423 |
-| 01022910 Rundvee, levend, met een gew... | 2021 | | |
-| | 2022 | 136 | 20 |
-| | 2023** | 156 | 18 |
+| GN                                       | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal landen | Grensoverschrijving goederen; uitvoer Totale uitvoerwaarde Totaal landen |
+|:-----------------------------------------|:---------|:-----------------------------------------------------------------------|:-------------------------------------------------------------------------|
+| 01012990 Paarden, levend (m.u.v. fokp... | 2021     |                                                                        |                                                                          |
+|                                          | 2022     | 11                                                                     | 411                                                                      |
+|                                          | 2023**   | 20                                                                     | 423                                                                      |
+| 01022910 Rundvee, levend, met een gew... | 2021     |                                                                        |                                                                          |
+|                                          | 2022     | 136                                                                    | 20                                                                       |
+|                                          | 2023**   | 156                                                                    | 18                                                                       |
 
 
 ### Expression output:
 
 | Perioden    | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal Landen | Grensoverschrijving goederen; uitvoer Totale invoerwaarde Totaal landen |
-|:------------| :--- | :--- |
-| Paarden SUM | 31 | 834 |
-| Rundvee SUM | 292 | 38 |
+|:------------|:-----------------------------------------------------------------------|:------------------------------------------------------------------------|
+| Paarden SUM | 31                                                                     | 834                                                                     |
+| Rundvee SUM | 292                                                                    | 38                                                                      |
 
 
 ## AVG
@@ -154,16 +154,16 @@ Same constraints as applicable for the `SUM` function
 ### Retrieval output:
 *VALUE*
 
-| GN | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal landen | Grensoverschrijving goederen; uitvoer Totale uitvoerwaarde Totaal landen |
-| :--- | :--- | :--- | :--- |
-| 01012990 Paarden, levend (m.u.v. fokp... | 2023** | 20 | 423 |
-| 01022910 Rundvee, levend, met een gew... | 2023** | 156 | 18 |
+| GN                                       | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal landen | Grensoverschrijving goederen; uitvoer Totale uitvoerwaarde Totaal landen |
+|:-----------------------------------------|:---------|:-----------------------------------------------------------------------|:-------------------------------------------------------------------------|
+| 01012990 Paarden, levend (m.u.v. fokp... | 2023**   | 20                                                                     | 423                                                                      |
+| 01022910 Rundvee, levend, met een gew... | 2023**   | 156                                                                    | 18                                                                       |
 
 ### Expression output:
 
 | MSR | Perioden | Grensoverschrijving goederen; invoer Totale invoerwaarde Totaal Landen | Grensoverschrijving goederen; uitvoer Totale invoerwaarde Totaal landen |
-| :--- | :--- | :--- | :--- |
-| AVG | 2023 | 88 | 220,5 |
+|:----|:---------|:-----------------------------------------------------------------------|:------------------------------------------------------------------------|
+| AVG | 2023     | 88                                                                     | 220,5                                                                   |
 
 
 ## MAX/MIN
@@ -186,17 +186,17 @@ Same constraints as applicable for the `SUM` function
 ### Retrieval output:
 *VALUE*
 
-| Regio's | Perioden | Graasdieren Aantal dieren Schapen |
-| :--- | :--- | :--- |
-| Nederland | 2021 | 860 151 |
-| | 2022 | 854 220 |
-| | 2023 | 838 586 |
+| Regio's   | Perioden | Graasdieren Aantal dieren Schapen |
+|:----------|:---------|:----------------------------------|
+| Nederland | 2021     | 860 151                           |
+|           | 2022     | 854 220                           |
+|           | 2023     | 838 586                           |
 
 ### Expression output:
 
-| MSR | Nederland 2023 |
-| :--- | :--- |
-| Schapen, totaal | 838.586 |
+| MSR             | Nederland 2023 |
+|:----------------|:---------------|
+| Schapen, totaal | 838.586        |
 
 
 ## PROP
@@ -222,16 +222,16 @@ Same constraints as applicable for the `SUM` function
 *VALUE*
 
 | Perioden | Bestemming en seizoen | Vakantiekenmerken | Marges | Totaal vakanties |
-| :--- | :--- | :--- | :--- | :--- |
-| 2021 | Totaal vakanties | Totaal vakanties | Waarde | 31 685 |
-| 2022 | Totaal vakanties | Totaal vakanties | Waarde | 35 933 |
+|:---------|:----------------------|:------------------|:-------|:-----------------|
+| 2021     | Totaal vakanties      | Totaal vakanties  | Waarde | 31 685           |
+| 2022     | Totaal vakanties      | Totaal vakanties  | Waarde | 35 933           |
 
 ### Expression output:
 
-| | X 1 000 Totaal vakanties | Totaal 2021 | % |
-| :--- | :--- | :--- | :--- |
-| Vakantiebestemming: Nederland Totaal vakanties Totaal 2021 | 37.938 | 21.440 | 56,51 |
-| Vakantiebestemming: buitenland Totaal vakanties Totaal 2021 | 29.681 | 21.440 | 72,23 |
+|                                                             | X 1 000 Totaal vakanties | Totaal 2021 | %     |
+|:------------------------------------------------------------|:-------------------------|:------------|:------|
+| Vakantiebestemming: Nederland Totaal vakanties Totaal 2021  | 37.938                   | 21.440      | 56,51 |
+| Vakantiebestemming: buitenland Totaal vakanties Totaal 2021 | 29.681                   | 21.440      | 72,23 |
 
 
 ## JOIN
@@ -258,22 +258,22 @@ When joining two `VALUE` outputs, all the selected joining filters must be prese
 *VALUE 1*
 
 | Perioden | Huurverhoging % |
-| :--- | :--- |
-| 2022 | 3,0 |
-| 2023 | 2,0 |
-| 2024 | 5,4 |
+|:---------|:----------------|
+| 2022     | 3,0             |
+| 2023     | 2,0             |
+| 2024     | 5,4             |
 
 *VALUE 2*
 
 | Perioden | Jaarmutatie CPI % |
-| :--- | :--- |
-| 2022 | 10,0 |
-| 2023 | 3,8 |
-| 2024* | 3,3 |
+|:---------|:------------------|
+| 2022     | 10,0              |
+| 2023     | 3,8               |
+| 2024*    | 3,3               |
 
 ### Expression output:
 
-| MSR | Perioden 2022 | 2023 | 2024 |
-| :--- | :--- | :--- | :--- |
-| Huurverhoging | 3,0 | 2,0 | 5,4 |
-| Jaarmutatie CPI | 10,0 | 3,8 | 3,3 |
+| MSR             | Perioden 2022 | 2023 | 2024 |
+|:----------------|:--------------|:-----|:-----|
+| Huurverhoging   | 3,0           | 2,0  | 5,4  |
+| Jaarmutatie CPI | 10,0          | 3,8  | 3,3  |

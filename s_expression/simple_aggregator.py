@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import pandas as pd
 import sqlglot
+from abc import ABC
 from beartype import beartype
-from typing import List, Tuple
+from typing import List, Tuple, Set, FrozenSet
 
 from pipeline.db_executor import DBExecutor
 from pipeline.odata_executor import CodeLabelMapper
-from s_expression import Expression, ParsedExpression
+from s_expression import Expression, ParsedExpression, Table, Measure, Dimension
 from s_expression.operators import Value
 
 
-class SimpleAggregator(Expression):
+class SimpleAggregator(Expression, ABC):
     """
         Shared logic for simple aggregator functions SUM, AVG, MIN, MAX
 
@@ -47,26 +48,25 @@ class SimpleAggregator(Expression):
             else:
                 sub_exps.append(sub_exp.sub_expression)
 
-    def __call__(self, sql: bool = False, odata4: bool = False, offline: bool = False, verbose: bool = False) -> \
-            Tuple[SimpleAggregator, pd.DataFrame]:
-        raise NotImplementedError()
-
-    def _execute_sql(self, odata4: bool = False) -> Tuple[pd.DataFrame, CodeLabelMapper]:
+    def _get_sub_exp_filters(self) -> Tuple[List[Value], Set[Table], Set[Measure], Set[Tuple[Dimension, FrozenSet[Dimension]]]]:
         """
-            Execute and return the result from the SQL query corresponding with this S-expression.
+            Helper function for getting all tables, measures and dimensions from all
+            inner VALUE expressions in this S-expression, regardless of their depth.
 
-            :param odata4: bool to indicate to use the OData4 parquet files
-            :return: resulting DataFrame and code-to-label mapping dictionary
+            :returns: Tuple containing a list of inner VALUE expressions, set with tables,
+                      set with measures and set with dimensions
         """
-        tables = []
+        tables = set()
         measures = set()
         dimensions = set()
+        value_exps = []
         sub_exps = [self.sub_expression]
-        for sub_exp in sub_exps: # Get inner VALUE expression(s)
+        for sub_exp in sub_exps:  # Get inner VALUE expression(s)
             if isinstance(sub_exp, Value):
-                tables.append(sub_exp.table)
+                tables |= { sub_exp.table }
                 measures |= sub_exp.measures
                 dimensions |= sub_exp.dimensions
+                value_exps.append(sub_exp)
                 continue
 
             if hasattr(sub_exp, 'sub_expressions'):
@@ -74,14 +74,31 @@ class SimpleAggregator(Expression):
             else:
                 sub_exps.append(sub_exp.sub_expression)
 
-        self._odata4 = odata4
-        query = self._sql if not odata4 else self._odata4_sql
-        db = DBExecutor(tables=tables, measures=measures, dims=dimensions, operator_name=self._operator)
-        answer, code_labels, _ = db.query_db(query=query, index_cols=frozenset({'Measure', 'Unit'}))
+        return value_exps, tables, measures, dimensions
+
+    def _execute_sql(self, odata4: bool = False, simplified: bool = False) -> Tuple[pd.DataFrame, CodeLabelMapper]:
+        """
+            Execute and return the result from the SQL query corresponding with this S-expression.
+
+            :param odata4: bool to indicate to use the OData4 parquet files
+            :param simplified: bool to indicate to use the simplified OData3 query
+            :return: resulting DataFrame and code-to-label mapping dictionary
+        """
+        _, tables, measures, dimensions = self._get_sub_exp_filters()
+
+        if odata4:
+            query = self.odata4_sql
+        elif simplified:
+            query = self.odata3_sql_simplified
+        else:
+            query = self.odata3_sql
+
+        db = DBExecutor(tables=list(tables), measures=measures, dims=dimensions, operator_name=self._operator)
+        answer, code_labels, _ = db.query_db(query=query, simplified=simplified)
         return answer, code_labels
 
     @property
-    def _sql(self):
+    def odata3_sql(self):
         """
             === Example SUM s-expression as OData3 SQL ===
             SELECT *
@@ -101,11 +118,11 @@ class SimpleAggregator(Expression):
             );
         """
         # Get inner select from sub expression to fetch data to aggregate
-        sub_sql = sqlglot.parse_one(self.sub_expression._sql)
+        sub_sql = sqlglot.parse_one(self.sub_expression.odata3_sql)
         return self._build_sql(sub_sql)
 
     @property
-    def _odata4_sql(self):
+    def odata4_sql(self):
         """
             === Example SUM s-expression as OData4 SQL ===
             SELECT *
@@ -123,7 +140,7 @@ class SimpleAggregator(Expression):
             );
         """
         # Get inner select from sub expression to fetch data to aggregate
-        sub_sql = sqlglot.parse_one(self.sub_expression._odata4_sql)
+        sub_sql = sqlglot.parse_one(self.sub_expression.odata4_sql)
         return self._build_sql(sub_sql)
 
     def _build_sql(self, sub_sql: sqlglot.exp.Expression) -> str:
@@ -131,7 +148,7 @@ class SimpleAggregator(Expression):
             Helper function for OData3 / OData4 SQL query building. In the current
             configuration, only the VALUE expressions differ between the two versions.
         """
-        if not isinstance(self.sub_expression, Value):  # Aggregate over complex inner query
+        if not isinstance(self.sub_expression, Value):  # Aggregate over complex inner query (e.g. AGGJOIN)
             if len(self.selectors) == 0:
                 sql = f"""
                     SELECT Measure, {self._operator}(Value) AS {self._operator}

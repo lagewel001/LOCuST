@@ -1,0 +1,147 @@
+[SYSTEM]
+Je bent een behulpzame assistent die SQL query's genereert.
+
+[USER]
+**Genereer een SQL-query op basis van een vraag in natuurlijke taal.**
+
+# INSTRUCTIE
+Genereer een SQL-query die de gegeven vraag kan beantwoorden. Genereer ALLEEN de SQL-query en niets anders.
+
+Je krijgt aangeleverd:
+- De vraag in natuurlijke taal
+- Voorbeeldtabellen met measures en dimensions van een retriever
+  (meerdere tabellen, scores en veel nodes per tabel; sommige kunnen irrelevant zijn).
+- Voor elke measure wordt de eenheid gegeven.
+
+Gebruik de volgende instructies om je SQL-query's te schrijven:
+- Er kan naar tabellen worden verwezen met: `FROM "data/nl/odata3/<tabel-id>.parquet"`.
+- Gebruik enkele aanhalingstekens voor measure-namen en dimensiecodes binnen `IN (...)`.
+- Gebruik alleen dimensiecodes en measure-namen die in de verstrekte metadata voorkomen. Verzin geen kolommen, codes of join-sleutels.
+- Ga er niet vanuit dat de tabel met de hoogste score correct is; kies de tabel(len) waarvan de measures + dimension groups overeenkomen met de vraag. Negeer irrelevante tabellen/codes.
+- Aggregeer of combineer geen measures met onverenigbare eenheden (bv. het optellen van een valuta met een gewicht).
+- Je belangrijkste hulpmiddel voor het vormgeven van de output is de `PIVOT`-clausule. Het doel is een nette, gedraaide tabel als eindresultaat.
+  Voor sommige speciale query-types (proporties, argmin/argmax) kan een andere structuur zonder `PIVOT` nodig zijn.
+
+**Kern Query Structuur:**
+Je query's volgen over het algemeen deze UNPIVOT -> PIVOT structuur:
+
+```
+SELECT *
+FROM (
+  SELECT <dims_in_output>, Measure, Value
+  FROM "data/nl/odata3/<tabel-id>.parquet"
+  UNPIVOT(Value FOR Measure IN (<measures>))
+  WHERE <filters>
+)
+PIVOT(
+  <agg_fn>(Value)
+  FOR <pivot_dims_in_kolommen>
+  GROUP BY <grouping_dims_in_rijen>
+);
+```
+
+- Ten eerste, `UNPIVOT` de measure-kolommen naar `Measure` en `Value`.
+- Vervolgens `PIVOT`:
+  - `<agg_fn>` is `SUM`, `AVG`, `MAX`, `MIN`, etc.
+  - `<pivot_dims_in_kolommen>` definieert outputkolommen. Je kunt op meerdere dimensies draaien; kolommen krijgen dan gecombineerde namen.
+    Voorbeeld: `FOR TypeOfBankruptcy IN ('A047597') Periods IN ('1993MM09')`
+  - `<grouping_dims_in_rijen>` definieert outputrijen.
+    - Als de output een `Measure`-kolom moet bevatten (meest gebruikelijk), neem dan `GROUP BY Measure` op.
+
+**Om opmaakfouten te voorkomen (belangrijk!):**
+- Meest voorkomende fout: extra kolommen/rijen veroorzaakt door het selecteren van dimensies die niet worden gebruikt in `PIVOT`.
+- Regel: elke dimensie die in de uiteindelijke output moet verschijnen, moet:
+  (a) geselecteerd zijn in de binnenste query EN
+  (b) gebruikt worden in `PIVOT`, ofwel in een `FOR ... IN (...)`-clausule (als kolommen) of in `GROUP BY` (als rijen).
+- Alleen-filteren dimensies: als een dimensie alleen in `WHERE` wordt gebruikt om gegevens te beperken (je aggregeert erover), neem deze dan NIET op in de binnenste `SELECT`.
+  Dit voorkomt onbedoelde extra kolommen/rijen.
+
+**Speciale query-types:**
+- **Totalen-regel:**
+  - Als de vraag om een totaal vraagt en de metadata een measure bevat waarvan de naam/label aangeeft dat het al een totaal voor dat concept is (bv. begint met 'Totaal'), geef dan de voorkeur aan het gebruik van die measure in plaats van te sommeren over categorieën.
+- **Samengestelde measure-aggregatie (meerdere measures combineren tot één totaal/gemiddelde):**
+  - Alleen toegestaan als de eenheden compatibel zijn.
+  - UNPIVOT meerdere measures en aggregeer over `Value`.
+  - Neem `Measure` NIET op in de binnenste `SELECT`, en groepeer NIET op `Measure` (anders krijg je aparte rijen per measure).
+  - Voeg optioneel een constante labelkolom toe in de buitenste `SELECT` die de gecombineerde measures beschrijft.
+- **Proportie / verhouding:**
+  - Gebruik voorwaardelijke aggregatie (`SUM(CASE WHEN ...)` ) en bereken het percentage; `PIVOT` wordt meestal weggelaten.
+- **Argmin/argmax ("welke X heeft de laagste/hoogste Y"):**
+  - Geef de gevraagde dimensiewaarde (X) en de min/max-waarde terug met een window-functie (`ROW_NUMBER/RANK`) of `ORDER BY ... LIMIT 1`.
+  - Als je over measures vergelijkt, UNPIVOT dan meerdere measures zodat je `Measure` kunt teruggeven voor de winnende waarde.
+- **Joins over meerdere tabellen:**
+  - Geef de voorkeur aan een enkele tabel als deze alle benodigde measures/dimensies bevat.
+  - Als measures uit verschillende tabellen komen, join dan alleen op gedeelde dimensiekolommen die in beide tabellen bestaan (verzin geen join-sleutels).
+  - Geef de voorkeur aan gereduceerde subqueries per tabel (filters + optionele PIVOT naar één rij per join-sleutel), voer dan de join uit en doe daarna de uiteindelijke vormgeving.
+
+Hier volgt een voorbeeld van verstrekte tabelinformatie en twee vraag-antwoord voorbeelden.
+
+- **Top voorbeeld tabellen:**
+Table: 86003NED (label: "Personen met een uitkering; soort uitkering, wijken en buurten 2024") (score: 45.24559775749761)
+Nodes:
+- Measure: M006098	(label: "Overheidsproductie en -consumptie") (unit: CCY_EUR)
+- DimensionGroup: Perioden (label: "Perioden")
+- Dimension: 2001JJ00 (label: "2001")
+- Dimension: A044434 (label: "P11 Marktoutput")
+- DimensionGroup: TransactiesEnSaldi (label: "Transacties en saldi")
+- Dimension: A044938 (label: "Overheid")
+- DimensionGroup: InstitutioneleSectoren (label: "Institutionele sectoren")
+- Dimension: A028903 (label: "Gemeenschappelijke regelingen")
+- Dimension: A044436 (label: "P131 Betalingen voor niet-marktoutput")
+- Dimension: A044942 (label: "Lokale overheid")
+- Dimension: A048156 (label: "B1g Bruto toegevoegde waarde")
+- Dimension: A048153 (label: "P132 Overige niet-marktoutput")
+- Dimension: A048157 (label: "B1n Netto toegevoegde waarde")
+- Dimension: A046349 (label: "P31 Individuele consumptieve bestedingen")
+- Dimension: A044940 (label: "Rijksoverheid")
+- Dimension: A044944 (label: "Socialezekerheidsfondsen")
+- Dimension: A046348 (label: "P3 Consumptieve bestedingen")
+- Dimension: A044478 (label: "D632 Uitkeringen in natura (aangekocht)")
+- Dimension: A044939 (label: "Centrale overheid")
+- Dimension: A044437 (label: "P2 Intermediair verbruik")
+- Dimension: A046350 (label: "P32 Collectieve consumptieve bestedingen")
+- Dimension: A044438 (label: "D1 Beloning van werknemers")
+- Dimension: A044941 (label: "Overige centrale overheid")
+- Dimension: A044491 (label: "P51c Verbruik van vaste activa")
+- Dimension: A048152 (label: "P13 Niet-marktoutput")
+- Dimension: A044435 (label: "P12A Investeringen in eigen beheer")
+- Dimension: A044440 (label: "D12 Sociale premies t.l.v. werkgevers")
+- Dimension: A044943 (label: "Overige lokale overheden")
+- Dimension: A028902 (label: "Waterschappen")
+- Dimension: A044439 (label: "D11 Lonen")
+- Dimension: A048158 (label: "B2n Netto exploitatieoverschot")
+- Dimension: A028870 (label: "Gemeente")
+- Dimension: A044451 (label: "D39 Niet-productgebonden subsidies")
+- Dimension: A044447 (label: "D29 Niet-productgebonden belastingen")
+- Dimension: A048155 (label: "D631 Overdrachten niet-marktproducten")
+- Dimension: A028869 (label: "Provincies")
+- Dimension: A048151 (label: "P1 Output")
+
+- **Voorbeeldvraag 1:** "Welke van de twee, rijksoverheid of waterschappen, had in 2001 de laagste waarde voor uitkeringen in natura?"
+- **Analyse**:
+    - De vraag vraagt om de laagste waarde (`MIN`) tussen twee instellingen voor een specifieke transactie.
+    - We moeten filteren op `InstitutioneleSectoren` ('A044940' voor Rijksoverheid en 'A028902' voor Waterschappen).
+    - We willen deze vergelijking voor het jaar `2001` en voor `Uitkeringen in natura`, dus `Perioden` en `TransactiesEnSaldi` moeten worden gedraaid om kolommen te vormen.
+    - De `GROUP BY` is op `Measure` omdat we de minimumwaarde voor de `Overheidsproductie en -consumptie` willen weten.
+- **VOORBEELD 1 ANTWOORD:**
+SELECT * FROM (SELECT Measure, Value, InstitutioneleSectoren, Perioden, TransactiesEnSaldi FROM "data/nl/odata3/84576NED.parquet" UNPIVOT(Value FOR Measure IN ('M006098')) WHERE InstitutioneleSectoren IN ('A028902', 'A044940')) PIVOT(MIN(Value) FOR Perioden IN ('2001JJ00') TransactiesEnSaldi IN ('A044478') GROUP BY Measure)
+
+- **Voorbeeldvraag 2:** "Wat was het aandeel van de 'Overheidsproductie en -consumptie' door de Rijksoverheid in 2002 ten opzichte van het totaal van Rijksoverheid en Waterschappen voor dat jaar?"
+- **Analyse**:
+    - Dit is een 'proportie'-vraag, die de berekening van een percentage van een totaal vereist. Deze hebben een speciale structuur en gebruiken de `PIVOT`-clausule niet.
+    - Het doel is om een waarde van één periode/sector (`2002JJ00`, `Rijksoverheid`) te vergelijken met een totaal van meerdere sectoren (`Rijksoverheid`, `Waterschappen`) in dezelfde periode.
+    - Dit wordt bereikt met voorwaardelijke aggregatie (`SUM(CASE WHEN ...)`).
+    - De output moet de totale som, de gedeeltelijke som voor de Rijksoverheid, en het berekende percentage tonen.
+- **VOORBEELD 2 ANTWOORD:**
+SELECT CONCAT_WS(', ', Measure, Perioden) AS Dimension_Measure, SUM(Value) AS "SUM[InstitutioneleSectoren]", SUM(CASE WHEN InstitutioneleSectoren IN ('A044940') THEN Value ELSE 0 END) AS "A044940", ROUND(SUM(CASE WHEN InstitutioneleSectoren IN ('A044940') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS "%" FROM ( SELECT Measure, Value, InstitutioneleSectoren, Perioden FROM "data/nl/odata3/84576NED.parquet" UNPIVOT(Value FOR Measure IN ("M006098"))) WHERE Perioden IN ('2002JJ00') AND InstitutioneleSectoren IN ('A044940', 'A028902') GROUP BY Dimension_Measure
+
+
+# INPUT
+Je krijgt de volgende context voor het genereren van de SQL:
+- De vraag: "{question}"
+- Top opgehaalde tabellen:
+{table_info}
+
+Genereer een SQL-query die de vraag beantwoordt. Genereer ALLEEN de SQL-query en niets anders.
+
+**ANTWOORD:**
