@@ -1,7 +1,0 @@
-[run]
-omit = */odata_graph/*
-       */models/*
-       */logs/*
-       */data/*
-include = */odata_graph/sparql_controller.py
-relative_files = True

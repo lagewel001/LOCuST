@@ -1,0 +1,18 @@
+{
+  "Query generation": [
+    { "method": "Claude 4.5 Sonnet", "date": "Baseline", "EX":  0.04, "obsF1":  0.56 },
+    { "method": "Gemini  2.5 Pro", "date": "Baseline", "EX":  0.02, "obsF1":  0.56 },
+    { "method": "GPT 5.1", "date": "Baseline", "EX":  0.02, "obsF1":  0.61 },
+    { "method": "LLama 4 Maverick", "date": "Baseline", "EX":  0.00, "obsF1":  0.50 }
+  ],
+  "End-to-end QA": [
+    { "method": "Claude 4.5 Sonnet", "date": "Baseline", "EX":  0.02, "obsF1":  0.24 },
+    { "method": "Gemini  2.5 Pro", "date": "Baseline", "EX":  0.01, "obsF1":  0.28 },
+    { "method": "GPT 5.1", "date": "Baseline", "EX":  0.01, "obsF1":  0.27 },
+    { "method": "LLama 4 Maverick", "date": "Baseline", "EX":  0.00, "obsF1":  0.25 }
+  ],
+  "Table Retrieval": [
+    { "method": "BM25+", "date": "Baseline", "acc@2": 0.20, "acc@5": 0.25, "acc@10": 0.29 },
+    { "method": "ColBERT2", "date": "Baseline", "acc@2": 0.14, "acc@5": 0.29, "acc@10": 0.47 }
+  ]
+}
