@@ -43,7 +43,19 @@
         <div class="col-lg-5">
             <div class="left-box">
                 <h2><i class="fas fa-info-circle"></i> About LOCuST</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                <p>
+                    LOCuST is a large-scale text-to-SQL benchmark on real-world statistical data provided by <a href="https://www.cbs.nl/en-gb/" target="_blank">Statistics Netherlands</a>.
+                    Our benchmark contains over 2,000 English and Dutch tables covering 22 statistical domains. In concrete, our datasets provide the following:
+                    <ul>
+                        <li>2,244 tables containing real-world statistics;</li>
+                        <li>table schemas ranging from small (< 5 columns) to very  large (> 1,200 columns);</li>
+                        <li>a coverage of 22 statistical domains;</li>
+                        <li>2,567 manually annotated complex questions and answers;</li>
+                        <li>an extensive metadata knowledge graph accompanying the tables, containing labels, descriptions, units, and other associated metadata for covered concepts.</li>
+                    </ul>
+                    Our benchmark consists of three tasks: (1) table retrieval; (2) query generation, where tables are given; and (3) end-to-end QA,
+                    which is a combination of table retrieval and query generation. All tasks are run on the same question-answer data.
+                </p>
                 <div class="button-group">
                     <a href="#" class="btn-custom">
                         <i class="fas fa-file-alt me-1"></i>
@@ -58,7 +70,21 @@
 
             <div class="left-box">
                 <h2><i class="fas fa-wrench"></i> Setup</h2>
-                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                <p>
+                    The total size of the datasets when extracted are 2.03 GB (en) and 4.68 GB (nl)
+                    <ul>
+                        <li><a href="https://locustdataset.blob.core.windows.net/locust-dataset-odata3-tables/en.zip">Here you can download the <b>English</b> OData3 tables</a> (592 MB)</li>
+                        <li><a href="https://locustdataset.blob.core.windows.net/locust-dataset-odata3-tables/nl.zip">Here you can download the <b>Dutch</b> OData3 tables</a> (1.44 GB)</li>
+                    </ul>
+
+                    The knowledge graphs files can be downloaded from here:
+                    <ul>
+                        <li><a href="https://locustdataset.blob.core.windows.net/locust-dataset-odata3-tables/cbs-en.trig">Here you can download the <b>English</b> graph</a></li>
+                        <li><a href="https://locustdataset.blob.core.windows.net/locust-dataset-odata3-tables/cbs-nl.trig">Here you can download the <b>Dutch</b> graph</a></li>
+                    </ul>
+
+                    For running models and evaluating your own solutions, please refer to the setup guide in <a href="https://github.com/lagewel001/LOCuST" target="_blank">the code repository here</a>.
+                </p>
             </div>
 
             <div class="left-box">

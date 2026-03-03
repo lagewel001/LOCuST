@@ -1,15 +1,9 @@
 [
   {
-    "date": "Jan 1, 1970",
+    "date": "Mar 3, 2026",
     "number": "1",
     "new": [
-      "Foobar"
-    ],
-    "fixes": [
-      "Foobar"
-    ],
-    "notes": [
-      "Foobar"
+      "Initial release of the LOCuST codebase and dataset."
     ]
   }
 ]

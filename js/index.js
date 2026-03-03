@@ -22,6 +22,21 @@ function setupCitationCopy() {
 }
 
 async function loadChangelog() {
+    /** Changelog items should look like
+    {
+        "date": "Mar 3, 2026",
+        "number": "1",
+        "new": [
+          "Foobar"
+        ],
+        "fixes": [
+          "Foobar"
+        ],
+        "notes": [
+          "Foobar"
+        ]
+    }
+    **/
     try {
         const response = await fetch('jsons/changelog.json');
         const changelog = await response.json();
