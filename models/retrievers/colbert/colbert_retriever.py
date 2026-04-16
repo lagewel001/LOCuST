@@ -141,7 +141,7 @@ class ColBERTRetriever(BaseRetriever):
         # Relative local path under BASE_PATH
         local_path = f"{BASE_PATH}/{self.checkpoint}"
         if os.path.isdir(local_path):
-            return self.checkpoint
+            return local_path
 
         # Treat as HuggingFace repo ID
         logger.info(f"Checkpoint '{self.checkpoint}' not found locally, attempting HuggingFace download...")

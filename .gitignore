@@ -51,7 +51,8 @@ notebooks/*
 scripts/*
 data/*
 odata_graph/graphs/*
-models/retrievers/colbert/experiments
+evaluation/**/*.json*
+experiments/*
 
 # Misc. data files by extensions
 *.pk
@@ -65,6 +66,9 @@ models/retrievers/colbert/experiments
 *.h5
 *.zip
 *.png
+*.db
+*.parquet
+*.pdf
 
 # Specific exceptions
 !data/tests
