@@ -101,12 +101,12 @@ async function loadAllLeaderboards() {
         const enData = await enResponse.json();
         const nlData = await nlResponse.json();
 
-        buildLeaderboard('en', 'qg', 'Query generation', enData['Query generation'], ['Rank', 'Method', 'EX', 'obsF1']);
-        buildLeaderboard('en', 'e2e', 'End-to-end QA', enData['End-to-end QA'], ['Rank', 'Method', 'EX', 'obsF1']);
+        buildLeaderboard('en', 'qg', 'Query generation', enData['Query generation'], ['Rank', 'Method', 'EX_S', 'EX_L', 'obsF1']);
+        buildLeaderboard('en', 'e2e', 'End-to-end QA', enData['End-to-end QA'], ['Rank', 'Method', 'EX_S', 'EX_L', 'obsF1']);
         buildLeaderboard('en', 'tr', 'Table retrieval', enData['Table Retrieval'], ['Rank', 'Method', 'acc@2', 'acc@5', 'acc@10']);
-        
-        buildLeaderboard('nl', 'qg', 'Query generation', nlData['Query generation'], ['Rank', 'Method', 'EX', 'obsF1']);
-        buildLeaderboard('nl', 'e2e', 'End-to-end QA', nlData['End-to-end QA'], ['Rank', 'Method', 'EX', 'obsF1']);
+
+        buildLeaderboard('nl', 'qg', 'Query generation', nlData['Query generation'], ['Rank', 'Method', 'EX_S', 'EX_L', 'obsF1']);
+        buildLeaderboard('nl', 'e2e', 'End-to-end QA', nlData['End-to-end QA'], ['Rank', 'Method', 'EX_S', 'EX_L', 'obsF1']);
         buildLeaderboard('nl', 'tr', 'Table retrieval', nlData['Table Retrieval'], ['Rank', 'Method', 'acc@2', 'acc@5', 'acc@10']);
 
     } catch (error) {
@@ -125,7 +125,10 @@ function buildLeaderboard(lang, type, leaderboardKey, data, headers) {
     
     // Create headers
     let headerRow = '<tr>';
-    headers.forEach(h => headerRow += `<th>${h}</th>`);
+    headers.forEach(h => {
+        const display = h === 'EX_S' ? 'EX<sub>S</sub>' : h === 'EX_L' ? 'EX<sub>L</sub>' : h;
+        headerRow += `<th>${display}</th>`;
+    });
     headerRow += '</tr>';
     head.innerHTML = headerRow;
 
@@ -135,7 +138,7 @@ function buildLeaderboard(lang, type, leaderboardKey, data, headers) {
         if (leaderboardKey === 'Table retrieval') {
             score = (entry['acc@2'] + entry['acc@5'] + entry['acc@10']) / 3;
         } else {
-            score = (entry.EX + entry.obsF1) / 2;
+            score = (entry.EX_L + entry.obsF1) / 2;
         }
         return { ...entry, score };
     }).sort((a, b) => b.score - a.score);
@@ -159,3 +162,19 @@ function buildLeaderboard(lang, type, leaderboardKey, data, headers) {
         body.appendChild(row);
     });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const cricket = document.getElementById('jumping-cricket');
+    if (!cricket) return;
+    const launch = () => {
+        if (cricket.classList.contains('jumping')) return;
+        cricket.classList.add('jumping');
+    };
+    cricket.addEventListener('click', launch);
+    cricket.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); launch(); }
+    });
+    cricket.addEventListener('animationend', () => {
+        cricket.classList.remove('jumping');
+    });
+});
