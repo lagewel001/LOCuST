@@ -12,6 +12,8 @@ Our benchmark contains over 2,000 English and Dutch tables covering 22 statistic
 Our benchmark consists of three tasks: (1) table retrieval; (2) query generation, where tables are given; and (3) end-to-end QA,
 which is a combination of table retrieval and query generation. All tasks are run on the same question-answer data.
 
+***All results can be found on [the leaderboard](https://lagewel001.github.io/LOCuST/).***
+
 Alongside the text-to-SQL benchmark, we also provide data and code for running custom S-expressions for those interested. 
 S-expressions can be (more) easily translated to Open Data API queries. When running the benchmark as text-to-SQL, all 
 S-expression related content can be ignored.
@@ -44,6 +46,9 @@ The graphs files should be downloaded and put under [odata_graphs/graphs](./odat
 
 The question-answers pairs can be found under [data/qa_pairs](./data/qa_pairs).
 
+The train and test questions contain the following domain-spread:
+
+![Domain-spread](./data/qa_pairs/Theme-analysis.svg)
 
 ## Setup
 **Prerequisites:** Python3.13 is installed.
@@ -74,3 +79,34 @@ scripts with an external graph, the environment variable `LOCAL_GRAPH` must be s
 ## Contact
 All questions and feedback is appreciated. Feel free to contact us by mailing to [l.lageweg@cbs.nl](mailto:l.lageweg@cbs.nl)
 or by opening a Github issue here.
+
+## FAQ
+> Is the original data open source?
+
+Yes. All data in the dataset is published license free by Statistics Netherlands in accordance with the [Statistics Netherlands Act (Wet op het Centraal bureau voor de statistiek)](https://wetten.overheid.nl/BWBR0015926/2025-09-01).
+
+> Does the dataset contain any confidential or privacy-sensitive information?
+
+No. All data is anonymized and not traceable to any individual or organization, [in accordance with Statistics Netherlands](https://www.cbs.nl/en-gb/about-us/who-we-are/our-organisation/privacy) 
+and validated through the [Data Privacy Impact Assessment](https://www.cbs.nl/-/media/cbs/over-ons/organisatie/cbs-standaard-cbspia-2021-v2-1-eng.pdf) 
+and [ISO 27001](https://www.cbs.nl/-/media/cbs/over-ons/organisatie/certificate--iso-iec-27001-cbs.pdf).
+
+> Can I use this dataset for doing statistics?
+
+No. The tables in the dataset concern all the actively maintained tables by Statistics Netherlands as of 2025-06-17. Since then, statistics might have been added, updated or become obsolete. The data in this dataset are real-world statistics, but because of the static nature of the dataset cannot be used for doing statistical analyses. If needed, please consult Statistics Netherlands for the most recent statistical observations.
+
+> Will you keep updating the dataset?
+
+Yes. We plan to keep updating the dataset with more question types and more difficult questions. We do not plan to increase number of tables.
+
+> Will you add support for the SDMX format?
+
+There are currently no plans to make our data available in SDMX for this benchmark.
+
+> How can I evaluate my model on this benchmark?
+
+The entire dataset, benchmark code and instructions are available in this repository. Results can be forwarded to [l.lageweg@cbs.nl](mailto:l.lageweg@cbs.nl) for verification and mentioning on [the leaderboard](https://lagewel001.github.io/LOCuST/).
+
+> Can I continue building on the benchmark or use this data for my own dataset?
+
+Yes. All data is published license free and can be used for your own research or projects. Please always reference this and/or the original source. For more questions on expanding the benchmark and collaborations, don't hesitate to contact (one of) the authors.
