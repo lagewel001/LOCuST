@@ -629,6 +629,6 @@ if __name__ == "__main__":
     print("Making graph for uploading to GRAPHDB")
     qudt_context = URIRef("http://qudt")
     qudt_graph = Graph(engine.graph.store, identifier=qudt_context)
-    qudt_graph.parse(config.QUDT_GRAPH, format='turtle')
+    qudt_graph.parse('odata_graph/ontology/QUDT-3.4.0-SHACL.ttl', format='turtle')
 
     engine.graph.serialize(config.GRAPH_FILE.replace('.trig', '-qudt.trig'), format='trig', encoding='utf-8')

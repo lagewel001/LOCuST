@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import sqlglot
 from typing import Tuple
 
 from odata_graph import engine
@@ -20,12 +19,14 @@ class Max(SimpleAggregator):
     def __call__(self,
                  sql: bool = False,
                  odata4: bool = False,
-                 simplified: bool = False,
+                 pivot: bool = False,
                  offline: bool = False,
                  verbose: bool = False) -> Tuple[Max, pd.DataFrame]:
+        self._validate_partition_coherence()
         if sql:
-            answer, code_labels = self._execute_sql(simplified=simplified)
+            answer, code_labels, code_definitions = self._execute_sql(pivot=pivot)
             self.mapper = code_labels
+            self.mapper_definitions = code_definitions
         else:
             measure_units = {}
             if isinstance(self.sub_expression, Value) and len(self.selectors) == 0:
@@ -33,6 +34,7 @@ class Max(SimpleAggregator):
             sub_exp, table = self.sub_expression(offline=offline, odata4=odata4, verbose=verbose)
 
             self.mapper = sub_exp.mapper
+            self.mapper_definitions = sub_exp.mapper_definitions
             measure_units = {self.mapper.get(k, k): v for k, v in measure_units.items()}
 
             max_values = self._aggregate(table, self.selectors, pd.DataFrame.max, measure_units)
@@ -67,58 +69,35 @@ class Max(SimpleAggregator):
         return self, answer
 
     @property
-    def odata3_sql_simplified(self) -> str:
+    def odata3_sql(self) -> str:
         """
-            === Example simplified MAX expression as OData3 SQL ===
+            === Example MAX expression over a dimension group as OData3 SQL ===
             WITH RankedRows AS (
-                SELECT RANK() OVER (ORDER BY Value DESC) as rnk,
-                       Measure, Purpose, Period, Region,
-                       Value AS 'MAX'
+                SELECT RANK() OVER (PARTITION BY Region ORDER BY "BuildingPermitsAdditions_11" DESC) AS rnk,
+                       Region, Period AS "MAX[Period]", "BuildingPermitsAdditions_11"
                 FROM '<parquet-file>'
+                WHERE Period IN ('2024KW04', '2025KW01')
+                AND Region IN ('NL01', 'PV20')
+            )
+            SELECT *
+            FROM RankedRows
+            WHERE rnk = 1;
+
+            === Example MAX expression over measures as OData3 SQL ===
+            WITH RankedRows AS (
+                SELECT RANK() OVER (PARTITION BY Period, Region ORDER BY Value DESC) AS rnk,
+                       Period, Region, Measure AS "MAX[Measure]", Value AS "MAX"
+                FROM (SELECT * FROM '<parquet-file>' WHERE Period = '2025KW01' AND Region = 'NL01')
                 UNPIVOT(Value FOR Measure IN ('BuildingPermitsAdditions_11', 'StockBalance_21'))
-                WHERE Purpose IN ('T001419', 'A045372', 'A045375')
-                AND Period IN ('2025KW01')
-                AND Region IN ('NL01')
             )
             SELECT *
             FROM RankedRows
             WHERE rnk = 1;
         """
-        sql = ""
-        inner_sql = sqlglot.parse_one(self.sub_expression.odata3_sql_simplified)  # Get inner VALUE query
-        _, _, measures, dimensions = self._get_sub_exp_filters()
+        if not isinstance(self.sub_expression, Value):
+            return self.odata3_pivot_sql  # No non-pivot version for aggregations over complex inner queries
 
-        measure = str(list(measures)[0])
-        selector = self.selectors[0] if len(self.selectors) > 0 else 'Value'
-        sql += f"""
-            SELECT 
-                RANK() OVER (ORDER BY {'"' + measure + '"' if len(self.selectors) > 0 else 'Value'} DESC) as rnk,
-                {'Measure' if len(self.selectors) == 0 else measure},
-                {', '.join(str(group) for group, _ in dimensions if str(group) != selector) + ',' if len(dimensions) > 0 else ''}
-                {selector} AS 'MAX[{selector}]'
-        """
-
-        # Add FROM clause from inner VALUE expression
-        from_stmt = inner_sql.find(sqlglot.exp.From)
-        if from_stmt:
-            sql += from_stmt.sql()  + '\n'
-
-        # Add UNPIVOT if required
-        if len(self.selectors) == 0:
-            sql += f"UNPIVOT(Value FOR Measure IN ('{"', '".join(map(str, measures))}'))\n"
-
-        # Add WHERE cluse  from inner VALUE expression
-        where_stmt = inner_sql.find(sqlglot.exp.Where)
-        if where_stmt:
-            sql += where_stmt.sql()
-
-        outer_sql = f"""
-            WITH RankedRows AS ({sql})
-            SELECT *
-            FROM RankedRows
-            WHERE rnk = 1;
-        """
-        return sqlglot.parse_one(outer_sql).sql(pretty=True)
+        return self._non_pivot_ranked_sql(order='DESC')
 
 
 if __name__ == '__main__':

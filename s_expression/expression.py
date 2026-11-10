@@ -18,6 +18,7 @@ class Expression(ABC):
     EOS = ')'  # End of S-expression
 
     mapper: CodeLabelMapper
+    mapper_definitions: CodeLabelMapper
     sub_expression: Expression
 
     @abstractmethod
@@ -29,7 +30,7 @@ class Expression(ABC):
     def __call__(self,
                  sql: bool = False,
                  odata4: bool = False,
-                 simplified: bool = False,
+                 pivot: bool = False,
                  offline: bool = False,
                  verbose: bool = False) -> Tuple[Expression, pd.DataFrame]:
         """
@@ -39,7 +40,7 @@ class Expression(ABC):
 
             :param sql: flag whether to execute the query as SQL (True) or as native S-expression (False; default)
             :param odata4: flag indicating whether to search SQL using OData4 (True) of OData3 (False; default)
-            :param simplified: flag indicating whether to use simplified OData3 SQLs (True) or not (False; default)
+            :param pivot: flag indicating whether to use pivoted OData3 SQLs (True) or not (False; default)
             :param offline: flag indicating whether to use the OData API service (False; default) or offline evaluation
                             of VALUE expressions using SQL (True). Only relevant when sql=False.
             :param verbose: show the (intermediate) outputs of the executed expression/query
@@ -49,6 +50,44 @@ class Expression(ABC):
                        measure/dimension code to label mapping)
         """
         raise NotImplementedError()
+
+    def inner_values(self) -> List[Expression]:
+        """
+            All leaf VALUE expressions of this tree, regardless of depth or branching: unlike a
+            naive `self.sub_expression` walk, this also descends into every branch of nodes with
+            multiple children (JOIN).
+        """
+        from s_expression.operators import Value  # importing at module level results in a circular import
+
+        values, stack = [], [self]
+        while stack:
+            exp = stack.pop()
+            if isinstance(exp, Value):
+                values.append(exp)
+            elif hasattr(exp, 'sub_expressions'):
+                stack.extend(exp.sub_expressions)
+            else:
+                stack.append(exp.sub_expression)
+        return values
+
+    def _validate_coherence(self) -> None:
+        """Node-local coherence (and unit) gates; overridden by nodes that collapse an axis (aggregations, PROP)."""
+
+    def validate(self) -> None:
+        """
+            Statically validate this expression tree without executing it: run the
+            partition/measure-coherence gate and (for aggregations over the measures) the
+            unit-compatibility gate of every node, top-down. The gates only read graph
+            metadata, so no OData/DB query is fired — this is the entry point for auditing
+            stored S-expressions in bulk. The same node-local gates run again at execution time.
+
+            :raises PartitionCoherenceError: when any aggregation in the tree is incoherent
+            :raises UnitCompatibilityError: when an aggregation over the measures mixes incompatible units
+        """
+        self._validate_coherence()
+        for sub in getattr(self, 'sub_expressions', None) or \
+                ([self.sub_expression] if hasattr(self, 'sub_expression') else []):
+            sub.validate()
 
     def _aggregate(self, table: pd.DataFrame, groupby: List[str], agg_func: Callable, measure_units: Dict[str, Dict[str, str]] = None) -> pd.DataFrame:
         """
@@ -74,7 +113,8 @@ class Expression(ABC):
         if len(groupby) == 0:
             # Aggregate over all measures when no selectors are given
             agg = pd.DataFrame(agg_func(table, axis=0 if len(table.index) > 1 else 1)).T
-            agg.index = ['\n'.join(table.index.get_level_values('Measure').map(str))]
+            # Sort the aggregated measure labels so the joined index is deterministic across runs
+            agg.index = ['\n'.join(sorted(table.index.get_level_values('Measure').map(str)))]
             return agg
 
         # Throw exception if the groupby column(s) are not present in the pivot table
@@ -141,14 +181,14 @@ class Expression(ABC):
 
     @property
     @abstractmethod
-    def odata3_sql(self) -> str:
-        """Parsable and executable OData3 SQL version of this expression."""
+    def odata3_pivot_sql(self) -> str:
+        """Parsable and executable OData3 pivot SQL version of this expression."""
         raise NotImplementedError()
 
     @property
     @abstractmethod
-    def odata3_sql_simplified(self) -> str:
-        """Simplified (non-pivoted) version of the OData3 SQL version of this expression."""
+    def odata3_sql(self) -> str:
+        """Non-pivoted version of the OData3 SQL version of this expression."""
         raise NotImplementedError()
 
     def __str__(self) -> str:

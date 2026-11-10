@@ -2,7 +2,7 @@ from rdflib import Graph, SKOS
 
 from odata_graph.ttl_to_py.defined_namespace_generator import generate_defined_namespace
 
-ttl_file = './odata_graph/graphs/frequenties.ttl'
+ttl_file = './odata_graph/ontology/frequenties.ttl'
 
 g = Graph()
 g.parse(ttl_file, format='n3')

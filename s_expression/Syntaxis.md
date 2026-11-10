@@ -14,30 +14,38 @@ This document contains the syntax description of the custom S-expressions Lisp-b
 
 ## Syntax table
 
-| Sub-expression | Syntax                                                                                       |
-|:--------------:|:---------------------------------------------------------------------------------------------|
-|      tab       | `<code>`                                                                                     |
-|      msrs      | `(MSR (<code₁> <code>))` <br> `(MSR (<code₁> <op> <int/float>))`*                            |
-|      dim       | `(DIM <codegroup> (<code₁> <code>))` <br> `(DIM <codegroup> ())`                             |
-|      dims      | `(dim₁ ... dimn)`                                                                            |
-|      val       | `(VALUE tab msrs dims)`                                                                      |
-|      sum       | `(SUM () val)` <br> `(SUM <codegroup> val)`                                                  |
-|      avg       | `(AVG () val)` <br> `(AVG <codegroup> val)`                                                  |
-|    max/min     | `(MAX () val)` <br> `(MIN () val)` <br> `(MAX <codegroup> val)` <br> `(MIN <codegroup> val)` |
-|      prop      | `(PROP dim val)`                                                                             |
-|      join      | `(JOIN <codegroup> val₁ val₂)`                                                               |
+| Sub-expression  | Syntax                                                                                                                                          |
+|:---------------:|:------------------------------------------------------------------------------------------------------------------------------------------------|
+|       tab       | `<code>`                                                                                                                                        |
+|      msrs       | `(MSR (<code₁> <code>))` <br> `(MSR (<code₁> <op> <int/float>))`* <br> `(MSR (<int/float> <lop> <code₁> <lop> <int/float>))`** <br> `(MSR (<code₁> <op> <int/float>) <AND\|OR> (<code₂> <op> <int/float>))` |
+|       dim       | `(DIM <codegroup> (<code₁> <code>))` <br> `(DIM <codegroup> ())` <br> `(DIM <codegroup> (LEVEL <level>))`*** <br> `(DIM <codegroup> (LEVEL <level> <scope>))`*** |
+|      dims       | `(dim₁ ... dimn)`                                                                                                                               |
+|       val       | `(VALUE tab msrs dims)`                                                                                                                         |
+|       sum       | `(SUM () val)` <br> `(SUM <codegroup> val)`                                                                                                     |
+|       avg       | `(AVG () val)` <br> `(AVG <codegroup> val)`                                                                                                     |
+|     max/min     | `(MAX () val)` <br> `(MIN () val)` <br> `(MAX <codegroup> val)` <br> `(MIN <codegroup> val)`                                                    |
+|      prop       | `(PROP dim val)`                                                                                                                                |
+|      join       | `(JOIN <codegroup> val₁ val₂)`                                                                                                                  |
 
 Aggregation functions = { `VALUE`, `SUM`, `AVG`, `MIN`, `MAX`, `PROP`, `JOIN` }
 
 *Comparison operators = { `<`, `>`, `!=`, `<=`, `>=`, `=` }
 
+**Range operators (`lop`) = { `<`, `<=` }; the lower bound must be smaller than the upper bound.
+
+***`LEVEL` selections are only available for time and geo dimensions; see the [LEVEL section](#level-intensional-timegeo-selection).
+
 ## VALUE
 
 ### Notes
 - `VALUE` denotes the operation of retrieving, filtering and selecting values from OData. The raw values of what is in OData are returned, depending on the selected measure and dimension filters. The output of one or multiple `VALUE` functions can be used in an aggregation function.
-- When filtering using a comparison operator, only one measure can be selected for a given `VALUE` expression. 
-- 'Between' queries are not possible at this point (e.g. `(MSR (25 < <code> <= 50))`)
-- When filtering on a dimension without providing codes `(DIM <codegroup> ())`, all codes are selected for that dimension group. This can be useful when getting all Periods for a given measure.
+- When filtering using a single comparison operator, only one measure can be selected for a given `VALUE` expression.
+- 'Between' queries filter a measure between two bounds, e.g. `(MSR (25 < <code> <= 50))`. Only `<` and `<=` are
+  allowed as range operators and the lower bound must be smaller than the upper bound.
+- Multiple measure conditions can be combined with `AND`/`OR`, e.g. `(MSR (<code₁> > 5) AND (<code₂> < 10))`.
+  With `AND` (`OR`), only the rows (i.e. dimension contexts) for which all (any) of the conditioned measures satisfy
+  their condition are returned. Mixing `AND` and `OR` in one filter is not supported.
+- When filtering on a dimension without providing codes `(DIM <codegroup> ())`, all codes are selected for that dimension group. This can be useful when getting all Periods for a given measure. Note that for time and geo dimensions this mixes aggregation levels (a province total already contains its municipalities); select a single level with a `LEVEL` selection instead.
  
 ### Examples
 ```
@@ -63,6 +71,46 @@ Aggregation functions = { `VALUE`, `SUM`, `AVG`, `MIN`, `MAX`, `PROP`, `JOIN` }
 |:--------|:---------|:-----------------------------------------------------------------------|:------------------------------------------------------------------------|
 | Paarden | 2023     | 20                                                                     | 423                                                                     |
 | Rundvee | 2023     | 156                                                                    | 18                                                                      |
+
+
+## LEVEL (intensional time/geo selection)
+
+### Notes
+- Time and geo dimensions can carry thousands of codes (all wijken, all buurten), far too many to enumerate in a
+  query. A `LEVEL` selection names a whole level instead: `(DIM RegioS (LEVEL WK))` selects every wijk-code of the
+  table's `RegioS` dimension. The level is resolved to its concrete code-set at execution time using the metadata
+  graph (the gecko level classes on the codes), so downstream execution is identical to an enumerated selection.
+- The `<level>` token is the level's code prefix/infix, and is the same vocabulary the codes themselves use.
+  All geo- and time prefixes are listed in [odata_graph/geo_and_time_codes_list.md](../odata_graph/geo_and_time_codes_list.md).
+  Levels without a prefix/infix use their gecko class name (`Date`). Tokens are matched case-insensitively.
+  A selection by level is always aggregation-coherent: all codes sit on the same level, so nothing double-counts.
+- The optional `<scope>` restricts the level to the codes contained in a given area or period:
+  `(DIM RegioS (LEVEL WK GM0363))` = all wijken within gemeente Amsterdam, `(DIM Perioden (LEVEL KW 2023))`
+  = the quarters of 2023. Containment follows the code-embedding convention (WK/BU codes embed the gemeente digits,
+  period codes their year) and the geo containment edges in the metadata graph (municipalities in a province, etc.).
+- In SQL mode the resolved selection is emitted as a compact pattern predicate where possible (`RegioS LIKE 'WK%'`,
+  `regexp_matches(Perioden, '^\d{4}KW\d{2}$')`), falling back to the enumerated `IN`-list when no exact pattern
+  exists (e.g. a graph-edge-scoped selection).
+- In S-expression mode a `startswith` OData filter is used for geo prefixes when translating the expression to an OData query.
+
+### Examples
+```
+(MAX
+  (RegioS)
+  (VALUE 85898NED
+    (MSR (GemiddeldStroomverbruik >= 4250))
+    (DIM Woningkenmerken (Vrijstaand))
+    (DIM RegioS (LEVEL WK))
+    (DIM Perioden (2023JJ00))
+  )
+)
+```
+
+### Expression output:
+
+| rank | Measure                 | Woningkenmerken | RegioS          | Perioden | Value |
+|:-----|:------------------------|:----------------|:----------------|:---------|:------|
+| 1    | Gemiddeld stroomverbruik | Vrijstaand      | Wijk 00 Rozendaal | 2023   | 4.590 |
 
 
 ## SUM

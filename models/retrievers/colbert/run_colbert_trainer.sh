@@ -1,5 +1,5 @@
 #!/bin/bash
-. venv13/bin/activate
+. "$HOME/venvs/locust/bin/activate"
 
 # DEFAULT VARIABLES FOR EXPERIMENTS
 export PYTHONPATH=.
@@ -12,6 +12,12 @@ export GRAPH_DB_PASSWORD=<passwqord>
 nohup python3.13 models/retrievers/colbert/colbert_trainer.py \
   --mode all \
   --negative_n 10 \
-  --output_name colbertv2-english-all-nodes \
   --num_rounds 2 \
-  > logs/colbert_trainer_english.log 2>&1 &
+  --search_k 200 \
+  --epochs 10 \
+  -b 16 \
+  --accumsteps 1 \
+  --doc_maxlen 256 \
+  -lr 1e-5 \
+  --output_name colbertv2-dutch-production \
+  > logs/colbert_trainer_dutch.log 2>&1 &

@@ -6,12 +6,13 @@ from colbert.infra import Run, RunConfig, ColBERTConfig
 from collections import OrderedDict
 from itertools import islice
 from torch.utils.cpp_extension import verify_ninja_availability
-from typing import Literal, Dict
+from typing import Literal, Dict, Optional, Tuple
 
 import config
 import models.retrievers.colbert.patch_colbert  # noqa: F401 — applies monkey-patches on import
 from logs import logging
 from models.retrievers.base_retriever import BaseRetriever
+from utils.global_functions import parse_bool
 
 verify_ninja_availability()
 
@@ -24,11 +25,16 @@ class ColBERTRetriever(BaseRetriever):
     pid_node_map: Dict[int, str]
     searcher: Searcher
 
+    # Files ColBERT leaves behind for a finished index. metadata.json is written last, so requiring
+    # all three distinguishes a usable index from a directory an interrupted build left behind.
+    INDEX_ARTIFACTS = ('plan.json', 'metadata.json', 'centroids.pt')
+
     def __init__(self,
             checkpoint: str,
-            mode: Literal['all', 'table', 'node'] = 'table',
+            mode: Literal['all', 'table', 'node'] = 'all',
             nbits: int = 4,
             search_depth: int = 2_500,
+            only_load_index: bool = False,
             override_index: bool = False):
         """
             :param checkpoint: Directory containing model checkpoint. Can be:
@@ -41,18 +47,34 @@ class ColBERTRetriever(BaseRetriever):
                           Should be an integer of [1, 2, 4, 8].
             :param search_depth: depth of search space when calling the ColBERT model. Only relevant if mode is in
                                  'all' or 'nodes', otherwise set to k during retrieval.
+            :param only_load_index: Whether to only load the index and forecefully NOT initiate (re)indexing.
             :param override_index: always creates a new index if true, regardless if an index already exists.
+                                   Both flags accept the strings the evaluation script passes through
+                                   (e.g. 'True'/'False'), not only real bools.
         """
         super().__init__()
         self.checkpoint = checkpoint
         self.mode = mode
 
-        # Explicit casts required when passed through model args in evaluation script
+        self.model_path = self._resolve_checkpoint()
+        self.experiment_name = self.checkpoint.replace('/', '_')
+        self.data_dir = self._data_dir(self.checkpoint)
+        self.collection_path = f"{self.data_dir}/collection_{self.mode}.tsv"
+        self.node_pid_map_path = f"{self.data_dir}/collection_{self.mode}_node_pid_map.json"
+
         self.nbits = int(nbits)
         self.search_depth = int(search_depth)
+        only_load_index = parse_bool(only_load_index)
+        override_index = parse_bool(override_index)
 
-        if not config.IS_UNIT_TESTING:
+        # Slot index_colbert() last wrote to; load_index() prefers it over probing the disk.
+        self.index_experiment_name: Optional[str] = None
+
+        if not config.IS_UNIT_TESTING and not only_load_index:
             self.index_colbert(override_index)
+
+        if only_load_index:
+            self.load_index()
 
     @staticmethod
     def aggregate_table_node_scores(
@@ -113,6 +135,12 @@ class ColBERTRetriever(BaseRetriever):
             :param k: number of tables to return
             :return: ordered dictionary of tables and nodes
         """
+        # index_colbert() only writes the index to disk; load_index() is what creates the searcher
+        # and pid_node_map. A retriever built with only_load_index=False therefore has an index but
+        # nothing loaded, so load it on first use.
+        if getattr(self, 'searcher', None) is None:
+            self.load_index()
+
         ranking = self.searcher.search(query, k=self.search_depth if self.mode in ['all', 'nodes'] else k)
         ranked_items = {self.pid_node_map[pid]: {
             'score': ranking[2][idx]
@@ -135,7 +163,7 @@ class ColBERTRetriever(BaseRetriever):
             :return: absolute local path to the checkpoint directory
         """
         # Absolute local path
-        if os.path.isabs(self.checkpoint) and os.path.isdir(self.checkpoint):
+        if config.IS_UNIT_TESTING or (os.path.isabs(self.checkpoint) and os.path.isdir(self.checkpoint)):
             return self.checkpoint
 
         # Relative local path under BASE_PATH
@@ -155,48 +183,117 @@ class ColBERTRetriever(BaseRetriever):
         """Return the shared data directory for collection and mapping files."""
         return f"{BASE_PATH}/{checkpoint.replace('/', '_')}"
 
+    def _slots(self) -> Tuple[str, str]:
+        """The two experiment directories this retriever alternates between (A/B, blue/green)."""
+        return f'{self.experiment_name}-A', f'{self.experiment_name}-B'
+
+    def _index_dir(self, experiment_name: str) -> str:
+        """Directory ColBERT writes this retriever's index into for the given slot."""
+        return f"./experiments/{experiment_name}/indexes/{self.mode}.nbits={self.nbits}"
+
+    def _index_stamp(self, experiment_name: str) -> Optional[float]:
+        """
+            Modification time of a *finished* index in the given slot, or None when the slot holds
+            no usable index -- because it was never indexed, or because a build was interrupted
+            partway through.
+
+            :param experiment_name: slot to inspect
+            :return: mtime of the slot's index, or None
+        """
+        index_dir = self._index_dir(experiment_name)
+        if not all(os.path.exists(f"{index_dir}/{artifact}") for artifact in self.INDEX_ARTIFACTS):
+            return None
+        return os.stat(f"{index_dir}/metadata.json").st_mtime
+
+    def _live_slot(self) -> Optional[str]:
+        """
+            The slot holding the most recently finished index, i.e. the one a reader should serve
+            from, or None when neither slot has been indexed yet.
+
+            Deliberately keyed on the index files rather than on the experiment directory: a
+            directory's mtime only moves when one of its *direct* children is added or removed, so
+            re-indexing into a slot that already has an `indexes/` child leaves its mtime untouched.
+            Ranking the slots by directory mtime therefore keeps pointing at the older index, and
+            the writer and the reader end up disagreeing about which slot is current.
+        """
+        stamps = {slot: stamp for slot, stamp in
+                  ((slot, self._index_stamp(slot)) for slot in self._slots())
+                  if stamp is not None}
+        return max(stamps, key=stamps.get) if stamps else None
+
+    def load_index(self):
+        # Within one process the slot index_colbert() just wrote to is authoritative; only fall back
+        # to probing disk when the index was built elsewhere (the reindexer writes, the API reads).
+        experiment_name = self.index_experiment_name or self._live_slot()
+        if experiment_name is None:
+            slot_a, slot_b = self._slots()
+            raise FileNotFoundError(
+                f"No usable ColBERT index found for checkpoint '{self.checkpoint}': neither "
+                f"{self._index_dir(slot_a)} nor {self._index_dir(slot_b)} holds a complete index "
+                f"({', '.join(self.INDEX_ARTIFACTS)}). Build one by instantiating this retriever "
+                f"with only_load_index=False, or run the reindexer.")
+
+        index_dir = self._index_dir(experiment_name)
+        with Run().context(RunConfig(nranks=1, experiment=experiment_name)):
+            logger.info(f"Loading ColBERTv2 index from path {index_dir}/centroids.pt...")
+            colbert_config = ColBERTConfig(nbits=self.nbits, root=".", index_bsize=32)
+            self.searcher = Searcher(index=f"{self.mode}.nbits={self.nbits}",
+                                     checkpoint=self.model_path,
+                                     collection=self.collection_path,
+                                     config=colbert_config)
+
+        with open(self.node_pid_map_path, 'r') as f:
+            node_pid_map = json.load(f)
+            self.pid_node_map = {v: k for k, v in node_pid_map.items()}
+
+        logger.info(f"Successfully loaded ColBERTv2 index ({experiment_name}).")
+
+    def build_collection(self):
+        """
+            Build the collection_<mode>.tsv and node_pid_map files from the current graph, the same
+            way `colbert_trainer.py --rebuild_collection` does. The published checkpoints do not ship
+            these files, so a fresh machine has to build them before it can index.
+        """
+        from models.retrievers.colbert.colbert_trainer import ColBERTTrainer  # heavy imports; only needed here
+        logger.info(f"Collection files missing in {self.data_dir}; building them from the graph...")
+        ColBERTTrainer(output_name=self.checkpoint, mode=self.mode, rebuild_only=True).rebuild_collection()
+
     def index_colbert(self, override_index: bool = False):
         """
             Create a ColBERT index. Requires a collection_<mode>.tsv and node_pid_map.json file for
-            indexing the documents. This can be created using the create_train_set function in the
-            colbert_training.py script.
+            indexing the documents. Both are built from the graph when missing (see build_collection).
 
             Collection and node_pid_map files are read from the shared data directory
             ({BASE_PATH}/{checkpoint_name}/), decoupled from the model checkpoint itself.
         """
-        model_path = self._resolve_checkpoint()
-        experiment_name = self.checkpoint.replace('/', '_')
-        data_dir = self._data_dir(self.checkpoint)
-        collection_path = f"{data_dir}/collection_{self.mode}.tsv"
-        node_pid_map_path = f"{data_dir}/collection_{self.mode}_node_pid_map.json"
+        if not (os.path.exists(self.collection_path) and os.path.exists(self.node_pid_map_path)):
+            self.build_collection()
+            # An index left in the -A/-B slots was built from an older collection, so its PIDs no longer
+            # match the new node_pid_map; rebuild_collection() does not clear these slots
+            override_index = True
 
-        if not os.path.exists(collection_path):
-            raise FileNotFoundError(f"A collection file must exist for indexing ColBERT! Missing {collection_path}")
-        if not os.path.exists(node_pid_map_path):
-            raise FileNotFoundError(f"A node-PID-mapping file must exist for running ColBERT! Missing {node_pid_map_path}")
+        slot_a, slot_b = self._slots()
+        live = self._live_slot()
 
-        index_dir = f"./experiments/{experiment_name}/indexes/{self.mode}.nbits={self.nbits}/centroids.pt"
-        overwrite_index = 'reuse' if os.path.exists(index_dir) and not override_index else True
+        if live is None:
+            experiment_name = slot_a
+        elif not override_index:
+            logger.info(f"Reusing existing ColBERTv2 index ({live}).")
+            self.index_experiment_name = live
+            return
+        else:
+            experiment_name = slot_b if live == slot_a else slot_a
+
         with Run().context(RunConfig(nranks=1, experiment=experiment_name)):
+            logger.info(f"Creating ColBERTv2 index ({experiment_name})...")
             colbert_config = ColBERTConfig(nbits=self.nbits, root=".", index_bsize=32)
+            indexer = Indexer(checkpoint=self.model_path, config=colbert_config)
+            indexer.index(name=f"{self.mode}.nbits={self.nbits}",
+                          overwrite=True,
+                          collection=self.collection_path)
 
-            if overwrite_index != 'reuse':
-                logger.info("Creating ColBERTv2 index...")
-                indexer = Indexer(checkpoint=model_path, config=colbert_config)
-                indexer.index(name=f"{self.mode}.nbits={self.nbits}",
-                              overwrite=overwrite_index,
-                              collection=collection_path)
-            else:
-                logger.info(f"Loading ColBERTv2 index from path {index_dir}...")
-
-            self.searcher = Searcher(index=f"{self.mode}.nbits={self.nbits}",
-                                     checkpoint=model_path,
-                                     collection=collection_path,
-                                     config=colbert_config)
-
-        with open(node_pid_map_path, 'r') as f:
-            node_pid_map = json.load(f)
-            self.pid_node_map = {v: k for k, v in node_pid_map.items()}
+        # Only now is this slot the live one, and only now may load_index() point at it.
+        self.index_experiment_name = experiment_name
 
 
 if __name__ == "__main__":

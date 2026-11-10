@@ -38,27 +38,28 @@ def test_max_sexp_on_dim_offline():
     _, answer = eval(parse(MAX_ON_DIM_SEXP), offline=True)
     assert_frame_equal_unordered(answer, MAX_ON_DIM_ANSWER_DF_SEXP)
 
-# SQL returns just max
-MAX_ON_DIM_ANSWER_DATA_SQL = [[35933.0]]
-MAX_ON_DIM_ANSWER_INDEX_SQL = [('Totaal vakanties', 'x 1 000')]
-MAX_ON_DIM_ANSWER_COLS_SQL = [('Totaal vakanties', 'Waarde', 'Totaal vakanties')]
-MAX_ON_DIM_ANSWER_DF_SQL = pd.DataFrame(
-    data=MAX_ON_DIM_ANSWER_DATA_SQL,
-    index=pd.MultiIndex.from_tuples(MAX_ON_DIM_ANSWER_INDEX_SQL, names=['Measure', 'Unit']),
-    columns=pd.MultiIndex.from_tuples(MAX_ON_DIM_ANSWER_COLS_SQL, names=['Bestemming en seizoen', 'Marges', 'Vakantiekenmerken']),
+# Pivoted SQL returns (max, argmax) too: MAX(Value) and ARG_MAX(Perioden, Value) inside the PIVOT
+MAX_ON_DIM_ANSWER_DATA_PIVOT_SQL = [[35933.0, '2022']]
+MAX_ON_DIM_ANSWER_INDEX_PIVOT_SQL = [('Totaal vakanties', 'x 1 000')]
+MAX_ON_DIM_ANSWER_COLS_PIVOT_SQL = [('Totaal vakanties', 'Waarde', 'Totaal vakanties', 'MAX'),
+                                    ('Totaal vakanties', 'Waarde', 'Totaal vakanties', 'MAX[Perioden]')]
+MAX_ON_DIM_ANSWER_DF_PIVOT_SQL = pd.DataFrame(
+    data=MAX_ON_DIM_ANSWER_DATA_PIVOT_SQL,
+    index=pd.MultiIndex.from_tuples(MAX_ON_DIM_ANSWER_INDEX_PIVOT_SQL, names=['Measure', 'Unit']),
+    columns=pd.MultiIndex.from_tuples(MAX_ON_DIM_ANSWER_COLS_PIVOT_SQL, names=['Bestemming en seizoen', 'Marges', 'Vakantiekenmerken', 'MAX']),
 )
 
-def test_max_on_dim_odata3_sql():
-    _, answer = eval(parse(MAX_ON_DIM_SEXP), sql=True)
-    assert_frame_equal_unordered(answer, MAX_ON_DIM_ANSWER_DF_SQL)
-
-def test_max_on_dim_simplified_sql():
-    # Simplified SQL returns (argmax, max)
+def test_max_on_dim_sql():
+    # Non-pivoted SQL returns (argmax, max)
     expected_answer = pd.DataFrame({'Vakantiekenmerken': 'Totaal vakanties', 'Marges': 'Waarde',
                                     'Bestemming en seizoen': 'Totaal vakanties', 'MAX[Perioden]': '2022',
                                     'Totaal vakanties': 35933.0}, index=range(1))
-    _, answer = eval(parse(MAX_ON_DIM_SEXP), sql=True, simplified=True)
+    _, answer = eval(parse(MAX_ON_DIM_SEXP), sql=True)
     assert_frame_equal_unordered(answer, expected_answer)
+
+def test_max_on_dim_pivot_sql():
+    _, answer = eval(parse(MAX_ON_DIM_SEXP), sql=True, pivot=True)
+    assert_frame_equal_unordered(answer, MAX_ON_DIM_ANSWER_DF_PIVOT_SQL)
 
 
 MAX_ON_MSR_SEXP = """
@@ -96,7 +97,6 @@ def test_max_on_msr_sexp_offline():
     _, answer = eval(parse(MAX_ON_MSR_SEXP), offline=True)
     assert_frame_equal_unordered(answer, MAX_ON_MSR_ANSWER_DF_SEXP)
 
-# SQL returns just max
 MAX_ON_MSR_SQL = """
     (MAX
         ()
@@ -109,24 +109,27 @@ MAX_ON_MSR_SQL = """
         )
     )
 """
-MAX_ON_MSR_ANSWER_DATA_SQL = [[973., 1401.]]
-MAX_ON_MSR_ANSWER_INDEX_SQL = [('Gemiddeld per persoon per vakantie;Gemiddeld per Nederlander', '')]
-MAX_ON_MSR_ANSWER_COLS_SQL = [('2021', 'Totaal vakanties', 'Waarde', 'Totaal vakanties'),
-                              ('2022', 'Totaal vakanties', 'Waarde', 'Totaal vakanties')]
-MAX_ON_MSR_ANSWER_DF_SQL = pd.DataFrame(
-    data=MAX_ON_MSR_ANSWER_DATA_SQL,
-    index=pd.MultiIndex.from_tuples(MAX_ON_MSR_ANSWER_INDEX_SQL, names=['Measure', 'Unit']),
-    columns=pd.MultiIndex.from_tuples(MAX_ON_MSR_ANSWER_COLS_SQL, names=['Perioden', 'Bestemming en seizoen', 'Marges', 'Vakantiekenmerken']),
+# Pivoted SQL returns (max, argmax) per period: ARG_MAX(Measure, Value) names the extreme measure
+MAX_ON_MSR_ANSWER_DATA_PIVOT_SQL = [[973., 'Gemiddeld per Nederlander', 1401., 'Gemiddeld per Nederlander']]
+MAX_ON_MSR_ANSWER_INDEX_PIVOT_SQL = [('Gemiddeld per persoon per vakantie;Gemiddeld per Nederlander', '')]
+MAX_ON_MSR_ANSWER_COLS_PIVOT_SQL = [('2021', 'Totaal vakanties', 'Waarde', 'Totaal vakanties', 'MAX'),
+                              ('2021', 'Totaal vakanties', 'Waarde', 'Totaal vakanties', 'MAX[Measure]'),
+                              ('2022', 'Totaal vakanties', 'Waarde', 'Totaal vakanties', 'MAX'),
+                              ('2022', 'Totaal vakanties', 'Waarde', 'Totaal vakanties', 'MAX[Measure]')]
+MAX_ON_MSR_ANSWER_DF_PIVOT_SQL = pd.DataFrame(
+    data=MAX_ON_MSR_ANSWER_DATA_PIVOT_SQL,
+    index=pd.MultiIndex.from_tuples(MAX_ON_MSR_ANSWER_INDEX_PIVOT_SQL, names=['Measure', 'Unit']),
+    columns=pd.MultiIndex.from_tuples(MAX_ON_MSR_ANSWER_COLS_PIVOT_SQL, names=['Perioden', 'Bestemming en seizoen', 'Marges', 'Vakantiekenmerken', 'MAX']),
 )
 
-def test_max_on_msr_odata3_sql():
+def test_max_on_msr_sql():
+    # Non-pivoted SQL returns (argmax, max) per period, identical to the values of the pivoted SQL
+    expected_answer = pd.DataFrame({'Vakantiekenmerken': ['Totaal vakanties'] * 2, 'Marges': ['Waarde'] * 2,
+                                    'Bestemming en seizoen': ['Totaal vakanties'] * 2, 'MAX': [973.0, 1401.0],
+                                    'MAX[Measure]': ['Gemiddeld per Nederlander'] * 2, 'Perioden': ['2021', '2022']}, index=range(2))
     _, answer = eval(parse(MAX_ON_MSR_SQL), sql=True)
-    assert_frame_equal_unordered(answer, MAX_ON_MSR_ANSWER_DF_SQL)
-
-def test_max_on_msr_simplified_sql():
-    # Simplified SQL returns (argmax, max)
-    expected_answer = pd.DataFrame({'Vakantiekenmerken': 'Totaal vakanties', 'Marges': 'Waarde',
-                                    'Bestemming en seizoen': 'Totaal vakanties', 'MAX[Value]': 1401.,
-                                    'Measure': 'Gemiddeld per Nederlander', 'Perioden': '2022'}, index=range(1))
-    _, answer = eval(parse(MAX_ON_MSR_SQL), sql=True, simplified=True)
     assert_frame_equal_unordered(answer, expected_answer)
+
+def test_max_on_msr_pivot_sql():
+    _, answer = eval(parse(MAX_ON_MSR_SQL), sql=True, pivot=True)
+    assert_frame_equal_unordered(answer, MAX_ON_MSR_ANSWER_DF_PIVOT_SQL)

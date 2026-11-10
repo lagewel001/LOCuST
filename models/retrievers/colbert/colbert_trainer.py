@@ -6,13 +6,16 @@ import locale
 import numpy as np
 import os
 import pandas as pd
+import math
 import pickle
+import random
 import regex as re
 import shutil
+import textwrap
 from colbert import Trainer, Indexer, Searcher
+from datetime import datetime
 from colbert.infra.run import Run
 from colbert.infra.config import ColBERTConfig, RunConfig
-from math import ceil
 from operator import itemgetter
 from rdflib.namespace import QB
 from sentence_transformers import SentenceTransformer
@@ -24,8 +27,9 @@ from typing import Literal, Dict, List, Optional
 
 # Patch for ColBERT training issues on Windows and Mac
 import colbert.infra.launcher
+from config import EN_TEST_TABLES, NL_TEST_TABLES
 from odata_graph import engine
-from models.retrievers.colbert.patch_colbert import patched_setup_new_process
+from models.retrievers.colbert.patch_colbert import patched_setup_new_process, set_checkpoint_steps
 
 colbert.infra.launcher.setup_new_process = patched_setup_new_process
 
@@ -41,6 +45,10 @@ logger = logging.getLogger(__name__)
 class ColBERTTrainer(object):
     RANDOM_STATE = 42
     SPLIT = 0.1
+    # Similarity above which a candidate counts as a duplicate of a positive and is not usable for hard-negative mining.
+    DUPLICATE_CUTOFF = 0.95
+    # Token embedding width for a fresh base model. ColBERT's paper own default is 128
+    DEFAULT_DIM = 128
 
     def __init__(self,
                  output_name: str,
@@ -57,6 +65,11 @@ class ColBERTTrainer(object):
                  search_k: int = 100,
                  mix_ratio: float = 0.0,
                  nbits: int = 4,
+                 epochs: int = 1,
+                 accumsteps: int = 1,
+                 doc_maxlen: Optional[int] = None,
+                 dim: Optional[int] = None,
+                 exclude_benchmark_tables: bool = True,
                  rebuild_only: bool = False):
         """
             Manages the full ColBERT training pipeline: dataset creation, negative sampling, and
@@ -107,6 +120,11 @@ class ColBERTTrainer(object):
         self.hn_checkpoint = hn_checkpoint
         self.search_k = search_k
         self.mix_ratio = mix_ratio
+        self.epochs = epochs
+        self.accumsteps = accumsteps
+        self.doc_maxlen = doc_maxlen
+        self.dim = dim
+        self.exclude_benchmark_tables = exclude_benchmark_tables
         self.nbits = nbits
 
         # Paths
@@ -162,6 +180,9 @@ class ColBERTTrainer(object):
         train_tables = {query_groups[i] for i in train_idx}
         test_tables = {query_groups[i] for i in test_idx}
         overlap = train_tables & test_tables
+        self.split_summary = {'train_questions': len(self.train_df), 'test_questions': len(self.test_df),
+                              'train_tables': len(train_tables), 'test_tables': len(test_tables),
+                              'overlapping_tables': len(overlap)}
 
         # Log configuration summary
         if num_rounds > 1 or hn_checkpoint is not None:
@@ -180,7 +201,11 @@ class ColBERTTrainer(object):
             f"\n\tTraining strategy:   {training_strategy}"
             f"\n\tNegative samples:    {negative_n} per (query, positive) pair"
             f"\n\tLearning rate:       {learning_rate}"
-            f"\n\tBatch size:          {batch_size}"
+            f"\n\tBatch size:          {batch_size} (accumsteps {accumsteps}, "
+            f"{batch_size // accumsteps} per forward pass)"
+            f"\n\tEpochs:              {epochs}"
+            f"\n\tnway:                {negative_n + 1} (1 positive + {negative_n} negatives per step)"
+            f"\n\tBenchmark tables:    {'excluded from negatives' if exclude_benchmark_tables else 'INCLUDED (production mode)'}"
             f"\n\tEmbedding model:     {embedding_source}{' (skipped)' if not needs_embedding_model else ''}"
             f"\n\tSearch depth (k):    {search_k}"
             f"\n\tMix ratio:           {mix_ratio}"
@@ -194,7 +219,10 @@ class ColBERTTrainer(object):
         """
             Return a dictionary with all the textual elements for every table and measure/dimension in the graph.
         """
-        node_labels_path = f"{self.base_path}/{config.GRAPH_DB_REPO}_node_labels{{}}.json"
+
+        # Prevents the construction of multi level folder structure caused by the URL scheme
+        prefix_node_labels_name = re.sub(r"[./]", "_", re.sub(r"^https?://", "", config.GRAPH_DB_REPO))
+        node_labels_path = f"{self.base_path}/{prefix_node_labels_name}_node_labels{{}}.json"
         node_labels_path = node_labels_path.format('_including_time_geo' if include_time_geo_dims else '')
         if os.path.isfile(node_labels_path):
             logger.info(f"Loading node labels from {node_labels_path}")
@@ -230,7 +258,25 @@ class ColBERTTrainer(object):
             tables[table] = {'body': val, 'type': 'table'}
 
             # Get all measures and dimensions for a table
-            query = (f"""
+            # Codes carry specific gecko level classes, so time/geo exclusion matches the (cached)
+            # subclass closure of gecko:TimeDimension/gecko:GeoDimension.
+            # Not every code is typed correctly at the source, so the class check alone lets them
+            # into the collection. There parents do cary the Time/Geo type, so a second check on the parent
+            # catches what the first one misses.
+            timegeo_values = ' '.join(f'<{c}>' for c in engine.timegeo_classes())
+            timegeo_filter = textwrap.dedent(f"""
+                FILTER NOT EXISTS {{
+                    VALUES ?timegeo {{ {timegeo_values} }}
+                    ?node a ?timegeo .
+                }}
+                FILTER NOT EXISTS {{
+                    VALUES ?timegeo_broader {{ {timegeo_values} }}
+                    ?node skos:broader ?parent .
+                    ?parent a ?timegeo_broader .
+                }}
+            """) if not include_time_geo_dims else ''
+
+            query = textwrap.dedent(f"""
                 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
                 PREFIX dct: <http://purl.org/dc/terms/>
                 PREFIX qb: <http://purl.org/linked-data/cube#>
@@ -238,12 +284,7 @@ class ColBERTTrainer(object):
                 SELECT ?node_id ?type ?label WHERE {{
                     ?table ?type ?node .
                     FILTER (?type = qb:measure || ?type = qb:dimension) .
-                    {'''
-                    FILTER NOT EXISTS {
-                        VALUES ?timegeo {'TimeDimension' 'GeoDimension'}
-                        ?node a ?timegeo.
-                    }
-                    ''' if not include_time_geo_dims else ''}
+                    {timegeo_filter}
                     ?table dct:identifier ?table_id .
                     ?node qb:concept ?concept ;
                           dct:identifier ?node_id .
@@ -389,7 +430,57 @@ class ColBERTTrainer(object):
             }
         return positives
 
-    def _mine_cosine_sim_negatives(self, train_questions: Dict[int, dict], collection: pd.DataFrame):
+    def _held_out_pids(self, node_pid_map: Dict[str, int]) -> set:
+        """
+            Collection PIDs belonging to tables reserved for the generalisation benchmark.
+
+            These tables never appear as a positive, so without this they can only ever be sampled
+            as negatives -- the model would be trained to rank down exactly the tables the benchmark
+            measures. "Unseen" is a fair zero-shot test; "seen only as a negative" is not. Returns
+            an empty set in production mode, where nothing is held out and suppressing them would
+            only lose training signal.
+
+            :param node_pid_map: mapping from node/table IDs to collection PIDs
+            :return: set of PIDs to keep out of every negative pool
+        """
+        if not self.exclude_benchmark_tables:
+            return set()
+
+        benchmark = set(NL_TEST_TABLES if config.LANGUAGE == 'nl' else EN_TEST_TABLES)
+        pids = {pid for node, pid in node_pid_map.items() if node.split('#')[0] in benchmark}
+        logger.info(f"Excluding {len(pids)} document(s) from {len(benchmark)} benchmark table(s) "
+                    f"from all negative pools.")
+        return pids
+
+    def _write_triples(self, triples: List[list], path: str):
+        """
+            Write triples as one line per (query, positive): [qpid, pid+, pid-, ...].
+
+            One line carrying every negative lets ColBERT train an (nway)-way softmax over all of
+            them at once, instead of the nway=2 binary contrast that one-negative-per-line forces.
+
+            The list is shuffled, and extra epochs are expressed by repeating it: LazyBatcher slices
+            batches straight off the file and raises StopIteration at EOF, so the file length is the
+            training length. Shuffling is required rather than cosmetic -- unshuffled, consecutive
+            lines are all positives of the same query, so a batch (and therefore its in-batch
+            negatives) would be built from near-identical examples.
+
+            :param triples: one [qpid, positive, *negatives] list per (query, positive) pair
+            :param path: destination JSONL file
+        """
+        rng = random.Random(self.RANDOM_STATE)
+        with open(path, 'w', newline='', encoding=locale.getpreferredencoding(), errors='ignore') as f:
+            for _ in range(self.epochs):
+                epoch = list(triples)
+                rng.shuffle(epoch)
+                for triple in epoch:
+                    f.write(json.dumps(triple) + '\n')
+
+        logger.info(f"Wrote {len(triples) * self.epochs:,} triples ({len(triples):,} unique "
+                    f"x {self.epochs} epoch(s)) to {path}")
+
+    def _mine_cosine_sim_negatives(self, train_questions: Dict[int, dict], collection: pd.DataFrame,
+                                   held_out_pids: set = frozenset()):
         """
             Mine negative samples using cosine similarity from the embedding model.
             For each (query, positive) pair, selects negative_n negatives by alternating between the
@@ -397,29 +488,65 @@ class ColBERTTrainer(object):
 
             :param train_questions: output of _build_positives() for the training split
             :param collection: DataFrame with 'body' and 'embedding' columns
+            :param held_out_pids: PIDs that must never be sampled as a negative (see _held_out_pids)
         """
-        if os.path.exists(self.triples_path):
-            os.remove(self.triples_path)
-
+        triples = []
         for qpid, r in tqdm(train_questions.items(), desc='Selecting negatives...'):
             query_embedding = self._embed(r['query'])
 
             for positive in r['positives']:
                 # Get n negative nodes per query partially based on cos sim of embeddings
                 too_similar = collection[collection.body.isin(
-                    difflib.get_close_matches(collection.loc[positive]['body'], collection['body'], cutoff=0.95)
+                    difflib.get_close_matches(collection.loc[positive]['body'], collection['body'], cutoff=self.DUPLICATE_CUTOFF)
                 )]
 
                 negative_candidates = collection[~collection.index.isin(
-                    set(r['positives'] + list(too_similar.index.values))
+                    set(r['positives']) | set(too_similar.index.values) | set(held_out_pids)
                 )]
+                candidate_pids = negative_candidates.index.to_numpy()
                 similarities = cosine_similarity(query_embedding.reshape(1, -1), np.vstack(negative_candidates['embedding'].values))[0]
                 sorted_indices = np.argsort(similarities)
 
+                if len(candidate_pids) < self.negative_n:
+                    logger.warning(f"Query {qpid}: only {len(candidate_pids)} candidate negatives "
+                                   f"available, skipping positive {positive}.")
+                    continue
+
+                negatives = []
                 for i in range(self.negative_n):
-                    negative = (sorted_indices[::-1] if i % 2 == 0 else sorted_indices)[ceil(i / 2)]
-                    with open(self.triples_path, 'a+', newline='', encoding=locale.getpreferredencoding(), errors='ignore') as triple_tsv:
-                        triple_tsv.write(f"[{qpid}, {positive}, {negative}]\n")
+                    # argsort returns positions within `negative_candidates`, which has rows
+                    # removed relative to `collection`; map back through the index to get a
+                    # real collection pid before writing it as one.
+                    rank = (sorted_indices[::-1] if i % 2 == 0 else sorted_indices)[i // 2]
+                    negatives.append(int(candidate_pids[rank]))
+
+                triples.append([qpid, positive, *negatives])
+
+        self._write_triples(triples, self.triples_path)
+
+    @staticmethod
+    def _strip_table_prefix(body: str) -> str:
+        """
+            Drop the '[parent table title] ' prefix that build_enriched_collection
+            prepends before doing duplicate detection.
+        """
+        return re.sub(r"^\[[^\]]*\]\s*", '', body).strip()
+
+    @classmethod
+    def _is_near_duplicate(cls, text: str, positive_texts: List[str], positive_text_set: set) -> bool:
+        """
+            Whether `text` is a (near-)duplicate of the query's positives, using the same
+            similarity cutoff as the cosine-sim pass (first training round).
+        """
+        if text in positive_text_set:
+            return True
+        for positive_text in positive_texts:
+            matcher = difflib.SequenceMatcher(None, positive_text, text)
+            if (matcher.real_quick_ratio() >= cls.DUPLICATE_CUTOFF
+                    and matcher.quick_ratio() >= cls.DUPLICATE_CUTOFF
+                    and matcher.ratio() >= cls.DUPLICATE_CUTOFF):
+                return True
+        return False
 
     def _mine_hard_negatives_from_model(self, checkpoint_path: str):
         """
@@ -446,22 +573,42 @@ class ColBERTTrainer(object):
             i: {**data, 'positives': set(data['positives'])}
             for i, data in self._build_positives(node_pid_map).items()
         }
+        held_out_pids = self._held_out_pids(node_pid_map)
 
         # Read collection size for random negative fallback
         collection_df = pd.read_csv(collection_path, sep='\t', header=None, names=['body'],
                                     encoding=locale.getpreferredencoding())
         all_pids = set(range(len(collection_df)))
 
+        # Sibling tables reuse measure/dimension labels near-verbatim, so a large share of the
+        # collection is a (near-)duplicate of some other document. Such a duplicate of a positive is
+        # a degenerate negative. The objective would push apart two all-but-identical token
+        # sequences, and the model ranks it highly by construction, so it lands at the very top of
+        # the mined candidates. Compare on the node's own text, with the '[parent table]' prefix
+        # that build_enriched_collection prepends removed: the same label under two different tables
+        # gets different prefixes, which would otherwise hide the duplicate, while for siblings of
+        # one table the shared prefix inflates the score and would cost us the hard negatives that
+        # are actually worth keeping.
+        node_texts = {pid: self._strip_table_prefix(b) for pid, b in collection_df['body'].items()}
+        pids_by_text: Dict[str, List[int]] = {}
+        for pid, text in node_texts.items():
+            pids_by_text.setdefault(text, []).append(pid)
+
         # Index the collection using the checkpoint
         logger.info(f"Indexing collection for hard negative mining with checkpoint: {checkpoint_path}")
         index_name = f"{self.mode}.nbits={self.nbits}.hn_mining"
-        with Run().context(RunConfig(nranks=1, experiment=os.path.basename(checkpoint_path))):
+        mining_experiment = f"{self.base_path}/hn_mining_{os.path.basename(checkpoint_path)}"
+        index_dir = f"{mining_experiment}/indexes/{index_name}"
+
+        with Run().context(RunConfig(nranks=1, experiment=mining_experiment)):
             colbert_config = ColBERTConfig(nbits=self.nbits, root=os.path.dirname(checkpoint_path), index_bsize=32)
             indexer = Indexer(checkpoint=checkpoint_path, config=colbert_config)
-            index_path = f"./experiments/{os.path.basename(checkpoint_path)}/indexes/{index_name}/centroids.pt"
-            overwrite = 'reuse' if os.path.exists(index_path) else True
+            # metadata.json is written last, so its presence means the index finished.
+            overwrite = 'reuse' if os.path.exists(f"{index_dir}/metadata.json") else True
             indexer.index(name=index_name, overwrite=overwrite, collection=collection_path)
-            searcher = Searcher(index=index_name, config=colbert_config)
+            # Pass the collection explicitly. Without it Searcher falls back to the path stored in
+            # the index metadata, which is whatever was indexed under that name last.
+            searcher = Searcher(index=index_name, collection=collection_path, config=colbert_config)
 
         # Load existing triples for mixing if needed
         old_triples = {}
@@ -472,16 +619,36 @@ class ColBERTTrainer(object):
                     key = (triple[0], triple[1])
                     if key not in old_triples:
                         old_triples[key] = []
-                    old_triples[key].append(triple[2])
+                    # One line carries every negative for this (query, positive) pair.
+                    old_triples[key].extend(triple[2:])
 
         # Mine hard negatives
         new_triples = []
+        n_dupes_blocked = 0
         for qpid, q_data in tqdm(positives_per_query.items(), desc='Mining hard negatives...'):
             ranking = searcher.search(q_data['query'], k=self.search_k)
             ranked_pids = ranking[0]
 
-            # Filter out positives to get hard negative candidates (ordered by model confidence)
-            hard_neg_candidates = [pid for pid in ranked_pids if pid not in q_data['positives']]
+            positive_texts = [node_texts[p] for p in q_data['positives'] if p in node_texts]
+            positive_text_set = set(positive_texts)
+
+            # Positives plus every exact duplicate of one, for the random-padding fallback below.
+            # Benchmark documents join them: they are never a positive, so nothing else keeps them
+            # out of the negatives.
+            blocked = set(q_data['positives']) | held_out_pids
+            for text in positive_text_set:
+                blocked.update(pids_by_text.get(text, ()))
+
+            # Filter out positives and near-duplicates of them to get hard negative candidates
+            # (ordered by model confidence)
+            hard_neg_candidates = []
+            for pid in ranked_pids:
+                if pid in blocked:
+                    continue
+                if self._is_near_duplicate(node_texts.get(pid, ''), positive_texts, positive_text_set):
+                    n_dupes_blocked += 1
+                    continue
+                hard_neg_candidates.append(pid)
 
             for positive in q_data['positives']:
                 n_old = int(np.floor(self.negative_n * self.mix_ratio)) if self.mix_ratio > 0 else 0
@@ -494,7 +661,7 @@ class ColBERTTrainer(object):
                 if len(selected_negatives) < n_new:
                     logger.warning(f"Query {qpid}: only found {len(selected_negatives)}/{n_new} hard negatives, "
                                    f"padding with random negatives")
-                    available_random = list(all_pids - q_data['positives'] - set(selected_negatives))
+                    available_random = list(all_pids - blocked - set(selected_negatives))
                     n_pad = n_new - len(selected_negatives)
                     selected_negatives.extend(np.random.choice(available_random, size=min(n_pad, len(available_random)),
                                                                replace=False).tolist())
@@ -510,8 +677,14 @@ class ColBERTTrainer(object):
                         selected_negatives = hard_neg_candidates[:n_new + extra]
                     selected_negatives = selected_old + selected_negatives
 
-                for neg_pid in selected_negatives:
-                    new_triples.append([qpid, positive, neg_pid])
+                # LazyBatcher asserts len(passages) == nway * bsize, so a short line would abort
+                # training partway through rather than simply weakening one step.
+                if len(selected_negatives) < self.negative_n:
+                    logger.warning(f"Query {qpid}: only {len(selected_negatives)}/{self.negative_n} "
+                                   f"negatives for positive {positive}, skipping it.")
+                    continue
+
+                new_triples.append([qpid, positive, *selected_negatives[:self.negative_n]])
 
         # Backup previous triples file
         if os.path.exists(triples_path):
@@ -523,11 +696,11 @@ class ColBERTTrainer(object):
             logger.info(f"Backed up previous triples to {backup_path}")
 
         # Write new triples
-        with open(triples_path, 'w', newline='', encoding=locale.getpreferredencoding(), errors='ignore') as f:
-            for triple in new_triples:
-                f.write(json.dumps(triple) + '\n')
+        self._write_triples(new_triples, triples_path)
 
-        logger.info(f"Mined {len(new_triples)} hard negative triples and saved to {triples_path}")
+        logger.info(f"Mined {len(new_triples)} hard negative triples and saved to {triples_path}. "
+                    f"Skipped {n_dupes_blocked} candidate(s) whose text was >={self.DUPLICATE_CUTOFF:.0%} "
+                    f"similar to a positive of the same query.")
 
     def rebuild_collection(self, include_time_geo_dims: bool = False):
         """
@@ -548,9 +721,11 @@ class ColBERTTrainer(object):
             logger.info(f"Removing stale collection cache: {pk_file}")
             os.remove(pk_file)
 
+        # Prevents the construction of multi level folder structure caused by the URL scheme
+        prefix_node_labels_name = re.sub(r"[./]", "_", re.sub(r"^https?://", "", config.GRAPH_DB_REPO))
         # Also invalidate the cached node labels so they are re-fetched from the graph
         for suffix in ['', '_including_time_geo']:
-            labels_path = f"{self.base_path}/{config.GRAPH_DB_REPO}_node_labels{suffix}.json"
+            labels_path = f"{self.base_path}/{prefix_node_labels_name}_node_labels{suffix}.json"
             if os.path.exists(labels_path):
                 logger.info(f"Removing stale node labels cache: {labels_path}")
                 os.remove(labels_path)
@@ -666,24 +841,30 @@ class ColBERTTrainer(object):
             query_df.to_csv(path, columns=['q'], header=False, sep='\t',
                             encoding=locale.getpreferredencoding(), errors='ignore')
 
+        validation_path = f"{self.base_path}/validation_{self.mode}.jsonl"
+        with open(validation_path, 'w', encoding=locale.getpreferredencoding()) as f:
+            for question in self.test_df:
+                f.write(json.dumps(question, ensure_ascii=False) + '\n')
+        logger.info(f"Wrote {len(self.test_df)} held-out validation questions to {validation_path}")
+
         # Mine negatives using cosine similarity of the embedding model
         train_questions = self._build_positives(node_pid_map)
-        self._mine_cosine_sim_negatives(train_questions, collection)
+        self._mine_cosine_sim_negatives(train_questions, collection,
+                                        held_out_pids=self._held_out_pids(node_pid_map))
 
     @staticmethod
     def recommend_colbert_config(model_checkpoint: str, collection_path: str):
         """
-        Analyze the base model and collection to recommend doc_maxlen and dim values.
+            Analyze the base model and collection to recommend doc_maxlen and dim values.
+            Tokenizes all documents in the collection using the base model's tokenizer to find the
+            token length distribution.
 
-        Tokenizes all documents in the collection using the base model's tokenizer to find
-        the token length distribution, and reads the model's hidden size to inform dim.
+            If the checkpoint is a previously trained ColBERT model (contains artifact.metadata),
+            the dim from that checkpoint is used to avoid shape mismatches in the projection layer.
 
-        If the checkpoint is a previously trained ColBERT model (contains artifact.metadata),
-        the dim from that checkpoint is used to avoid shape mismatches in the projection layer.
-
-        :param model_checkpoint: HuggingFace model name or local path for the base model
-        :param collection_path: path to the collection TSV file
-        :return: dict with recommended 'doc_maxlen' and 'dim' values
+            :param model_checkpoint: HuggingFace model name or local path for the base model
+            :param collection_path: path to the collection TSV file
+            :return: dict with recommended 'doc_maxlen' and 'dim' values
         """
         from transformers import AutoTokenizer, AutoConfig
 
@@ -704,19 +885,19 @@ class ColBERTTrainer(object):
         # Round p99 up to the nearest power of 2 for ColBERT efficiency
         recommended_doc_maxlen = int(2 ** np.ceil(np.log2(p99)))
 
-        # Determine dim: respect existing checkpoint dim if present, otherwise use hidden_size
+        # Determine dim: a previously trained ColBERT checkpoint has to keep its own, or the projection layer will not load.
         model_config = AutoConfig.from_pretrained(model_checkpoint)
         hidden_size = model_config.hidden_size
 
         checkpoint_metadata = os.path.join(model_checkpoint, 'artifact.metadata')
         if os.path.exists(checkpoint_metadata):
             with open(checkpoint_metadata) as f:
-                checkpoint_dim = json.load(f).get('dim', hidden_size)
+                checkpoint_dim = json.load(f).get('dim', ColBERTTrainer.DEFAULT_DIM)
             recommended_dim = checkpoint_dim
-            dim_source = f"from checkpoint artifact.metadata (trained with dim={checkpoint_dim})"
+            dim_source = f"fixed by checkpoint artifact.metadata (trained with dim={checkpoint_dim})"
         else:
-            recommended_dim = hidden_size
-            dim_source = "full hidden size (fresh base model)"
+            recommended_dim = ColBERTTrainer.DEFAULT_DIM
+            dim_source = "default for a fresh base model; ColBERT's own default is 128"
 
         logger.info(f"=== ColBERT config recommendations for '{model_checkpoint}' ==="
                     f"\n\tCollection size: {len(docs)} documents"
@@ -725,16 +906,178 @@ class ColBERTTrainer(object):
                     f"truncates {(token_lengths > recommended_doc_maxlen).sum()}/{len(docs)})"
                     f"\n\tModel hidden size: {hidden_size}"
                     f"\n\tRecommended dim: {recommended_dim} ({dim_source})")
-        if recommended_dim != hidden_size:
-            logger.warning(f"To train with dim={hidden_size}, use the original base model as checkpoint")
-        if recommended_dim > 256:
-            logger.warning(f"Recommended dim is larger than 256 ({recommended_dim}). Currently this doesn't work for ColBERTv2. Using dim=256 with slight loss in model quality for now.")
 
         return {
             'doc_maxlen': recommended_doc_maxlen,
             'dim': recommended_dim,
             'token_length_stats': {'p50': p50, 'p95': p95, 'p99': p99, 'max': max_len},
         }
+
+    @staticmethod
+    def validate_dim(dim: int, nbits: int):
+        """
+            Check dim against the only constraints ColBERT places on it, both in the residual codec
+            (colbert/indexing/codecs/residual.py): dim % 8 and dim % (nbits * 8) must be 0. Checked
+            here because otherwise it surfaces as an assertion deep inside indexing, after training
+            has already finished.
+
+            :param dim: token embedding width
+            :param nbits: quantization bits per dimension
+            :raises ValueError: when the index could not be built from this combination
+        """
+        if dim % 8 or dim % (nbits * 8):
+            raise ValueError(f"dim={dim} cannot be indexed at nbits={nbits}: ColBERT's residual codec "
+                             f"requires dim divisible by 8 and by nbits*8 ({nbits * 8}). "
+                             f"Nearest valid values: {dim - dim % (nbits * 8)} or "
+                             f"{dim - dim % (nbits * 8) + nbits * 8}.")
+
+    def _training_stats_path(self, round_num: int) -> str:
+        """Where one round records what it actually trained on, for the model card to read back."""
+        directory = self.base_path if round_num == 0 else f"{self.base_path}/round_{round_num}"
+        return f"{directory}/training_stats.json"
+
+    def _collect_evaluations(self, name: str, results_dir: str) -> List[dict]:
+        """
+            Evaluation results belonging to this model, for the card's evaluation table.
+
+            Matched on the checkpoint name so a model never reports another's numbers.
+
+            :param name: this model's directory name
+            :param results_dir: directory of evaluate_table_retrieval.py result JSONs
+            :return: one record per matching result file
+        """
+        evaluations = []
+        if not os.path.isdir(results_dir):
+            return evaluations
+
+        for result_file in sorted(os.listdir(results_dir)):
+            if not result_file.endswith('.json'):
+                continue
+            with open(os.path.join(results_dir, result_file)) as f:
+                result = json.load(f)
+            checkpoint = str(result.get('model_kwargs', {}).get('checkpoint', ''))
+            if not checkpoint.startswith(name):
+                continue
+
+            metrics = result.get('metrics', {})
+            # accuracy_at_k is the full curve; its last point is the accuracy at the k the
+            # evaluation ran with, and its length is that k.
+            curve = metrics.get('accuracy_at_k')
+            evaluations.append({'checkpoint': checkpoint,
+                                'dataset': os.path.basename(result.get('dataset_path', '?')),
+                                'em': metrics.get('exact_match_accuracy', 0.0),
+                                'a': curve[-1] if curve else None,
+                                'k': len(curve) if curve else None})
+        return evaluations
+
+    def write_hf_metadata(self) -> List[str]:
+        """
+            Generate HuggingFace model card metadata, as a YAML block
+
+            :return: the block's lines, fences included
+        """
+        lines = ["---",
+                 "pipeline_tag: sentence-similarity",
+                 "library_name: transformers",
+                 "language:",
+                 f"  - {config.LANGUAGE}",
+                 "license: mit"]
+
+        if self.model_name and re.fullmatch(r'[\w.-]+(/[\w.-]+)?', self.model_name):
+            lines.append(f"base_model: {self.model_name}")
+
+        lines += ["tags:",
+                  "  - colbert",
+                  "  - colbertv2",
+                  "  - late-interaction",
+                  "  - information-retrieval",
+                  "  - table-retrieval",
+                  "  - gecko"]
+
+        return lines + ["---"]
+
+    def write_model_card(self, results_dir: str = 'evaluation/results'):
+        """
+            Render MODEL_CARD.md next to the model from the configuration, what each round actually trained
+            on, and any evaluation results found for it. Regenerating can be done using --write_model_card
+            once the evaluations have finished, to replace the placeholders with real numbers.
+
+            :param results_dir: directory of evaluate_table_retrieval.py result JSONs to scan
+        """
+        name = os.path.basename(self.base_path)
+        strategy = (f"iterative hard negative mining ({self.num_rounds} round(s))"
+                    if self.num_rounds > 1 or self.hn_checkpoint else "single-round with cosine-sim negatives")
+        split = getattr(self, 'split_summary', {})
+
+        lines = [f"# {name}", "",
+                 f"ColBERT retriever for GECKOv2 ({config.LANGUAGE}), "
+                 f"generated {datetime.now().strftime('%Y-%m-%d %H:%M')}.", "",
+                 "## Training configuration", "",
+                 "| Setting | Value |", "| --- | --- |",
+                 f"| Base model | `{self.model_name}` |",
+                 f"| Mode | {self.mode} |",
+                 f"| Training strategy | {strategy} |",
+                 f"| Negative samples | {self.negative_n} per (query, positive) pair |",
+                 f"| nway | {self.negative_n + 1} (1 positive + {self.negative_n} negatives per step) |",
+                 f"| Learning rate | {self.learning_rate} |",
+                 f"| Batch size | {self.batch_size} (accumsteps {self.accumsteps}, "
+                 f"{self.batch_size // self.accumsteps} per forward pass) |",
+                 f"| Epochs | {self.epochs} |",
+                 f"| Search depth (k) | {self.search_k} |",
+                 f"| Mix ratio | {self.mix_ratio} |",
+                 f"| Quantization (nbits) | {self.nbits} |",
+                 f"| Embedding model | `{self.embedding_model_name}`"
+                 f"{' (Azure)' if self.azure else ''} |",
+                 f"| Benchmark tables | {'excluded from negatives' if self.exclude_benchmark_tables else 'included (production model)'} |", ""]
+
+        if split:
+            lines += ["## Data", "",
+                      f"- Split: {split['train_questions']} train / {split['test_questions']} validation "
+                      f"questions, {split['train_tables']} train tables / {split['test_tables']} validation "
+                      f"tables, {split['overlapping_tables']} overlapping (should be 0)"]
+            if os.path.exists(self.collection_path):
+                with open(self.collection_path, encoding=locale.getpreferredencoding(), errors='ignore') as f:
+                    lines.append(f"- Collection: {sum(1 for _ in f):,} documents")
+            lines.append("")
+
+        rounds = []
+        for round_num in range(0, self.num_rounds + 1):
+            stats_path = self._training_stats_path(round_num)
+            if os.path.exists(stats_path):
+                with open(stats_path) as f:
+                    rounds.append(json.load(f))
+        if rounds:
+            lines += ["## Rounds", "",
+                      "| Round | Negatives from | Triples | Steps | doc_maxlen | dim | Finished |",
+                      "| --- | --- | --- | --- | --- | --- | --- |"]
+            lines += [f"| {r['round']} | {r['negatives']} | {r['triples']:,} | {r['steps']:,} | "
+                      f"{r['doc_maxlen']} | {r['dim']} | {r['finished']} |" for r in rounds]
+            lines.append("")
+
+        evaluations = self._collect_evaluations(name, results_dir)
+
+        lines += ["## Evaluation", "",
+                  "| Checkpoint | Dataset | EM | acc@k |", "| --- | --- | --- | --- |"]
+        rows = []
+        for evaluation in evaluations:
+            accuracy = (f"{evaluation['a']:.3f} (@{evaluation['k']})"
+                        if evaluation['a'] is not None else '-')
+            rows.append(f"| `{evaluation['checkpoint']}` | `{evaluation['dataset']}` | "
+                        f"{evaluation['em']:.3f} | {accuracy} |")
+        lines += rows or ["| _TBD_ | _TBD_ | _TBD_ | _TBD_ |"]
+        if not evaluations:
+            lines += ["", "> No evaluation results found yet. Run the evaluation, then regenerate this "
+                      "card with `--write_model_card` to fill the table in."]
+        lines.append("")
+
+        lines = self.write_hf_metadata() + lines
+
+        card_path = f"{self.base_path}/MODEL_CARD.md"
+        with open(card_path, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(lines))
+
+        logger.info(f"Wrote model card to {card_path}")
+        return card_path
 
     def train(self, model_checkpoint: str, round_num: int = 0):
         """
@@ -745,16 +1088,48 @@ class ColBERTTrainer(object):
         """
         recommendations = self.recommend_colbert_config(model_checkpoint, self.collection_path)
 
-        with Run().context(RunConfig(nranks=1, experiment=self.base_path)):
+        # LazyBatcher stops at EOF, so one pass over the file is the whole run: the step count
+        # follows from its length. maxsteps also sets the horizon the LR schedule decays over.
+        with open(self.triples_path, encoding=locale.getpreferredencoding()) as f:
+            n_triples = sum(1 for _ in f)
+        maxsteps = max(1, math.ceil(n_triples / self.batch_size))
+
+        doc_maxlen = self.doc_maxlen or recommendations['doc_maxlen']
+        dim = self.dim or recommendations['dim']
+        self.validate_dim(dim, self.nbits)
+
+        # ColBERT validates nothing and returns the last checkpoint, so without this the only
+        # artefact of a multi-epoch run is its final step. Keeping one per epoch turns --epochs into
+        # something selectable after the fact, by scoring each on the validation split.
+        if self.epochs > 1:
+            steps_per_epoch = max(1, maxsteps // self.epochs)
+            kept = set_checkpoint_steps(steps_per_epoch * epoch for epoch in range(1, self.epochs))
+            logger.info(f"Keeping an intermediate checkpoint every {steps_per_epoch:,} steps "
+                        f"(1 epoch): {sorted(kept)}")
+
+        experiment = self.base_path if round_num == 0 else f"{self.base_path}/checkpoints_round_{round_num}"
+
+        with Run().context(RunConfig(nranks=1, experiment=experiment)):
             # Note: regardless of given root, the model seems always to be saved in `experiments/<model_name>/**`
-            accumsteps = min(self.batch_size, 16)
             colbert_cfg = ColBERTConfig(bsize=self.batch_size,
                                         lr=self.learning_rate,
-                                        accumsteps=accumsteps,
+                                        accumsteps=self.accumsteps,
                                         query_maxlen=64,
-                                        doc_maxlen=recommendations['doc_maxlen'],
-                                        dim=min(256, recommendations['dim']),
+                                        doc_maxlen=doc_maxlen,
+                                        dim=dim,
+                                        # One positive scored against every negative on the line, as a nway-way softmax.
+                                        # ColBERT defaults to nway=2, which would silently discard all but the first negative.
+                                        nway=self.negative_n + 1,
+                                        # Off by default; the other passages in the batch are free extra negatives and are what makes a large bsize pay off.
+                                        use_ib_negatives=True,
+                                        maxsteps=maxsteps,
+                                        # Without a warmup the scheduler is None and the LR stays flat for the entire run.
+                                        warmup=max(1, int(0.1 * maxsteps)),
                                         save_every=1_000)
+            logger.info(f"Training on {n_triples:,} triples: {maxsteps:,} steps of {self.batch_size} "
+                        f"(nway={self.negative_n + 1}, in-batch negatives on, "
+                        f"doc_maxlen={doc_maxlen}, dim={dim}, "
+                        f"warmup={max(1, int(0.1 * maxsteps)):,})")
             q_path = self.queries_path.replace('.tsv', '_train.tsv')
             trainer = Trainer(triples=self.triples_path, queries=q_path,
                               collection=self.collection_path, config=colbert_cfg)
@@ -785,6 +1160,32 @@ class ColBERTTrainer(object):
             shutil.copyfile(self.collection_path, f"{self.base_path}/collection.tsv")
             shutil.copyfile(self.collection_path.replace('.tsv', '_node_pid_map.json'),
                             f"{self.base_path}/node_pid_map.json")
+
+        # Record what this round actually trained on, for the model card to read back. Written per
+        # round because the triple count, step count and negative source all differ between them.
+        if round_num == 0:
+            negatives = 'cosine similarity of embedded descriptions'
+        elif round_num == 1 and self.hn_checkpoint:
+            negatives = f"mined from `{os.path.basename(self.hn_checkpoint)}`"
+        elif round_num == 1:
+            negatives = 'cosine similarity of embedded descriptions'
+        else:
+            negatives = f"mined from round {round_num - 1}"
+
+        stats_path = self._training_stats_path(round_num)
+        os.makedirs(os.path.dirname(stats_path), exist_ok=True)
+        with open(stats_path, 'w') as f:
+            json.dump({'round': round_num or 1,
+                       'negatives': negatives,
+                       'triples': n_triples,
+                       'steps': maxsteps,
+                       'epochs': self.epochs,
+                       'doc_maxlen': doc_maxlen,
+                       'dim': dim,
+                       'checkpoint': checkpoint_path,
+                       'finished': datetime.now().strftime('%Y-%m-%d %H:%M')}, f, indent=4)
+
+        self.write_model_card()
 
         logger.info(f"=== DONE TRAINING (round {round_num}) ===")
 
@@ -879,7 +1280,7 @@ if __name__ == "__main__":
                         help='Batch size for the model trainer')
     parser.add_argument('--num_rounds', type=int, default=1,
                         help='Number of training rounds. Round 1 uses cosine-sim negatives, '
-                             'rounds 2+ mine from the trained model.')
+                             'rounds >=2 mine from the trained model.')
     parser.add_argument('--hn_checkpoint', type=str, default=None,
                         help='Path to a pre-trained checkpoint to use for hard negative mining from round 1. '
                              'Skips initial cosine-sim training. The checkpoint directory must contain '
@@ -890,6 +1291,27 @@ if __name__ == "__main__":
                         help='Fraction of negatives to keep from previous round (0.0 = all model-mined).')
     parser.add_argument('--nbits', type=int, choices=[1, 2, 4, 8], default=4,
                         help='Number of bits for quantization during hard negative mining indexing.')
+    parser.add_argument('--epochs', type=int, default=1,
+                        help='Passes over the triples. ColBERT stops at the end of the triples file, '
+                             'so this is expressed by repeating the shuffled triples that many times.')
+    parser.add_argument('--accumsteps', type=int, default=1,
+                        help='Gradient accumulation steps. batch_size // accumsteps passages go '
+                             'through each forward pass, so >1 shrinks the in-batch negative pool.')
+    parser.add_argument('--doc_maxlen', type=int, default=None,
+                        help='Override the document length recommended from the collection. Cost in '
+                             'time, memory and index size is linear in this.')
+    parser.add_argument('--dim', type=int, default=None,
+                        help='Override the token embedding width. Index size and query latency are '
+                             "linear in this; ColBERT's default is 128. Ignored when continuing from "
+                             'a trained ColBERT checkpoint, which fixes its own dim.')
+    parser.add_argument('--include_benchmark_tables', action='store_true',
+                        help='Allow documents from the held-out benchmark tables to be sampled as '
+                             'negatives. Off by default, which keeps the generalisation benchmark '
+                             'honest; turn it on for a production model, where nothing is held out.')
+    parser.add_argument('--write_model_card', action='store_true',
+                        help='Regenerate MODEL_CARD.md from the recorded training stats and any '
+                             'evaluation results found, then exit. Run this after evaluating to '
+                             'replace the placeholders with real numbers.')
     parser.add_argument('--rebuild_collection', action='store_true',
                         help='Rebuild the collection TSV and node_pid_map from the current SPARQL graph, '
                              'then exit. Does not train or require QA data. Useful when new tables/nodes '
@@ -897,7 +1319,26 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.rebuild_collection:
+    if args.write_model_card:
+        trainer = ColBERTTrainer(
+            output_name=args.output_name,
+            mode=args.mode,
+            negative_n=args.negative_n,
+            learning_rate=args.learning_rate,
+            batch_size=args.batch_size,
+            num_rounds=args.num_rounds,
+            hn_checkpoint=args.hn_checkpoint,
+            search_k=args.search_k,
+            mix_ratio=args.mix_ratio,
+            nbits=args.nbits,
+            epochs=args.epochs,
+            accumsteps=args.accumsteps,
+            doc_maxlen=args.doc_maxlen,
+            dim=args.dim,
+            exclude_benchmark_tables=not args.include_benchmark_tables
+        )
+        trainer.write_model_card()
+    elif args.rebuild_collection:
         trainer = ColBERTTrainer(
             output_name=args.output_name,
             mode=args.mode,
@@ -920,5 +1361,10 @@ if __name__ == "__main__":
             search_k=args.search_k,
             mix_ratio=args.mix_ratio,
             nbits=args.nbits,
+            epochs=args.epochs,
+            accumsteps=args.accumsteps,
+            doc_maxlen=args.doc_maxlen,
+            dim=args.dim,
+            exclude_benchmark_tables=not args.include_benchmark_tables
         )
         trainer.run()

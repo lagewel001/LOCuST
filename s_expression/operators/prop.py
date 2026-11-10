@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import os
 import pandas as pd
 import sqlglot
 from beartype import beartype
 from typing import Tuple, List
 
-import config
+from odata_graph import engine
 from pipeline.db_executor import DBExecutor
 from s_expression import Expression, ParsedExpression
 from s_expression.operators import Value
@@ -29,12 +28,27 @@ class Prop(Expression):
         self.sub_expression = sub_expression
         self.selector = selector
 
+    def _validate_coherence(self) -> None:
+        """
+            PROP sums the retrieved values over the selector dimension as its denominator, so
+            every inner VALUE's code-set for that dimension must be partition-coherent: totals
+            mixed in or codes spanning partitions silently halve/corrupt the proportion.
+        """
+        for value in self.inner_values():
+            for dim, dim_codes in value.dimensions:
+                if str(dim) == self.selector[0]:
+                    if str(dim) in value.level_filters:
+                        continue  # a (LEVEL ...) selection is same-level by construction
+                    engine.validate_partition_coherence(value.table, dim, dim_codes)
+
     def __call__(self,
                  sql: bool = False,
                  odata4: bool = False,
-                 simplified: bool = False,
+                 pivot: bool = False,
                  offline: bool = False,
                  verbose: bool = False) -> Tuple[Prop, pd.DataFrame]:
+        self._validate_coherence()
+
         if sql:
             sub_exp = self.sub_expression
             while 1:  # Get inner VALUE expression
@@ -42,19 +56,21 @@ class Prop(Expression):
                     break
                 sub_exp = sub_exp.sub_expression
 
-            if simplified:
-                query = self.odata3_sql_simplified
-            else:
+            if not pivot:
                 query = self.odata3_sql
+            else:
+                query = self.odata3_pivot_sql
 
             db = DBExecutor(tables=[sub_exp.table], measures=sub_exp.measures, dims=sub_exp.dimensions,
                             operator_name=self._operator)
-            answer, code_labels, _ = db.query_db(query=query, simplified=simplified)
+            answer, code_labels, code_definitions, _ = db.query_db(query=query, pivot=pivot)
             self.mapper = code_labels
+            self.mapper_definitions = code_definitions
         else:
             sub_exp, table = self.sub_expression(offline=offline, odata4=odata4, verbose=verbose)
 
             self.mapper = sub_exp.mapper
+            self.mapper_definitions = sub_exp.mapper_definitions
             self.intermediate_results = [table] + sub_exp.intermediate_results
             totals = self._aggregate(table, [self.selector[0]], pd.DataFrame.sum, {})
 
@@ -63,8 +79,8 @@ class Prop(Expression):
             selector_vals = table.filter(like=selector_labels[0]).T
             selector_vals.index = answer.index
 
-            answer[selector_labels + tuple('' for _ in range(answer.columns.nlevels-1))] = selector_vals
-            answer[('%',) + tuple('' for _ in range(answer.columns.nlevels-1))] = 100 / totals.T * selector_vals
+            answer[selector_labels + tuple('' for _ in range(answer.columns.nlevels - 1))] = selector_vals
+            answer[('%',) + tuple('' for _ in range(answer.columns.nlevels - 1))] = 100 / totals.T * selector_vals
 
         if verbose:
             self._print_answer(answer)
@@ -72,7 +88,7 @@ class Prop(Expression):
         return self, answer
 
     @property
-    def odata3_sql(self):
+    def odata3_pivot_sql(self):
         """
             === Example PROP s-expression as OData3 SQL ===
             SELECT CONCAT_WS(', ', BestemmingEnSeizoen, Marges, Measure, Vakantiekenmerken) AS Dimension_Measure,
@@ -99,12 +115,13 @@ class Prop(Expression):
 
         group_by_cols = sorted([str(d[0]) for d in sub_exp.dimensions if str(d[0]) != self.selector[0]] + ['Measure'])
         selector_values = ", ".join(f"'{c}'" for c in self.selector[1])
-        
-        where_parts = []
-        for dim, codes in sub_exp.dimensions:
-            if len(codes) > 0:
-                cod_str = ", ".join(f"'{c}'" for c in codes)
-                where_parts.append(f"{dim} IN ({cod_str})")
+
+        # The VALUE's comparison filters apply before the proportion is taken. A code whose value fails the filter drops
+        # out of both the total and (if selected) the numerator.
+        table_source, value_filter = sub_exp._unpivot_filter_parts()
+        where_parts = [sub_exp._dim_predicate(dim, codes) for dim, codes in sub_exp.dimensions if len(codes) > 0]
+        if value_filter:
+            where_parts.append(value_filter)
         where_clauses = " AND ".join(where_parts)
 
         sql = f"""
@@ -116,7 +133,7 @@ class Prop(Expression):
                    ) AS "%"
             FROM (
                 SELECT Measure, Value, {', '.join(str(g) for g, _ in sub_exp.dimensions)}
-                FROM '{os.path.relpath(config.DB_ODATA3_FILES)}/{sub_exp.table}.parquet'
+                FROM {table_source}
                 UNPIVOT (
                     Value FOR Measure IN ("{'", "'.join(str(msr) for msr in sub_exp.measures)}")
                 )
@@ -127,9 +144,9 @@ class Prop(Expression):
         return sqlglot.parse_one(sql).sql(pretty=True)
 
     @property
-    def odata3_sql_simplified(self):
-        """There is no simplified version for the PROP type query. Defaults to the OData3 SQL implementation"""
-        return self.odata3_sql
+    def odata3_sql(self):
+        """There is no non-pivot version for the PROP type query. Defaults to the OData3 pivot-SQL implementation"""
+        return self.odata3_pivot_sql
 
 
 if __name__ == '__main__':
@@ -138,7 +155,7 @@ if __name__ == '__main__':
     # Multi dimension table example
     s, a = eval(parse("""
     (PROP (DIM WijkenEnBuurten (WK037501)) (VALUE 84517NED (MSR (M002463 < 284)) (DIM WijkenEnBuurten ())))
-    """), sql=True, simplified=True, verbose=True)
+    """), sql=True, verbose=True)
 
     # Single dimension table example
     eval(parse("""

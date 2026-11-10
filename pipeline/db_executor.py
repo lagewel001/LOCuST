@@ -1,5 +1,5 @@
 """
-    This module retrieves the data from a SQL query and returns a pivot table as a pandas DataFrame.
+    This module retrieves the data from a SQL query and returns a table as a pandas DataFrame.
     This module is similar to the `odata_executor`, which does the same using the OData API.
 """
 import duckdb
@@ -19,7 +19,7 @@ from odata_graph import engine
 from odata_graph.sparql_controller import QUDT
 from s_expression.mapper import CodeLabelMapper
 from s_expression import Table, Measure, Dimension, uri_to_code
-from utils.custom_types import UnitCompatibilityError, FormatWarning
+from utils.custom_types import FormatWarning
 
 
 logger = logging.getLogger(__name__)
@@ -53,22 +53,22 @@ class DBExecutor(object):
     def query_db(self,
                  query: str,
                  index_cols: FrozenSet = frozenset({'Measure', 'Unit'}),
-                 simplified: bool = False,
-                 friendly_labels: bool = True) -> Tuple[pd.DataFrame, CodeLabelMapper, float]:
+                 pivot: bool = False,
+                 friendly_labels: bool = True) -> Tuple[pd.DataFrame, CodeLabelMapper, CodeLabelMapper, float]:
         """
-            Retrieve values from OData parquet files and create a pivot table using table, measure and dimension selectors.
+            Retrieve values from OData parquet files and create a DataFrame using table, measure and dimension selectors.
 
             :param query: SQL query to execute on DuckDB
             :param index_cols: the columns to use as the MultiIndex for the output pivot tables.
                                Defaults to ['Measure', 'Unit']
-            :param simplified: if executing simplified queries, measure columns/pivots are not mandatory and
-                               units will be ignored.
+            :param pivot: if executing pivoted queries, measure columns/pivots and units are mandatory.
             :param friendly_labels: map the OData codes in the output table to their friendly names.
                                     Set to False when wanting to JOIN the pivot tables at a later stage.
-            :returns: tuple containing (a DataFrame pivot table, mapper for codes to labels, SQL execution time)
+            :returns: tuple containing (a DataFrame (pivot) table, mapper for codes to labels, mapper for codes to definitions, SQL execution time)
         """
         # Get friendly names of codes
         concept_labels = dict(self.graph.subject_objects(SKOS.prefLabel))
+        concept_definitions = dict(self.graph.subject_objects(SKOS.definition))
         code_labels = CodeLabelMapper(
             # MSR/DIM-Concept mapping
             {str(obs).split(Measure.rdf_ns if obs in Measure.rdf_ns else Dimension.rdf_ns)[-1]: str(concept_labels[concept])
@@ -76,6 +76,12 @@ class DBExecutor(object):
             # Table title
             {str(table).split(Table.rdf_ns)[-1]: str(title)
              for table, title in self.graph.subject_objects(DCT.title)}
+        )
+        code_definitions = CodeLabelMapper(
+            # MSR/DIM-Concept mapping
+            {str(obs).split(Measure.rdf_ns if obs in Measure.rdf_ns else Dimension.rdf_ns)[-1]: str(
+                concept_definitions[concept])
+             for obs, concept in self.graph.subject_objects(QB.concept) if concept in concept_definitions}
         )
 
         try:
@@ -94,12 +100,8 @@ class DBExecutor(object):
                                                                    and match.group(1) in obs_df.columns)]]
                 obs_df.rename({'Dimension_Measure': 'Measure'}, axis=1, inplace=True)  # Only relevant for JOIN and PROP results
 
-                if not simplified:
-                    # Validate and add the relevant units for all measures
-                    if self.operator_name in ['SUM', 'AVG', 'MIN', 'MAX']:
-                        # TODO: check if this doesn't throw errors when summing over dimensions instead of units.
-                        #  can we even check this?
-                        engine.validate_msr_unit_compatibility(self.measures, allow_different_scaling=False)
+                if pivot:
+                    # Add the relevant units for all measures
                     units = {uri_to_code(m): str(u) for m, u in self.graph.subject_objects(QUDT.unitOfSystem)}
                     if 'Measure' in obs_df.columns:
                         obs_df['Unit'] = obs_df['Measure'].map(units)
@@ -149,7 +151,7 @@ class DBExecutor(object):
                         obs_df[c] = obs_df[c].replace(code_labels, regex=True)
                     index_cols = [code_labels.get(c, c) for c in index_cols]
 
-                if not simplified:
+                if pivot:
                     try:
                         for i in index_cols:
                             dim_groups = map(str, map(itemgetter(0), self.dims))
@@ -177,10 +179,10 @@ class DBExecutor(object):
                         obs_df = obs_df.drop(['rnk'], axis=1)  # Drop 'rnk' utility created for the MIN/MAX type queries
 
                 result_df = obs_df
-        except (UnitCompatibilityError, duckdb.IOException, duckdb.ParserException, SqlglotError, duckdb.BinderException) as e:
+        except (duckdb.IOException, duckdb.ParserException, SqlglotError, duckdb.BinderException) as e:
             raise e
         except Exception as e:
             raise RuntimeError(f"Failed to process retrieved data: {format_exception(e)}")
 
         # As a last step, sort the columns. This is automatically done by the OData4 API, but not by SQL
-        return result_df[sorted(result_df)], code_labels, execution_time
+        return result_df[sorted(result_df)], code_labels, code_definitions, execution_time

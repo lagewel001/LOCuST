@@ -4,6 +4,7 @@ This module introduces some fixes for running the colbert package on Windows or 
 import os
 import torch
 import torch.nn as nn
+from typing import Iterable, Set
 import colbert.infra.launcher
 
 # Keep a reference to the original functions
@@ -11,17 +12,18 @@ original_setup_new_process = colbert.infra.launcher.setup_new_process
 original_DDP = nn.parallel.DistributedDataParallel
 
 
-def patched_DDP(module, *args, **kwargs):
+class PatchedDDP(original_DDP):
     """
         A patched version of DistributedDataParallel that sets device_ids and output_device to None
         when the model is running on CPU, to avoid a ValueError from PyTorch.
     """
-    is_cpu = all(p.device.type == 'cpu' for p in module.parameters())
-    if is_cpu:
-        kwargs['device_ids'] = None
-        kwargs['output_device'] = None
-    
-    return original_DDP(module, *args, **kwargs)
+    def __init__(self, module, *args, **kwargs):
+        is_cpu = all(p.device.type == 'cpu' for p in module.parameters())
+        if is_cpu:
+            kwargs['device_ids'] = None
+            kwargs['output_device'] = None
+
+        super().__init__(module, *args, **kwargs)
 
 
 def patched_setup_new_process(*args, **kwargs):
@@ -46,8 +48,9 @@ def patched_setup_new_process(*args, **kwargs):
     if not torch.distributed.is_initialized():
         torch.distributed.init_process_group(backend='gloo', init_method='env://')
 
-    # 3. Patch DistributedDataParallel for CPU training.
-    nn.parallel.DistributedDataParallel = patched_DDP
+    # 3. Patch DistributedDataParallel for CPU training. Stays in place for the whole run: the
+    #    original setup function below runs the entire training loop, so it cannot be restored after.
+    nn.parallel.DistributedDataParallel = PatchedDDP
 
     # 4. Temporarily replace colbert's distributed init to avoid re-initialization.
     import colbert.utils.distributed
@@ -68,5 +71,42 @@ def patched_setup_new_process(*args, **kwargs):
     return result
 
 
+CHECKPOINT_STEPS_ENV = 'COLBERT_CHECKPOINT_STEPS'
+
+
+def _apply_checkpoint_steps(steps: Iterable[int]) -> Set[int]:
+    """
+        Replace ColBERT's checkpoint milestones in this process.
+
+        The set must be mutated in place: colbert.training.utils binds it with
+        `from colbert.parameters import SAVED_CHECKPOINTS`, so rebinding the attribute on
+        colbert.parameters would not be visible to it.
+    """
+    from colbert.training import utils as training_utils
+
+    training_utils.SAVED_CHECKPOINTS.clear()
+    training_utils.SAVED_CHECKPOINTS.update(int(step) for step in steps)
+    return training_utils.SAVED_CHECKPOINTS
+
+
+def set_checkpoint_steps(steps: Iterable[int]) -> Set[int]:
+    """
+        Make ColBERT write a numbered checkpoint at each of the given batch indices.
+        colbert.training.utils.manage_checkpoints only saves a `colbert-{batch_idx}` checkpoint when
+        batch_idx appears in colbert.parameters.SAVED_CHECKPOINTS, whose milestones start at 10,000
+        steps.
+
+        :param steps: batch indices at which to keep a checkpoint
+        :return: the live set, after replacement
+    """
+    steps = sorted({int(step) for step in steps})
+    os.environ[CHECKPOINT_STEPS_ENV] = ','.join(str(step) for step in steps)
+    return _apply_checkpoint_steps(steps)
+
+
 # Apply the monkey-patch
 colbert.infra.launcher.setup_new_process = patched_setup_new_process
+
+# Re-apply the checkpoint schedule in spawned training processes (see set_checkpoint_steps).
+if os.environ.get(CHECKPOINT_STEPS_ENV):
+    _apply_checkpoint_steps(int(step) for step in os.environ[CHECKPOINT_STEPS_ENV].split(','))

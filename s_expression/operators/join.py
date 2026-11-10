@@ -18,12 +18,12 @@ from utils.custom_types import NonEmptyList
 
 class Join(Expression):
     """
-        The JOIN expression does an outer join of two or multiple intermediate pivot tables,
+        The JOIN expression does an outer join of two or multiple intermediate tables,
         resulting from a set of sub-expressions, over given axes. The axes will be used as the
         index of the pivot tables from the evaluated sub-expressions.
 
         :param sexp: the parsed S-expression, of which the evaluation instantiates this object
-        :param selector: axes to join the intermediate pivot table results on
+        :param selector: axes to join the intermediate (pivot) table results on
         :param sub_expressions: VALUE expressions that will be executed and used for joining
     """
     @beartype
@@ -39,7 +39,7 @@ class Join(Expression):
     def __call__(self,
                  sql: bool = False,
                  odata4: bool = False,
-                 simplified: bool = False,
+                 pivot: bool = False,
                  offline: bool = False,
                  verbose: bool = False) -> Tuple[Join, pd.DataFrame]:
         if sql:
@@ -60,16 +60,18 @@ class Join(Expression):
                 dims |= sub_exp.dimensions
 
             db = DBExecutor(tables=tables, measures=measures, dims=dims, operator_name=self._operator)
-            if simplified:
-                query = self.odata3_sql_simplified
-            else:
+            if not pivot:
                 query = self.odata3_sql
+            else:
+                query = self.odata3_pivot_sql
 
-            answer, code_labels, _ = db.query_db(query=query, index_cols=frozenset(self.selectors), simplified=simplified)
+            answer, code_labels, code_definitions, _ = db.query_db(query=query, index_cols=frozenset(self.selectors), pivot=pivot)
             self.mapper = code_labels
+            self.mapper_definitions = code_definitions
         else:
             self.intermediate_results = []
             self.mapper = CodeLabelMapper({})
+            self.mapper_definitions = CodeLabelMapper({})
             measures = set()
             for sexp in self.sub_expressions:
                 sub_exp, table = sexp(index_cols=frozenset(self.selectors), friendly_labels=False,
@@ -77,6 +79,7 @@ class Join(Expression):
                 measures |= sub_exp.measures
                 self.intermediate_results.append(table)
                 self.mapper |= sub_exp.mapper
+                self.mapper_definitions |= sub_exp.mapper_definitions
 
             answer = pd.concat(self.intermediate_results, axis=1)
 
@@ -130,7 +133,7 @@ class Join(Expression):
         return value_exps, tables, measures, dimensions
 
     @property
-    def odata3_sql(self):
+    def odata3_pivot_sql(self):
         """
             === Example JOIN s-expression as SQL ===
             SELECT CONCAT_WS(', ', TableA.<selectorA>, TableA.<selectorB>) AS Dimension_Measure,
@@ -143,7 +146,7 @@ class Join(Expression):
             ) AS TableB
             ON TableA.selector = TableB.selector;
         """
-        inner_table_sqls = [sqlglot.parse_one(sub.odata3_sql) for sub in self.sub_expressions]
+        inner_table_sqls = [sqlglot.parse_one(sub.odata3_pivot_sql) for sub in self.sub_expressions]
 
         # Get measures to select per table
         measures = []
@@ -159,14 +162,19 @@ class Join(Expression):
         for_statements = []
         for i, table in enumerate(inner_table_sqls):
             pivot = table.find(sqlglot.exp.Pivot)
+            dimensions = {str(group): (group, codes) for group, codes in self.sub_expressions[i].dimensions}
             table_fors = []
             for node in pivot.args['fields']:
                 if isinstance(node, sqlglot.exp.In):
                     if not any(s in node.sql() for s in self.selectors):  # Non-selector, keep in PIVOT
                         table_fors.append(node)
                     else:  # JOIN selector, move to where of inner SQL for filtering
+                        # (with the VALUE's own predicate, e.g. the compact LIKE of a LEVEL selection)
+                        group = node.this.name
+                        predicate = (self.sub_expressions[i]._dim_predicate(*dimensions[group])
+                                     if group in dimensions else node.sql())
                         inner_select = table.find(sqlglot.exp.Subquery).find(sqlglot.exp.Select)
-                        inner_select.where(node.sql(), append=True, copy=False)
+                        inner_select.where(predicate, append=True, copy=False)
 
             if len(table_fors) == 0:
                 # Default to pivot on Measure if all table dimensions are used as join selectors
@@ -181,12 +189,13 @@ class Join(Expression):
             if len(self.selectors) > 1:
                 select = "CONCAT_WS(', ', TableA."
                 select += ', TableA.'.join(self.selectors) + ') AS Dimension_Measure, '
-                select += ', '.join([msr for table_measures in measures for msr in table_measures])
+                select += ', '.join([f'"{msr}"' for table_measures in measures for msr in table_measures])
             else:
+                # Quote the pivoted columns, such that DuckDB can't read them as a number on accident
                 select = f"TableA.{self.selectors[0]}"
                 for i, fors in enumerate(for_statements):
                     combs = product(*[[s.name for s in f.expressions] for f in fors])
-                    select += f", {', '.join(['_'.join(c) for c in combs])}"
+                    select += f", {', '.join(['"' + '_'.join(c) + '"' for c in combs])}"
 
             on_selectors = []
             for selector in self.selectors:
@@ -209,9 +218,9 @@ class Join(Expression):
         return sqlglot.parse_one(sql).sql(pretty=True)
 
     @property
-    def odata3_sql_simplified(self):
+    def odata3_sql(self):
         """
-            === Example simplified JOIN expressions as SQL (OData3) ===
+            === Example JOIN expressions as SQL (OData3) ===
             SELECT COALESCE(TableA.Periods, TableB.Periods) AS 'Periods',
                    BankruptciesSessionDayCorrected_1,
                    SoldHomes_4
@@ -227,60 +236,62 @@ class Join(Expression):
                 WHERE Periods IN ('2007KW04')
             ) AS TableB
             ON TableA.Periods = TableB.Periods;
+
+            === Example JOIN over a shared measure as SQL (OData3) ===
+            (SELECT Periods, MunicipalTasks, Regions, "Expenditures_2"
+             FROM '<parquet-file>'
+             WHERE Periods = '2017JJ00' AND MunicipalTasks IN ('A041570', 'A041581') AND Regions = 'PV21')
+            UNION ALL BY NAME
+            (SELECT Periods, MunicipalTasks, Regions, "Expenditures_2"
+             FROM '<other-parquet-file>'
+             WHERE Periods = '2017JJ00' AND MunicipalTasks IN ('A041570', 'A041581') AND Regions = 'PV21');
         """
-        inner_table_sqls = [sqlglot.parse_one(sub.odata3_sql_simplified) for sub in self.sub_expressions]
+        inner_table_sqls = [sqlglot.parse_one(sub.odata3_sql) for sub in self.sub_expressions]
+
+        if self.measure_selector:
+            # Joining over a shared measure stacks the values of all tables. A FULL JOIN would have to match
+            # the rows on their measure VALUES, silently merging identical values of two tables into a single
+            # row (and dropping one of them from any aggregation over the join). UNION ALL BY NAME keeps every
+            # value instead and fills the dimension groups that the other table lacks with NULLs.
+            sql = '\nUNION ALL BY NAME\n'.join(f"({inner_sql.sql()})" for inner_sql in inner_table_sqls)
+            return sqlglot.parse_one(sql).sql(pretty=True)
+
         for inner_sql in inner_table_sqls:
             inner_sql.find(sqlglot.exp.Select).args['expressions'] = [sqlglot.exp.Star()]
 
-        measures_per_inner = [sub_exp.measures for sub_exp in self.sub_expressions]
-        dimensions_per_inner = [sub_exp.dimensions for sub_exp in self.sub_expressions]
+        def ident(name: str) -> str:
+            return f'"{name}"' if name.replace('_', '').isnumeric() else name
 
-        # Fill the SELECT and JOIN-ON statements with the proper columns
-        select_cols = ""
-        for col in self.select_cols:
-            if col.replace('_', '').isnumeric():
-                select_cols += f"COALESCE(TableA.\"{col}\", TableB.\"{col}\") AS '{col}',\n"
-            else:
-                select_cols += f"COALESCE(TableA.{col}, TableB.{col}) AS '{col}',\n"
-        select_cols = select_cols[:-2]  # remove trailing comma
+        measures_per_inner = [sorted(map(str, sub_exp.measures)) for sub_exp in self.sub_expressions]
+        dimensions_per_inner = [{str(group): frozenset(map(str, codes)) for group, codes in sub_exp.dimensions}
+                                for sub_exp in self.sub_expressions]
 
-        for table, measures in zip(['TableA', 'TableB'], measures_per_inner):
-            for measure in measures:
-                if str(measure) not in select_cols:
-                    if str(measure).replace('_', '').isnumeric():
-                        select_cols += f", {table}.\"{str(measure)}\""
+        # Join keys: the selector, plus every other shared dimension group that both sides filter on exactly the
+        # same codes (these describe the same rows, e.g. the same gender in both tables). A shared group filtered on
+        # different codes (e.g. two different industries) is NOT a key: joining on it would never match and split
+        # the answer over half-empty rows, like the pivot SQL (which only joins on the selector) never does. Keys are
+        # compared as text, because a code column can be numeric in one table and textual in the other.
+        shared_dims = [g for g in dimensions_per_inner[0] if g in dimensions_per_inner[1] and g not in self.select_cols]
+        keys = list(self.select_cols) + sorted(g for g in shared_dims
+                                               if dimensions_per_inner[0][g] == dimensions_per_inner[1][g])
+        join_on = ' AND '.join(f"CAST(TableA.{ident(k)} AS VARCHAR) = CAST(TableB.{ident(k)} AS VARCHAR)"
+                               for k in keys)
+
+        # Fill the SELECT with the keys (present in either table), then the measures and remaining dimension groups
+        # of both tables. A column name that TableA already provides gets a '_B' suffix for TableB.
+        select_cols = [f"COALESCE(TableA.{ident(k)}, TableB.{ident(k)}) AS {ident(k)}" for k in keys]
+        taken = set(keys)
+        for columns_per_inner in (measures_per_inner, [sorted(dims) for dims in dimensions_per_inner]):
+            for table, columns in zip(['TableA', 'TableB'], columns_per_inner):
+                for col in columns:
+                    if col in keys:
+                        continue
+                    if col in taken:
+                        select_cols.append(f'{table}.{ident(col)} AS "{col}_B"')
                     else:
-                        select_cols += f", {table}.{str(measure)}"
-
-        for table, dimensions in zip(['TableA', 'TableB'], dimensions_per_inner):
-            for dim, _ in dimensions:
-                if str(dim) not in select_cols:
-                    if str(dim).replace('_', '').isnumeric():
-                        select_cols += f", {table}.\"{dim}\""
-                    else:
-                        select_cols += f", {table}.{dim}"
-
-        on_selectors = []
-        common_dims = (set(map(str, [g for g, _ in dimensions_per_inner[0]])) &
-                       set(map(str, [g for g, _ in dimensions_per_inner[1]])))
-        for dim in common_dims:
-            on_selectors.append(f"TableA.{dim} = TableB.{dim}")
-
-        if self.measure_selector:
-            common_measures = set(map(str, measures_per_inner[0])) & set(map(str, measures_per_inner[1]))
-            for measure in common_measures:
-                if str(measure).replace('_', '').isnumeric():
-                    on_selectors.append(f"TableA.\"{str(measure)}\" = TableB.\"{str(measure)}\"")
-                else:
-                    on_selectors.append(f"TableA.{str(measure)} = TableB.{str(measure)}")
-
-        if len(on_selectors) == 0:
-            for col in self.select_cols:
-                if col.replace('_', '').isnumeric():
-                    on_selectors.append(f"TableA.\"{col}\" = TableB.\"{col}\"")
-                else:
-                    on_selectors.append(f"TableA.{col} = TableB.{col}")
-        join_on = ' AND '.join(on_selectors)
+                        select_cols.append(f"{table}.{ident(col)}")
+                        taken.add(col)
+        select_cols = ',\n'.join(select_cols)
 
         sql = f"""
             SELECT {select_cols}

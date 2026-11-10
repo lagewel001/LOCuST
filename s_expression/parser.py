@@ -16,7 +16,7 @@ def standard_env() -> Env:
     """This function defines the set (environment) of operators possible and their procedures when called."""
     env = Env()
     env.update({
-        'MSR':      lambda _, x: x,
+        'MSR':      lambda _, *x: list(x) if len(x) > 1 else x[0],
         'DIM':      lambda _, group, codes: (group, codes),
         # This could be done automatically if the __init__.py would contain the import of the operators,
         #  but it gets confused when deciding what class to call when creating the env as

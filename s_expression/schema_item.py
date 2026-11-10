@@ -13,7 +13,7 @@ class SchemaItem(ABC):
     """SchemaItem acts as an Atom in the S-expressions"""
     def __init__(self, identifier: str, rdf_ns: Namespace):
         self.rdf_ns: Namespace = Namespace(rdf_ns)
-        self.identifier: str = identifier
+        self.identifier: str = str(identifier).replace(' ', '').strip()
 
     @property
     def uri(self) -> URIRef:
@@ -41,18 +41,18 @@ class SchemaItem(ABC):
         return self.identifier
 
     def __hash__(self):
-        return id(self)
+        return hash(self.uri)
 
 
 class Table(SchemaItem):
     rdf_ns: Namespace
-    if config.GRAPH_DB_REPO == 'cbs-nl':
+    if 'cbs-nl' in config.GRAPH_DB_REPO:
         rdf_ns = Namespace("https://datasets.cbs.nl/odata/v1/CBS/")
-    elif config.GRAPH_DB_REPO == 'cbs-en':
+    elif 'cbs-en' in config.GRAPH_DB_REPO:
         rdf_ns = Namespace("https://opendata.cbs.nl/ODataApi/OData/")
     else:
-        raise ValueError(f"Invalid graph repository name: {config.GRAPH_DB_REPO}. "
-                         f"Choose between ['cbs-nl', 'cbs-en']")
+        raise ValueError(f"Can't resolve schema namespace from graph repository name: {config.GRAPH_DB_REPO}.\n"
+                         f"Make sure your graph name contains ['cbs-nl', 'cbs-en']")
 
     def __init__(self, identifier: str):
         super().__init__(identifier, self.rdf_ns)

@@ -5,8 +5,10 @@ retrieving the top-scoring tables and their corresponding dimensions and measure
 import itertools
 import json
 import nltk
+import re
 import os
 import string
+import textwrap
 from collections import OrderedDict
 from rdflib.namespace import QB
 from nltk.corpus import stopwords
@@ -19,10 +21,11 @@ from typing import Dict, List
 
 import config
 from models.retrievers.base_retriever import BaseRetriever
-from models.retrievers.colbert.colbert_retriever import ColBERTRetriever
 from odata_graph import engine
 
-NODE_LABEL_BASE_PATH = f"{config.PATH_DIR_DATA}/bm25_retriever/bm25_{config.GRAPH_DB_REPO}_node_labels{{}}.json"
+# Prevents the construction of multi level folder structure caused by the URL scheme
+PREFIX_NODE_LABELS_NAME = re.sub(r"[./]", "_", re.sub(r"^https?://", "", config.GRAPH_DB_REPO))
+NODE_LABEL_BASE_PATH = f"{config.PATH_DIR_DATA}/bm25_retriever/bm25_{PREFIX_NODE_LABELS_NAME}_node_labels{{}}.json"
 
 
 class BM25Retriever(BaseRetriever):
@@ -101,7 +104,9 @@ class BM25Retriever(BaseRetriever):
             else:
                 raise RuntimeError(f"No {node_type} index found.")
 
-        # Calculate combined table scores and format for sorting
+        # Calculate combined table scores and format for sorting.
+        # Imported lazily: the colbert package is an optional (GPU) dependency and BM25 itself does not need it.
+        from models.retrievers.colbert.colbert_retriever import ColBERTRetriever
         sorted_tables = ColBERTRetriever.aggregate_table_node_scores(scored_candidates)
         return OrderedDict(itertools.islice(sorted_tables.items(), k))
 
@@ -145,33 +150,50 @@ def get_graph_node_labels(include_time_geo_dims: bool = False) -> Dict[str, Dict
         tables[table] = {'body': val, 'type': 'table'}
 
         # Get all measures and dimensions for a table
-        query = (f"""
+        # Codes carry specific gecko level classes, so time/geo exclusion matches the (cached)
+        # subclass closure of gecko:TimeDimension/gecko:GeoDimension.
+        timegeo_filter = textwrap.dedent(f"""
+            FILTER NOT EXISTS {{
+                VALUES ?timegeo {{ {' '.join(f'<{c}>' for c in engine.timegeo_classes())} }}
+                ?node a ?timegeo .
+            }}
+        """) if not include_time_geo_dims else ''
+
+        query = textwrap.dedent(f"""
             PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
             PREFIX dct: <http://purl.org/dc/terms/>
             PREFIX qb: <http://purl.org/linked-data/cube#>
+            PREFIX xkos: <http://rdf-vocabulary.ddialliance.org/xkos#>
 
-            SELECT ?node_id ?type ?label WHERE {{
+            SELECT DISTINCT ?node_id ?type ?label ?plabel WHERE {{
                 ?table ?type ?node .
                 FILTER (?type = qb:measure || ?type = qb:dimension) .
-                {'''
-                FILTER NOT EXISTS {
-                    VALUES ?timegeo {'TimeDimension' 'GeoDimension'}
-                    ?node a ?timegeo.
-                }
-                ''' if not include_time_geo_dims else ''}
+                {timegeo_filter}
                 ?table dct:identifier ?table_id .
                 ?node qb:concept ?concept ;
                       dct:identifier ?node_id .
                 ?concept dct:isPartOf ?table .
                 OPTIONAL {{ ?concept skos:prefLabel|skos:altLabel|skos:definition|dct:description|dct:subject ?label }}
+                OPTIONAL {{
+                    # Fold the node's partition-group text (measure groups / dimension partitions)
+                    #  into its document: group titles/descriptions carry matching vocabulary that
+                    #  no longer exists as separate (pseudo-measure) nodes since the group remodel.
+                    ?node xkos:isPartOf ?pgroup .
+                    ?pgroup skos:inScheme ?pscheme .
+                    ?pscheme dct:isPartOf ?table .                                      # scope to this table's scheme
+                    ?pgroup skos:prefLabel|skos:definition ?plabel .
+                }}
                 FILTER (?table_id = "{table}")
             }}
         """)
 
         try:
             result = engine.select(query)
-            props = [(r['node_id']['value'], r['type']['value'], (r.get('label', False) or {'value': ''})['value'])
+            props = [(r['node_id']['value'], r['type']['value'],
+                      (r.get('label', False) or {'value': ''})['value'],
+                      (r.get('plabel', False) or {'value': ''})['value'])
                      for r in result]
+            props.sort(key=itemgetter(0))  # groupby needs adjacency; SPARQL row order is not guaranteed
             node_it = itertools.groupby(props, itemgetter(0))
             for node_id, node_props in node_it:
                 node_props = list(node_props)
@@ -183,7 +205,13 @@ def get_graph_node_labels(include_time_geo_dims: bool = False) -> Dict[str, Dict
                 else:
                     raise ValueError(f"Unknown node type: {node_type}")
 
-                val = ' '.join(f"{prop[2].strip()}{'' if not prop[2] or prop[2][-1] == '.' else '.'}" for prop in node_props)
+                # Dedupe while preserving order: the two OPTIONALs multiply into label x plabel rows
+                texts = []
+                for prop in node_props:
+                    for text in (prop[2].strip(), prop[3].strip()):
+                        if text and text not in texts:
+                            texts.append(text)
+                val = ' '.join(f"{t}{'' if t[-1] == '.' else '.'}" for t in texts)
                 # Because nodes can have different concepts per table, store them using unique identifiers per table
                 nodes[f"{table}#{node_id}"] = {'body': val, 'type': type_, 'table': table}
         except Exception as e:

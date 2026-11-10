@@ -33,7 +33,7 @@ def normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df.columns = normalize_columns(df)
 
     if isinstance(df.index, pd.RangeIndex):
-        # RangeIndex applies for 'simplified' SQLs
+        # RangeIndex applies for non-pivoted SQLs
         # Ensure column order is irrelevant
         sorted_cols = sorted(df.columns.to_list())
         df = df[sorted_cols]

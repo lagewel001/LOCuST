@@ -3,11 +3,10 @@ import json
 import numpy as np
 import os
 import pandas as pd
-from itertools import chain
 from matplotlib import pyplot as plt
 from tqdm import tqdm
-from typing import get_args, List, Dict
 from time import perf_counter
+from typing import get_args, List, Dict, Optional
 
 import config
 from models.retrievers.base_retriever import BaseRetriever
@@ -15,21 +14,39 @@ from utils.custom_types import QueryType
 from utils.global_functions import load_dataset, load_model_from_path, parse_for_table_id
 
 
+def accuracy_at_each_k(predicted_tables: List[str], ground_truth: List[str], k: int) -> np.ndarray:
+    """
+        Accuracy@1..k for a single question: the share of its ground-truth tables appearing in the
+        first j predictions, for every j up to k.
+
+        :param predicted_tables: ranked table predictions
+        :param ground_truth: the question's ground-truth tables
+        :param k: cut-off
+        :return: array of length k, where index j-1 holds accuracy@j
+    """
+    hits = np.isin(predicted_tables[:k], list(ground_truth)).astype(float)
+    found = np.cumsum(hits)
+    if len(found) < k:  # the retriever returned fewer than k tables
+        found = np.pad(found, (0, k - len(found)), constant_values=found[-1] if len(found) else 0.0)
+    return found / len(ground_truth)
+
+
 def evaluate_table_retrieval(
         model_path: str,
         dataset_path: str,
         query_type: QueryType,
         k: int = 5,
-        model_kwargs: Dict = None) -> Dict:
+        model_kwargs: Optional[Dict] = None) -> Dict:
     """
         Evaluates table retrieval performance of a given model on a given test dataset.
 
         :param model_path: path to the model
         :param dataset_path: path to the dataset file
-        :param query_type: type of query to evaluate ('sexp', 'sql' or 'simplified_sql')
+        :param query_type: type of query to evaluate ('sexp', 'sql' or 'pivot_sql')
         :param k: The 'k' for accuracy@k calculation
         :param model_kwargs: optional keyword arguments for model instantiation
-        :return: dictionary containing the used model, dataset, query_type and EM + Acc@K metrics
+        :return: dictionary containing the used model (path and kwargs), dataset, query_type and
+                 EM + the accuracy@1..k curve
     """
     if model_kwargs is None:
         model_kwargs = {}
@@ -37,8 +54,7 @@ def evaluate_table_retrieval(
     model: BaseRetriever = load_model_from_path(model_path, **model_kwargs)
 
     exact_match = 0
-    acc_at_k = 0
-    acc_until_k = np.zeros(k)
+    acc_curve = np.zeros(k)
     total = len(dataset)
     perf_time = []
 
@@ -46,7 +62,7 @@ def evaluate_table_retrieval(
         question = item.question
         answer = item[query_type]
         ground_truth_table = parse_for_table_id(answer, query_type)
-        
+
         if not ground_truth_table:
             total -= 1
             continue
@@ -59,32 +75,33 @@ def evaluate_table_retrieval(
         # Check if all the first N tables of the predicted tables match the number N tables in the ground truth
         if set(predicted_tables[:len(ground_truth_table)]) == set(ground_truth_table):
             exact_match += 1
-        
-        # Accuracy@K
-        # Check how many ground truth tables are in the first K tables predicted by the model
-        acc_at_k += len(set(ground_truth_table) & set(predicted_tables[:k])) / len(ground_truth_table)
 
-        matches = sorted(np.argwhere(np.isin(predicted_tables, list(ground_truth_table))).ravel())
-        if len(matches) == 0:
-            continue
-        acc_until_k += np.array(list(chain.from_iterable(
-            [[0.0] * min(k, matches[0])] +
-            [[1 / len(matches) * (i + 1)] * ((matches[i + 1] if i + 1 < len(matches) else k) - p)
-             for i, p in enumerate(matches)]
-        )))
+        # Accuracy@1..K
+        # The share of ground-truth tables found by each cut-off, so a model can be compared at the
+        # k that matters downstream (a prompt sees a handful of tables) without re-evaluating.
+
+        # Test Marc Ponsen: problematic items
+        acc_at_k = accuracy_at_each_k(predicted_tables, ground_truth_table, k)
+        if acc_at_k[-1] == 0.0:
+            with open('./evaluation/table_retriever_errors.jsonl', 'a+', encoding='utf-8') as f:
+                line = {"question": question, "ground_truth_table": ground_truth_table, "predicted_tables": predicted_tables}
+                f.write(f"{json.dumps(line)}\n")
+
+        acc_curve += accuracy_at_each_k(predicted_tables, ground_truth_table, k)
 
     em_accuracy = exact_match / total if total > 0 else 0
-    acc_at_k = acc_at_k / total if total > 0 else 0
-    acc_until_k = acc_until_k / total if total > 0 else 0
+    acc_curve = acc_curve / total if total > 0 else np.zeros(k)
 
     results = {
         "model_path": model_path,
+        # Multiple checkpoints of one retriever share a model_path,
+        # so the kwargs are the only record of which one was actually evaluated.
+        "model_kwargs": model_kwargs,
         "dataset_path": dataset_path,
         "query_type": query_type,
         "metrics": {
             "exact_match_accuracy": em_accuracy,
-            f"accuracy_at_{k}": acc_at_k,
-            "accuracies_until_k": list(acc_until_k),
+            "accuracy_at_k": list(acc_curve),
             "mean_perf_time_in_seconds": float(np.mean(perf_time)),
             "median_perf_time_in_seconds": float(np.median(perf_time)),
         },
@@ -99,10 +116,15 @@ def plot_graph(json_files: List[str], k: int):
     for file in json_files:
         with open(file) as f:
             results = json.load(f)
-            if 'accuracies_until_k' not in results.get('metrics', {}):
+            metrics = results.get('metrics', {})
+
+            curve = metrics.get('accuracy_at_k')
+            if curve is None:
+                print(f"SKIPPING {os.path.basename(file)}: no accuracy_at_k. Re-run the evaluation.")
                 continue
 
-            result_df[results['model_path'].split('/')[-1].replace('.py', '')] = pd.Series(results['metrics']['accuracies_until_k'][:k])
+            label = os.path.splitext(os.path.basename(file))[0]
+            result_df[label] = pd.Series(curve[:k])
 
     # Generate graphs
     result_df = result_df.reindex(sorted(result_df.columns), axis=1)

@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import os
 import pandas as pd
 import sqlglot
 from typing import Tuple
 
-import config
 from odata_graph import engine
 from s_expression.operators import Value
 from s_expression.simple_aggregator import SimpleAggregator
@@ -13,17 +11,19 @@ from s_expression.simple_aggregator import SimpleAggregator
 
 class Sum(SimpleAggregator):
     """
-        The SUM expression sums the resulting pivot tables from a sub-expression over a given column.
+        The SUM expression sums the resulting tables from a sub-expression over a given column.
     """
     def __call__(self,
                  sql: bool = False,
                  odata4: bool = False,
-                 simplified: bool = False,
+                 pivot: bool = False,
                  offline: bool = False,
                  verbose: bool = False) -> Tuple[Sum, pd.DataFrame]:
+        self._validate_partition_coherence()
         if sql:
-             answer, code_labels = self._execute_sql(simplified=simplified)
+             answer, code_labels, code_definitions = self._execute_sql(pivot=pivot)
              self.mapper = code_labels
+             self.mapper_definitions = code_definitions
         else:
             measure_units = {}
             if isinstance(self.sub_expression, Value) and len(self.selectors) == 0:
@@ -31,6 +31,7 @@ class Sum(SimpleAggregator):
             sub_exp, table = self.sub_expression(offline=offline, odata4=odata4, verbose=verbose)
 
             self.mapper = sub_exp.mapper
+            self.mapper_definitions = sub_exp.mapper_definitions
             self.intermediate_results = [table] + sub_exp.intermediate_results
 
             measure_units = {self.mapper.get(k, k): v for k, v in measure_units.items()}
@@ -42,14 +43,14 @@ class Sum(SimpleAggregator):
         return self, answer
 
     @property
-    def odata3_sql_simplified(self) -> str:
+    def odata3_sql(self) -> str:
         """
-            === Example simplified SUM expression as OData3 SQL ===
-            SELECT 'Livestock_1' AS Measure, Periods,
-                   SUM(Livestock_1) AS 'SUM'
-            FROM '<parquet-files>'
+            === Example SUM expression as OData3 SQL ===
+            SELECT Periods,
+                   SUM("Livestock_1") AS "SUM"
+            FROM '<parquet-file>'
             WHERE FarmAnimals IN ('A044005', 'A044022')
-            AND Periods IN ('2022MM04')
+            AND Periods = '2022MM04'
             GROUP BY Periods;
         """
         if not isinstance(self.sub_expression, Value):  # Aggregate over complex inner query (e.g. AGGJOIN)
@@ -58,8 +59,8 @@ class Sum(SimpleAggregator):
                 sql = f"""
                     SELECT
                         '{str(list(measures)[0])}' AS Measure,
-                        SUM({str(list(measures)[0])}) AS SUM
-                    FROM ({self.sub_expression.odata3_sql_simplified})
+                        SUM("{str(list(measures)[0])}") AS SUM
+                    FROM ({self.sub_expression.odata3_sql})
                     GROUP BY Measure
                 """
                 return sqlglot.parse_one(sql).sql(pretty=True)
@@ -67,20 +68,7 @@ class Sum(SimpleAggregator):
                 raise NotImplementedError("Can't build SQL aggregations over complex inner queries "
                                           "with a dimension as the aggregation selector yet.")
 
-        value_exps, tables, measures, dimensions = self._get_sub_exp_filters()
-        where_stmts = []
-        for sub_exp in value_exps:
-            where_stmts.append(sqlglot.parse_one(sub_exp.odata3_sql_simplified).find(sqlglot.exp.Where).this)
-
-        sql = f"""
-            SELECT
-                {', '.join(str(group) for group, _ in dimensions) + ',' if len(dimensions) > 0 else ''}
-                {self._operator}("{'" + "'.join(map(str, measures))}") AS '{self._operator}'
-            FROM '{os.path.relpath(config.DB_ODATA3_FILES)}/{list(tables)[0]}.parquet'
-            {sqlglot.exp.Where(this=sqlglot.expressions.and_(*where_stmts)).sql()}
-            GROUP BY {', '.join(str(group) for group, _ in dimensions)}
-        """
-        return sqlglot.parse_one(sql).sql(pretty=True)
+        return self._non_pivot_aggregation_sql()
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 # SQL examples
-This document contains examples for SQL and simplified SQL queries
+This document contains examples for the (default) non-pivoted SQL queries and their pivoted counterparts, which are
+only used as an ablation.
 
 ## Value queries
 *How many businesses and organizations went bankrupt in September 1993 after adjusting for court session days?*
@@ -171,12 +172,15 @@ Output:
 | 2887                  | 2271                  | GITradeHotelsRestaurantsBars_7;BuildingCostsAlteration_2 |
 
 #### Without PIVOT
+Averaging over measures takes the mean of the measure columns per row. Note that no dimension is aggregated
+over here, so all dimensions are part of the GROUP BY. When aggregating over a dimension instead, that dimension
+must only be filtered on and must NOT be part of the GROUP BY, otherwise each of its codes ends up in its own group.
 ```sql
 SELECT
     Periods,
     Region,
     BuildingPhases,
-    AVG(GITradeHotelsRestaurantsBars_7 + BuildingCostsAlteration_2) AS 'AVG'
+    AVG((GITradeHotelsRestaurantsBars_7 + BuildingCostsAlteration_2) / 2) AS 'AVG'
 FROM "data/en/odata3/83707ENG.parquet"
 WHERE Periods IN ('2019JJ00')
 AND Region IN ('NL01')
@@ -188,8 +192,8 @@ Output:
 
 | Periods  | Region | BuildingPhases | AVG  |
 |----------|--------|----------------|------|
-| 2019JJ00 | NL01   | A041322        | 4542 |
-| 2019JJ00 | NL01   | A041324        | 5774 |
+| 2019JJ00 | NL01   | A041322        | 2271 |
+| 2019JJ00 | NL01   | A041324        | 2887 |
 
 
 ---
@@ -285,20 +289,25 @@ Output:
 #### Without PIVOT
 For doing the MIN + ARGMIN combination over measures requires a bit of a more elaborate solution, where we can't
 eliminate/simplify the UNPIVOT found in the origional SQL unless we resolve to convoluted CASE-WHEN-THEN-ELSE shenanigans.
+Like the PIVOT version, the minimum is determined separately for every combination of the dimension codes (PARTITION BY).
+The measure filters are applied before unpivoting.
 ```sql
 WITH RankedRows AS (
     SELECT
-        RANK() OVER (ORDER BY Value ASC) as rnk,
-        Measure,
-        Purpose,
+        RANK() OVER (PARTITION BY Period, Purpose, Region ORDER BY Value ASC) as rnk,
         Period,
+        Purpose,
         Region,
+        Measure AS 'MIN[Measure]',
         Value AS 'MIN'
-    FROM "data/en/odata3/86098ENG.parquet"
+    FROM (
+        SELECT *
+        FROM "data/en/odata3/86098ENG.parquet"
+        WHERE Purpose IN ('T001419', 'A045372', 'A045375')
+        AND Period IN ('2025KW01')
+        AND Region IN ('NL01')
+    )
     UNPIVOT(Value FOR Measure IN ('BuildingPermitsAdditions_11', 'StockBalance_21'))
-    WHERE Purpose IN ('T001419', 'A045372', 'A045375')
-    AND Period IN ('2025KW01')
-    AND Region IN ('NL01')
 )
 SELECT *
 FROM RankedRows
@@ -307,9 +316,11 @@ WHERE rnk = 1;
 
 Output:
 
-| rnk | Measure         | Purpose | Period   | Region | MIN |
-|-----|-----------------|---------|----------|--------|-----|
-| 1   | StockBalance_21 | A045372 | 2025KW01 | NL01   | -23 |
+| rnk | Period   | Purpose | Region | MIN[Measure]                | MIN  |
+|-----|----------|---------|--------|-----------------------------|------|
+| 1   | 2025KW01 | T001419 | NL01   | BuildingPermitsAdditions_11 | 3804 |
+| 1   | 2025KW01 | A045372 | NL01   | StockBalance_21             | -23  |
+| 1   | 2025KW01 | A045375 | NL01   | BuildingPermitsAdditions_11 | 34   |
 
 
 ---
@@ -400,7 +411,7 @@ Output:
 | 2007KW04 | 722                                       | 871                                       | 54562       |
 
 
-#### Without PIVOT (simplified for the inner queries)
+#### Without PIVOT
 ```sql
 SELECT
     COALESCE(TableA.Periods, TableB.Periods) AS 'Periods',
@@ -498,31 +509,26 @@ Output:
 
 
 #### Without Pivot
+Joining over a shared measure stacks the values of both tables with `UNION ALL BY NAME`. A `FULL JOIN` would have to
+match the rows on their measure values, which silently merges identical values of the two tables into a single row.
 ```sql
 SELECT
     'AverageConsumptionOfElectricity_2' AS Measure,
-    AVG(AverageConsumptionOfElectricity_2) AS AVG
+    AVG("AverageConsumptionOfElectricity_2") AS AVG
 FROM (
-    SELECT
-        COALESCE(TableA.AverageConsumptionOfElectricity_2, TableB.AverageConsumptionOfElectricity_2) AS "AverageConsumptionOfElectricity_2",
-        TableA.FloorareaSize,
-        TableA.BuildingTypesServicesSector,
-        TableA.ConstructionPeriod,
-        TableB.FloorArea,
-        TableB.EnergyIntensitiesServicesFloorArea
-    FROM (
-        SELECT *
+    (
+        SELECT FloorareaSize, BuildingTypesServicesSector, ConstructionPeriod, "AverageConsumptionOfElectricity_2"
         FROM "data/en/odata3/83376ENG.parquet"
         WHERE FloorareaSize = 'A025415'
         AND BuildingTypesServicesSector IN ('A047460', 'A047461', 'A047477')
         AND ConstructionPeriod = 'ZW25814'
-    ) AS TableA
-    FULL JOIN (
-      SELECT *
-      FROM "data/en/odata3/83374ENG.parquet"
-      WHERE FloorArea = 'A025413' AND EnergyIntensitiesServicesFloorArea = 'A047466'
-    ) AS TableB
-    ON TableA.AverageConsumptionOfElectricity_2 = TableB.AverageConsumptionOfElectricity_2
+    )
+    UNION ALL BY NAME
+    (
+        SELECT FloorArea, EnergyIntensitiesServicesFloorArea, "AverageConsumptionOfElectricity_2"
+        FROM "data/en/odata3/83374ENG.parquet"
+        WHERE FloorArea = 'A025413' AND EnergyIntensitiesServicesFloorArea = 'A047466'
+    )
 )
 GROUP BY Measure;
 ```

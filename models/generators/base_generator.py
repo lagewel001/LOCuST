@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from utils.custom_types import BaseModel, LLMResponse
 
@@ -10,13 +10,11 @@ class BaseGenerator(BaseModel, ABC):
     def __init__(self):
         pass
 
-    def generate_query(
-            self,
-            question: str,
-            retrieved_tables: Optional[List[str]] = None
-    ) -> LLMResponse:
+    @abstractmethod
+    def generate_query(self, question: str, retrieved_tables: Optional[dict] = None) -> LLMResponse:
         """
             Generate a logical query for the given question.
+            Subclasses can overload this method with any defaulted keyword arguments.
 
             :param question: natural language question
             :param retrieved_tables: optional full retriever output dict with table scores and optional node scores.

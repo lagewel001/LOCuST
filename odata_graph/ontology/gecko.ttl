@@ -1,0 +1,241 @@
+@prefix gecko: <https://vocabs.cbs.nl/def/gecko#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix xkos:  <http://rdf-vocabulary.ddialliance.org/xkos#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+#  GECKO dimension ontology (TBox)
+#
+#  Project-owned classes for CBS statistical dimensions. Hand-maintained; loaded into the graph
+#  alongside the generated data (ABox). The generator only *uses* these classes (e.g. `<code> a
+#  gecko:Municipality`); their definitions, labels and hierarchy live here.
+#################################################################
+
+gecko: a owl:Ontology ;
+    rdfs:label "GECKO dimensie-ontologie"@nl, "GECKO dimension ontology"@en ;
+    rdfs:comment "Project-owned classes describing CBS statistical dimensions: aggregation roles and the geographic/temporal level hierarchies."@en ;
+    dct:creator "Lucas Lageweg" .
+
+### Annotation properties
+
+gecko:codePrefix a owl:DatatypeProperty ;
+    rdfs:label "code prefix"@nl, "code prefix"@en ;
+    rdfs:comment "Prefix (twee letters) for geografische locatie-aanduidingen."@nl, "The prefix (two letters, or three characters for e.g. 'G04') that CBS geographic codes of this class start with."@en ;
+    rdfs:range xsd:string .
+
+gecko:codeInfix a owl:DatatypeProperty ;
+    rdfs:label "code infix"@nl, "code infix"@en ;
+    rdfs:comment "Infix die de granulariteit van een tijdsperiode aangeeft. Volgt de conventie <vier cijfers><een of twee letters><twee cijfers> (e.g. 2022JJ00 = jaar, 2022KW01 = eerste kwartaal)."@nl, "The granularity marker inside CBS period codes, which follow <four digits: year><one or two letters><two digits> (e.g. 2022JJ00 = year, 2022KW01 = first quarter)."@en ;
+    rdfs:range xsd:string .
+
+gecko:level a owl:DatatypeProperty ;
+    rdfs:label "hiërarchisch niveau"@nl, "hierarchy level"@en ;
+    rdfs:comment "Ordinaal niveau van een hiërarchie. Lager niveau = groter gebied / langere tijdsperiode."@nl, "Ordinal depth of a level in its containment hierarchy; smaller = coarser (larger area / longer period). Only classes that are part of the clean containment chain carry a level; functional or overlapping classifications do not."@en ;
+    rdfs:range xsd:integer .
+
+### Aggregation role
+
+gecko:Aggregate a owl:Class ;
+    rdfs:label "Aggregate"@en, "Totaal"@nl ;
+    rdfs:comment "A dimension code, dimension group or measure whose value aggregates (totals) a set of sibling codes. Must be excluded when summing over those siblings to avoid double counting."@en .
+
+#################################################################
+#  Geographic dimension levels — administrative containment chain (coarsest -> finest)
+#  All are sub-classes of gecko:GeoDimension (siblings). Instance-level containment (this
+#  municipality in that province) is carried on the data via skos:broader / xkos:isPartOf.
+#  Chain membership is signalled by the presence of gecko:level.
+#################################################################
+
+gecko:GeoDimension a owl:Class ;
+    rdfs:label "Geographic dimension"@en, "Geografische dimensie"@nl ;
+    rdfs:comment "A dimension (or its codes) describing geographic areas."@en .
+
+gecko:Country a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Country"@en, "Land"@nl ;                 gecko:codePrefix "NL" ; gecko:level 1 .
+
+gecko:Region a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Region"@en, "Landsdeel"@nl ;
+    rdfs:comment "Grouping of provinces (there are four: Noord, Oost, West, Zuid)."@en ;
+                                                          gecko:codePrefix "LD" ; gecko:level 2 .
+
+gecko:Province a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Province"@en, "Provincie"@nl ;           gecko:codePrefix "PV" ; gecko:level 3 .
+
+gecko:Municipality a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Municipality"@en, "Gemeente"@nl ;        gecko:codePrefix "GM" ; gecko:level 4 .
+
+gecko:District a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "District"@en, "Wijk"@nl ;
+    rdfs:comment "Ward within a municipality; subdivided into buurten (neighbourhoods)."@en ;
+                                                          gecko:codePrefix "WK" ; gecko:level 5 .
+
+gecko:Neighbourhood a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Neighbourhood"@en, "Buurt"@nl ;
+    rdfs:comment "Finest CBS geographic unit; part of a wijk (district)."@en ;
+                                                          gecko:codePrefix "BU" ; gecko:level 6 .
+
+#################################################################
+#  Geographic classifications — functional / non-hierarchical
+#  These have no standardized leveling (hence no gecko:level): they are overlapping groupings,
+#  mostly of municipalities. Within a table a hierarchy can still be expressed through the
+#  regular dimension group/code hierarchy (skos:broader / xkos:isPartOf on the data).
+#################################################################
+
+gecko:LabourMarketRegion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Labour market region"@en, "Arbeidsmarktregio"@nl ; gecko:codePrefix "AM" ;
+    rdfs:comment "Een indeling in regio's van waaruit gemeenten en het Uitvoeringsinstituut Werknemersverzekeringen (UWV) de dienstverlening aan werkgevers en werkzoekenden vormgeven. Het is een regionaal niveau tussen gemeenten en provincies in. Deze indeling is van onderop, door gemeenten zelf, tot stand gekomen."@nl .
+
+gecko:JudicialDistrict a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Judicial district"@en, "Arrondissement"@nl ; gecko:codePrefix "AR" ;
+    rdfs:comment "Groepering van gemeenten op basis van rechtsgebieden. Een arrondissement is het rechtsgebied van één van de 11 rechtbanken in Nederland. De indeling in 11 arrondissementen betreft een onderverdeling van de ressorten, dat zijn de rechtsgebieden van de gerechtshoven."@nl .
+
+gecko:MunicipalityCluster a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Cluster of municipalities"@en, "Cluster van gemeenten"@nl ; gecko:codePrefix "CG" ;
+    rdfs:comment "Groepering van gemeenten."@nl .
+
+gecko:CaribbeanNetherlands a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Caribbean Netherlands"@en, "Caribisch Nederland"@nl ; gecko:codePrefix "CN" ;
+    rdfs:comment "Caribisch Nederland is de benaming van de Nederlandse eilanden Bonaire, Sint-Eustatius en Saba."@nl .
+
+gecko:ConcentrationArea a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Concentration area"@en, "Concentratiegebied"@nl ; gecko:codePrefix "CO" ;
+    rdfs:comment "Wettelijke aangewezen gebied waar afwijkende bepalingen gelden in het kader van de Meststoffenwet. Het suffix van de code bepaalt het gebied (bijv. Oost of Zuid); Concentratiegebied Oost Nederland omvat bijvoorbeeld gedeelten van Overijssel, Utrecht en Gelderland."@nl .
+
+gecko:CoropArea a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "COROP region"@en, "COROP-gebied"@nl ; gecko:codePrefix "CR" ;
+    rdfs:comment "Regionaal niveau tussen gemeenten en provincies in. In 1970 ontworpen door de Coördinatie Commissie Regionaal Onderzoeksprogramma, waaraan de indeling haar naam dankt. Nederland telt 40 COROP-gebieden."@nl .
+
+gecko:EnergyStrategyRegion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Regional Energy Strategy region"@en, "Regionale Energiestrategie-regio"@nl ; gecko:codePrefix "ES" ;
+    rdfs:comment "In het kader van het klimaatakkoord is Nederland ingedeeld in 30 regio's. In die regio's werken de lokale overheden - gemeenten, provincies en waterschappen - aan het opstellen van Regionale Energiestrategieën (RES). Samen met bedrijfsleven, maatschappelijke organisaties, netbeheerders en inwoners brengen ze mogelijkheden voor lokale energiebesparing (o.a. isolatie van woningen en andere gebouwen) en duurzame opwekking van energie in kaart en de gevolgen daarvan voor het energienetwerk."@nl .
+
+gecko:EnergyStrategySubregion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Sub-RES region"@en, "SubRES-regio"@nl ; gecko:codePrefix "ET" ;
+    rdfs:comment "Een onderverdeling van een aantal van de 30 RES-regio's; de volgende RES-regio's zijn verder opgesplitst: Foodvalley (ES09), Noord-Holland Noord (ES15), Noord-Holland Zuid (ES16) en Zuid-Limburg (ES30)."@nl .
+
+gecko:G4 a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "G4 (four largest cities)"@en, "G4"@nl ; gecko:codePrefix "G04" ;
+    rdfs:comment "Samenwerkingsverband van de gemeenten Amsterdam, 's-Gravenhage, Rotterdam en Utrecht."@nl .
+
+gecko:G40 a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "G40 (medium-sized cities network)"@en, "G40"@nl ; gecko:codePrefix "G40" ;
+    rdfs:comment "Het gaat hier om het samenwerkingsverband van de 40 (middel) grote steden binnen het Nederlandse grotestedenbeleid (GSB), exclusief de G4. De G40 is een uitbreiding van de oorspronkelijke G27. Met ingang van verslagjaar 2018 is deze indeling hernoemd tot G40."@nl .
+
+gecko:HealthServiceRegion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Municipal health service region"@en, "GGD-regio"@nl ; gecko:codePrefix "GG" ;
+    rdfs:comment "Een in 1990 door het toenmalig Ministerie van Welzijn, Volksgezondheid en Cultuur vastgestelde indeling in samenwerkingsgebieden voor de gemeentelijke gezondheidsdiensten (GGD). Deze indeling is in de loop der jaren verschillende keren gewijzigd. De indeling is voor het laatst herzien op 1 januari 2016 en telt vanaf die datum 25 gebieden."@nl .
+
+gecko:YouthCareRegion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Youth care region"@en, "Jeugdregio"@nl ; gecko:codePrefix "JZ" ;
+    rdfs:comment "Een door gemeenten vastgestelde indeling in samenwerkingsgebieden voor uitvoering van de Jeugdwet (2014). Nederland telt 42 jeugdregio's."@nl .
+
+gecko:ChamberOfCommerceRegion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Chamber of Commerce region"@en, "Kamer van Koophandel-regio"@nl ; gecko:codePrefix "KK" ;
+    rdfs:comment "De indeling in werkgebieden van de Kamer van Koophandel regio's (KvK). De indeling wordt gehanteerd met ingang van 2008 en telde toen 12 KvK-regio's. Per 1 januari 2014 is de indeling volledig herzien. Nederland telt vanaf die datum 5 KvK-regio's. Ontstaan per 01-01-2014."@nl .
+
+gecko:AgriculturalArea a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Agricultural area"@en, "Landbouwgebied"@nl ; gecko:codePrefix "LB" ;
+    rdfs:comment "Groepering van gemeenten met (zoveel mogelijk) gelijksoortige typen van landbouwbedrijven. De indeling in landbouwgebieden is in 1991 door de Adviescommissie Landbouwstatistieken vastgesteld. Nederland telt 66 landbouwgebieden."@nl .
+
+gecko:AgriculturalAreaGroup a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Group of agricultural areas"@en, "Groep van landbouwgebieden"@nl ; gecko:codePrefix "LG" ;
+    rdfs:comment "Een samenvoeging van de 66 landbouwgebieden tot 14 groepen van landbouwgebieden. Deze indeling is in 1991 tezamen met de indeling in 66 landbouwgebieden vastgesteld door de Adviescommissie Landbouwstatistieken."@nl .
+
+gecko:RmcRegion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "RMC region"@en, "Regionaal Meld- en Coördinatiepunt"@nl ; gecko:codePrefix "MC" ;
+    rdfs:comment "In RMC-regio's werken scholen en gemeenten samen om te voorkomen dat leerlingen zonder startkwalificatie van school gaan. Alle gemeenten in Nederland participeren in één van de 40 RMC-regio's. Gemeenten registreren (potentiële) voortijdige schoolverlaters (vsv'ers) en zorgen ervoor dat ze via een geschikt onderwijs- of arbeidstraject alsnog een startkwalificatie halen."@nl .
+
+# Explicit CBS prefix meaning 'cannot be classified' — distinct from gecko:UnknownRegion,
+#  which is our own fallback for unrecognized prefixes.
+gecko:Unclassified a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Not classifiable"@en, "Niet in te delen"@nl ; gecko:codePrefix "ND" .
+
+gecko:RegioPlusRegion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "RegioPlus labour market region"@en, "RegioPlus-arbeidsmarktregio"@nl ; gecko:codePrefix "RA" ;
+    rdfs:comment "Een indeling in regio's van waaruit regionale werkgeversorganisaties, verenigd in het samenwerkingsverband RegioPlus, zich inzetten voor het behouden en aantrekken van voldoende en goed gekwalificeerd personeel in zorg en welzijn. Deze indeling is tot stand gekomen vanuit dit samenwerkingsverband. Nederland telt 28 RegioPlus-arbeidsmarktregio's."@nl .
+
+gecko:PoliceRegion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Police regional unit"@en, "Regionale eenheid"@nl ; gecko:codePrefix "RE" ;
+    rdfs:comment "De indeling in regionale eenheden is ingevoerd per 1 januari 2013 en berust op de Politiewet 2012. Nederland telt 10 regionale eenheden."@nl .
+
+gecko:RiverBasinDistrict a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "River basin district"@en, "Stroomgebieddistrict"@nl ; gecko:codePrefix "RS" ;
+    rdfs:comment "Het stroomgebieddistrict is een belangrijke regionale indeling in de EU-Kaderrichtlijn Water."@nl .
+
+gecko:UrbanRegion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Urban region"@en, "Stadsgewest"@nl ; gecko:codePrefix "SG" ;
+    rdfs:comment "Stedelijk gebied in functionele zin. Een stadsgewest bestaat uit een grootstedelijke agglomeratie en het omringende gebied dat georiënteerd is op deze agglomeratie. De huidige indeling in stadsgewesten is geïntroduceerd in 2000 en is niet landelijk dekkend. Nederland telt 22 stadsgewesten. Met ingang van verslagjaar 2016 worden er door CBS geen gegevens meer gepubliceerd over stadsgewesten. Door diverse maatschappelijke ontwikkelingen zijn de filosofie en methode die ten grondslag lagen aan de afbakening niet langer actueel."@nl .
+
+gecko:TouristAreaGroup a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Group of tourist areas"@en, "Groep van toeristengebieden"@nl ; gecko:codePrefix "TG" ;
+    rdfs:comment "De 17 toeristische gebieden zijn samengevoegd in 6 groepen van toeristengebieden."@nl .
+
+gecko:TouristArea a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Tourist area"@en, "Toeristengebied"@nl ; gecko:codePrefix "TR" ;
+    rdfs:comment "De indeling in toeristengebieden is ontworpen in 1972 voor statistieken op het terrein van de toeristische dienstverlening en vrijetijdsbesteding. Nederland telt 17 toeristengebieden. De gebieden zijn niet noodzakelijkerwijs aaneensluitend."@nl .
+
+gecko:VeiligThuisRegion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Veilig Thuis region"@en, "Veilig Thuis-regio"@nl ; gecko:codePrefix "VT" ;
+    rdfs:comment "Een indeling in regio's waarin gemeenten met elkaar samenwerken voor de organisatie van een Advies- en Meldpunt Huiselijk Geweld en Kindermishandeling (ook wel Veilig Thuis genoemd), zoals vastgelegd in de Wet Maatschappelijke Ondersteuning 2015."@nl .
+
+# Fallback: the OData metadata marks a dimension as geographic, but the code prefix matches no
+#  known CBS area classification.
+gecko:UnknownRegion a owl:Class ; rdfs:subClassOf gecko:GeoDimension ;
+    rdfs:label "Unknown region type"@en, "Onbekend gebiedstype"@nl .
+
+#################################################################
+#  Temporal dimension levels
+#  CBS period codes follow <four digits: year><infix><two digits> (gecko:codeInfix holds the
+#  infix). A code of only digits (e.g. 19950101) is a calendar date (gecko:Date, no infix).
+#  As with geo, gecko:level marks the clean containment chain (year > half year > quarter >
+#  month > date); weeks and derived/overlapping periods (rolling years, school years,
+#  reporting periods, ...) carry no level.
+#################################################################
+
+gecko:TimeDimension a owl:Class ;
+    rdfs:label "Time dimension"@en, "Tijddimensie"@nl ;
+    rdfs:comment "A dimension (or its codes) describing time periods."@en .
+
+gecko:Year a owl:Class ; rdfs:subClassOf gecko:TimeDimension ;
+    rdfs:label "Year"@en, "Jaar"@nl ;           gecko:codeInfix "JJ" ; gecko:level 1 .
+
+gecko:HalfYear a owl:Class ; rdfs:subClassOf gecko:TimeDimension ;
+    rdfs:label "Half year"@en, "Half jaar"@nl ; gecko:codeInfix "HJ" ; gecko:level 2 .
+
+gecko:Quarter a owl:Class ; rdfs:subClassOf gecko:TimeDimension ;
+    rdfs:label "Quarter"@en, "Kwartaal"@nl ;    gecko:codeInfix "KW" ; gecko:level 3 .
+
+gecko:Month a owl:Class ; rdfs:subClassOf gecko:TimeDimension ;
+    rdfs:label "Month"@en, "Maand"@nl ;         gecko:codeInfix "MM" ; gecko:level 4 .
+
+gecko:Date a owl:Class ; rdfs:subClassOf gecko:TimeDimension ;
+    rdfs:label "Date"@en, "Datum"@nl ;          gecko:level 5 ;
+    rdfs:comment "A single calendar date; encoded as a digits-only code (e.g. 19950101 = Sunday 1 January 1995), so it has no gecko:codeInfix."@en .
+
+# Weeks cross month (and ISO weeks even year) boundaries, so they are not part of the
+#  containment chain and carry no gecko:level.
+gecko:Week a owl:Class ; rdfs:subClassOf gecko:TimeDimension ;
+    rdfs:label "Week"@en, "Week"@nl ;           gecko:codeInfix "W" .
+
+### Derived / overlapping periods (no gecko:level)
+
+gecko:FourYearAverage a owl:Class ; rdfs:subClassOf gecko:TimeDimension ;
+    rdfs:label "4-year average"@en, "4-jaarsgemiddelde"@nl ; gecko:codeInfix "G4" .
+
+gecko:RollingYear a owl:Class ; rdfs:subClassOf gecko:TimeDimension ;
+    rdfs:label "Rolling year"@en, "Voortschrijdende jaren"@nl ; gecko:codeInfix "VJ" ;
+    rdfs:comment "Period of 12 months running backwards from the given year + month, i.e. 2024VJ06 spans July 2023 up to and including June 2024."@en .
+
+gecko:SchoolYear a owl:Class ; rdfs:subClassOf gecko:TimeDimension ;
+    rdfs:label "School year"@en, "Schooljaar"@nl ; gecko:codeInfix "SJ" .
+
+gecko:ReportingPeriod a owl:Class ; rdfs:subClassOf gecko:TimeDimension ;
+    rdfs:label "Reporting period"@en, "Verslagperiode"@nl ; gecko:codeInfix "XX" ;
+    rdfs:comment "De verslagperiode van één enquête omvat drie jaren, bijvoorbeeld 2006 tot en met 2008. Het laatste jaar in een enquête is daarbij hetzelfde als het eerste jaar in de volgende enquête. Dat betekent dat de periodes elkaar gedeeltelijk overlappen."@nl .
+
+gecko:ReferenceDayTotal a owl:Class ; rdfs:subClassOf gecko:TimeDimension ;
+    rdfs:label "Total on a reference day"@en, "Totaal op een dag in een jaar"@nl ; gecko:codeInfix "X0" .

@@ -4,6 +4,7 @@ This module contains functions that are used by all other modules in this projec
 import json
 import importlib.util
 import inspect
+import logging
 import re
 import requests
 import time
@@ -16,7 +17,12 @@ from typing import List, Any, Callable, Union
 
 from utils.custom_types import QAPair, BaseModel, QueryType
 
+logger = logging.getLogger(__name__)
+
 TRUSTED_SOURCES = ['localhost', 'cbs.nl', 'cbscms9', 'rivm.nl', 'politie.nl', 'grensdata.eu', 'volkstellingen.nl']
+
+TRUTHY_STRINGS = ('true', '1', 'yes', 'y', 'on')
+FALSY_STRINGS = ('false', '0', 'no', 'n', 'off', '')
 
 
 class TooManyRequestsError(Exception):
@@ -35,7 +41,7 @@ def secure_request(callee: Union[Callable, str], *args, json: bool = True, max_r
         :param max_retries: maximum number of tries if request fails before returning None (default: 3)
         :param verify: do request with SSL verification (default: True)
         :param timeout: the allowed number of seconds timeout
-        :return: request content or json from request source. None if no data found. False if failed
+        :return: request content or json from request source.
     """
     for _ in range(max_retries):
         try:
@@ -53,27 +59,26 @@ def secure_request(callee: Union[Callable, str], *args, json: bool = True, max_r
             if req.status_code == 429:
                 raise TooManyRequestsError
             if req.status_code != 200:
-                print(f"Fetching {callee} succeeded, but yielded status code {req.status_code}")
-                return None
+                logger.debug(f"Fetching {callee} succeeded, but yielded status code {req.status_code}")
 
             data = req.json() if json else req.content
         except (TimeoutError, TooManyRequestsError):
             # Try to fetch again if timed out
-            print(f"Request timed out or too many request for {callee}.")
+            logger.debug(f"Request timed out or too many request for {callee}.")
             time.sleep(3)
             continue
         except JSONDecodeError:
-            print(f"Could not parse JSON-result for request {callee}")
+            logger.warning(f"Could not parse JSON-result for request {callee}")
             break
         except RequestException as e:
-            print(f"Failed to fetch {callee}: {str(e)}")
+            logger.error(f"Failed to fetch {callee}: {str(e)}")
             break
         else:
             if callable(callee):
                 return req
             return data
 
-    return False
+    return None
 
 
 def load_dataset(file_path: str) -> List[QAPair]:
@@ -111,10 +116,32 @@ def parse_for_table_id(query: str, query_type: QueryType) -> List[str]:
     """
     if query_type == 'sexp':
         pattern = r"\(VALUE\s+([A-Z0-9]+)"
-    elif query_type in ['sql', 'simplified_sql']:
+    elif query_type in ['sql', 'pivot_sql']:
         pattern = r"FROM\s+['\"](?:[^/]+/)*?([A-Z0-9]+)\.parquet['\"]"
     else:
         raise ValueError(f"Unknown query type: {query_type}")
 
     table_matches = re.findall(pattern, query, re.IGNORECASE)
     return table_matches
+
+
+def trim_text(text: str, no_chars: int) -> str:
+    return f"{text[:no_chars]}..." if len(text) > no_chars else text
+
+
+def parse_bool(value: Any) -> bool:
+    """
+        Parse a value from an argument parser/environment variable from a string/int into a boolean.
+
+        :param value: value to coerce. Non-strings are tested for truthiness as usual.
+        :return: the value as a bool
+    """
+    if not isinstance(value, str):
+        return bool(value)
+
+    normalised = value.strip().lower()
+    if normalised in TRUTHY_STRINGS:
+        return True
+    if normalised in FALSY_STRINGS:
+        return False
+    raise ValueError(f"Cannot interpret {value!r} as a boolean. Use one of {TRUTHY_STRINGS} or {FALSY_STRINGS}.")

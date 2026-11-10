@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import os
 import pandas as pd
 import sqlglot
-from typing import Tuple
+from typing import List, Tuple
 
-import config
 from odata_graph import engine
 from s_expression.operators import Value
 from s_expression.simple_aggregator import SimpleAggregator
@@ -13,17 +11,19 @@ from s_expression.simple_aggregator import SimpleAggregator
 
 class Avg(SimpleAggregator):
     """
-        The AVG expression averages the resulting pivot tables from a sub-expression over a given column.
+        The AVG expression averages the resulting (pivot) tables from a sub-expression over a given column.
     """
     def __call__(self,
                  sql: bool = False,
                  odata4: bool = False,
-                 simplified: bool = False,
+                 pivot: bool = False,
                  offline: bool = False,
                  verbose: bool = False) -> Tuple[Avg, pd.DataFrame]:
+        self._validate_partition_coherence()
         if sql:
-            answer, code_labels = self._execute_sql(simplified=simplified)
+            answer, code_labels, code_definitions = self._execute_sql(pivot=pivot)
             self.mapper = code_labels
+            self.mapper_definitions = code_definitions
         else:
             measure_units = {}
             if isinstance(self.sub_expression, Value) and len(self.selectors) == 0:
@@ -31,6 +31,7 @@ class Avg(SimpleAggregator):
             sub_exp, table = self.sub_expression(offline=offline, odata4=odata4, verbose=verbose)
 
             self.mapper = sub_exp.mapper
+            self.mapper_definitions = sub_exp.mapper_definitions
             self.intermediate_results = [table] + sub_exp.intermediate_results
 
             measure_units = {self.mapper.get(k, k): v for k, v in measure_units.items()}
@@ -42,16 +43,16 @@ class Avg(SimpleAggregator):
         return self, answer
 
     @property
-    def odata3_sql_simplified(self) -> str:
+    def odata3_sql(self) -> str:
         """
-            === Example simplified AVG expression as OData3 SQL ===
-            SELECT Periods, Region, BuildingPhases,
-                   AVG(GITradeHotelsRestaurantsBars_7 + BuildingCostsAlteration_2) AS 'AVG'
+            === Example AVG expression as OData3 SQL ===
+            SELECT Periods, Region,
+                   AVG("BuildingCostsAlteration_2") AS "AVG"
             FROM '<parquet-file>'
-            WHERE Periods IN ('2019JJ00')
-            AND Region IN ('NL01')
+            WHERE Periods = '2019JJ00'
+            AND Region = 'NL01'
             AND BuildingPhases IN ('A041324', 'A041322')
-            GROUP BY Periods, Region, BuildingPhases;
+            GROUP BY Periods, Region;
         """
         if not isinstance(self.sub_expression, Value):  # Aggregate over complex inner query (e.g. AGGJOIN)
             if len(self.selectors) == 0:
@@ -60,7 +61,7 @@ class Avg(SimpleAggregator):
                     SELECT
                         '{str(list(measures)[0])}' AS Measure,
                         AVG(\"{str(list(measures)[0])}\") AS AVG
-                    FROM ({self.sub_expression.odata3_sql_simplified})
+                    FROM ({self.sub_expression.odata3_sql})
                     GROUP BY Measure
                 """
                 return sqlglot.parse_one(sql).sql(pretty=True)
@@ -68,20 +69,13 @@ class Avg(SimpleAggregator):
                 raise NotImplementedError("Can't build SQL aggregations over complex inner queries "
                                           "with a dimension as the aggregation selector yet.")
 
-        value_exps, tables, measures, dimensions = self._get_sub_exp_filters()
-        where_stmts = []
-        for sub_exp in value_exps:
-           where_stmts.append(sqlglot.parse_one(sub_exp.odata3_sql_simplified).find(sqlglot.exp.Where).this)
+        return self._non_pivot_aggregation_sql()
 
-        sql = f"""
-            SELECT
-                {', '.join(str(group) for group, _ in dimensions) + ',' if len(dimensions) > 0 else ''}
-                {self._operator}("{'" + "'.join(map(str, measures))}") AS '{self._operator}'
-            FROM '{os.path.relpath(config.DB_ODATA3_FILES)}/{list(tables)[0]}.parquet'
-            {sqlglot.exp.Where(this=sqlglot.expressions.and_(*where_stmts)).sql()}
-            GROUP BY {', '.join(str(group) for group, _ in dimensions)}
-        """
-        return sqlglot.parse_one(sql).sql(pretty=True)
+    def _non_pivot_measure_combination(self, measures: List[str]) -> str:
+        """Averaging over measures takes the mean of the measure columns per row, i.e. (MeasureA + MeasureB) / 2."""
+        if len(measures) == 1:
+            return super()._non_pivot_measure_combination(measures)
+        return f"({super()._non_pivot_measure_combination(measures)}) / {len(measures)}"
 
 
 if __name__ == '__main__':
@@ -89,8 +83,8 @@ if __name__ == '__main__':
 
     # Single dimension table example
     eval(parse("""
-    (AVG () (JOIN (AverageConsumptionOfElectricity_2) (VALUE 83376ENG (MSR (AverageConsumptionOfElectricity_2)) (DIM BuildingTypesServicesSector (A047461 A047477 A047460)) (DIM FloorareaSize (A025415)) (DIM ConstructionPeriod (ZW25814))) (VALUE 83374ENG (MSR (AverageConsumptionOfElectricity_2)) (DIM EnergyIntensitiesServicesFloorArea (A047466)) (DIM FloorArea (A025413)))))
-    """), sql=True, simplified=True, verbose=True)
+        (AVG (Periods) (VALUE 03753eng (MSR (EnrolledPupilsStudents_2)) (DIM TypeOfEducation (A025279)) (DIM IdeologicalBasisOfTheSchool (A041917)) (DIM Schoolsize (A041906)) (DIM Periods (2004SJ00 2003SJ00))))
+    """), sql=True,verbose=True)
 
     # Multi dimension table example
     eval(parse("""(AVG

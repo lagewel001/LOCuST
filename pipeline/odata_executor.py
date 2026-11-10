@@ -3,27 +3,17 @@
     This module is similar to the ` db_executor`, which does the same for SQL queries.
 """
 import numpy as np
-import operator
 import pandas as pd
 from rdflib import SKOS, QB, DCTERMS as DCT
-from typing import Set, FrozenSet, Tuple, Optional
+from typing import Dict, List, Set, FrozenSet, Tuple
 
 import config
 from odata_graph import engine
-from odata_graph.sparql_controller import QUDT
+from odata_graph.sparql_controller import QUDT, LevelSelection
 from s_expression.mapper import CodeLabelMapper
 from s_expression import Table, Measure, Dimension, uri_to_code
-from utils.custom_types import ComparisonOperator, UnitCompatibilityError
+from utils.custom_types import ComparisonOperator, Connective, COMPARISON_OPERATORS, UnitCompatibilityError
 from utils.global_functions import secure_request
-
-COMPARISON_OPERATORS = {
-    '<': operator.lt,
-    '>': operator.gt,
-    '!=': operator.ne,
-    '<=': operator.le,
-    '>=': operator.ge,
-    '=': operator.eq
-}
 
 class OData3QueryBuilder(object):
     """
@@ -43,6 +33,12 @@ class OData3QueryBuilder(object):
             self.query += '?$filter=' if not self.filters else ' and '
             self.query += f'''((substringof({')) or (substringof('.join(["'" + str(dim) + "'," + str(group) for dim in codes])})))'''
             self.filters = True
+
+    def add_prefix_filter(self, group: Dimension, prefix: str):
+        """Filter a dimension on a code prefix (e.g. all WK-codes) instead of enumerating codes."""
+        self.query += '?$filter=' if not self.filters else ' and '
+        self.query += f"startswith({group},'{prefix}')"
+        self.filters = True
 
     def __str__(self):
         return self.__repr__()
@@ -73,6 +69,12 @@ class OData4QueryBuilder(object):
             self.query += f'''{group} in ('{"', '".join([str(dim) for dim in codes])}')'''
             self.filters = True
 
+    def add_prefix_filter(self, group: Dimension, prefix: str):
+        """Filter a dimension on a code prefix (e.g. all WK-codes) instead of enumerating codes."""
+        self.query += '?$filter=' if not self.filters else ' and '
+        self.query += f"startswith({group},'{prefix}')"
+        self.filters = True
+
     def __str__(self):
         return self.__repr__()
 
@@ -92,12 +94,16 @@ class ODataExecutor(object):
     def __init__(self,
                  table: Table,
                  measures: Set[Measure],
-                 measure_filter: Optional[Tuple[Measure, ComparisonOperator, float]],
-                 dims: Set[Tuple[Dimension, FrozenSet[Dimension]]]):
+                 measure_filters: List[Tuple[Measure, ComparisonOperator, float]],
+                 dims: Set[Tuple[Dimension, FrozenSet[Dimension]]],
+                 filter_connective: Connective = 'AND',
+                 level_filters: Dict[str, LevelSelection] = None):
         self.table = table
         self.measures = measures
-        self.measure_filter = measure_filter
+        self.measure_filters = measure_filters
+        self.filter_connective = filter_connective
         self.dims = dims
+        self.level_filters = level_filters or {}
 
         if config.LANGUAGE == 'nl':
             self._odata4 = True
@@ -105,11 +111,41 @@ class ODataExecutor(object):
             self._odata4 = False
 
         self._odata_query = None
-        self._graph = engine.get_table_graph(table=self.table, include_time_geo_dims=True)
+        # The label graph is fetched lazily in query_odata(), scoped to the codes the OData API actually returns.
+        self._graph = None
+
+    def _filter_observations(self, observations: List[Dict]) -> List[Dict]:
+        """
+            Apply the measure value condition(s) client-side. A single condition keeps only the
+            observations of the filtered measure that satisfy it. Multiple conditions combined with
+            AND/OR work on the dimension context level: a context (the unique combination of dimension
+            values of an observation) survives when all (AND) or any (OR) of the conditioned measures
+            satisfy their condition, after which all observations of the surviving contexts are kept.
+
+            :param observations: OData4(-style) observations, one measure value per observation
+            :returns: the observations that satisfy the measure value condition(s)
+        """
+        if len(self.measure_filters) == 1:
+            msr, op, value = self.measure_filters[0]
+            return [obs for obs in observations if obs['Measure'] == str(msr)
+                    and COMPARISON_OPERATORS[op](obs['Value'], value)]
+
+        non_context_keys = {'ID', 'Id', 'Measure', 'Value', 'ValueAttribute', 'StringValue'}
+        context = lambda obs: tuple((k, obs[k]) for k in sorted(obs) if k not in non_context_keys)
+
+        context_values: Dict[Tuple, Dict[str, float]] = {}
+        for obs in observations:
+            context_values.setdefault(context(obs), {})[obs['Measure']] = obs['Value']
+
+        connective = all if self.filter_connective == 'AND' else any
+        surviving = {ctx for ctx, msr_values in context_values.items()
+                     if connective(str(msr) in msr_values and COMPARISON_OPERATORS[op](msr_values[str(msr)], value)
+                                   for msr, op, value in self.measure_filters)}
+        return [obs for obs in observations if context(obs) in surviving]
 
     def query_odata(self,
                     index_cols: FrozenSet = frozenset({'Measure', 'Unit'}),
-                    friendly_labels: bool = True) -> Tuple[pd.DataFrame, CodeLabelMapper]:
+                    friendly_labels: bool = True) -> Tuple[pd.DataFrame, CodeLabelMapper, CodeLabelMapper]:
         """
             Retrieve values from OData4 and create a pivot table using table, measure and dimension selectors.
 
@@ -117,36 +153,39 @@ class ODataExecutor(object):
                                Defaults to ['Measure', 'Unit']
             :param friendly_labels: map the OData4 codes in the output table to their friendly names.
                                     Set to False when wanting to JOIN the pivot tables at a later stage.
-            :returns: tuple containing a DataFrame pivot table and mapper for codes to labels
+            :returns: tuple containing a DataFrame pivot table, mapper for codes to labels and mapper for codes to definitions
         """
         table = self.table
 
-        # Get friendly names of codes
-        concept_labels = dict(self._graph.subject_objects(SKOS.prefLabel))
-        code_labels = CodeLabelMapper(
-            # MSR/DIM-Concept mapping
-            {str(obs).split(Measure.rdf_ns if obs in Measure.rdf_ns else Dimension.rdf_ns)[-1]: str(concept_labels[concept])
-             for obs, concept in self._graph.subject_objects(QB.concept)} |
-            # Table title
-            {str(table).split(Table.rdf_ns)[-1]: str(title)
-             for table, title in self._graph.subject_objects(DCT.title)}
-        )
+        # For (LEVEL ...) selections with an exactness-proven code prefix, push a startswith filter into the OData
+        # request instead of enumerating (potentially thousands of) codes, which would overflow the request URL.
+        # Time levels match on an infix, which OData can't express positionally, so those keep the enumerated filter.
+        def _add_dim_filter(builder, group: Dimension, codes: Set[Dimension]):
+            selection = self.level_filters.get(str(group))
+            if selection and selection.sql_pattern and selection.sql_pattern[0] == 'like':
+                builder.add_prefix_filter(group, selection.sql_pattern[1].rstrip('%'))
+            else:
+                builder.add_dim_filter(group, codes)
 
         if self._odata4:  # Dutch
             self._odata_query = OData4QueryBuilder(table)
             self._odata_query.add_msr_filter(self.measures)
             for dim in self.dims:
-                self._odata_query.add_dim_filter(dim[0], set(dim[1]))
+                _add_dim_filter(self._odata_query, dim[0], set(dim[1]))
         else:  # English, OData3
             self._odata_query = OData3QueryBuilder(table)
             for dim in self.dims:
-                self._odata_query.add_dim_filter(dim[0], set(dim[1]))
+                _add_dim_filter(self._odata_query, dim[0], set(dim[1]))
             self._odata_query.add_selects(self.measures, {d[0] for d in self.dims})
 
         try:
             observations = secure_request(str(self._odata_query), json=True, max_retries=9, timeout=8)
 
-            if not observations or not observations['value']:
+            if observations is None:
+                raise ValueError("Retrieved OData data is empty.")
+            elif 'error' in observations:
+                raise RuntimeError(observations['error']['message'])
+            elif 'value' not in observations or not observations['value']:
                 raise ValueError("Retrieved OData data is empty.")
             else:
                 observations = observations['value']
@@ -166,13 +205,35 @@ class ODataExecutor(object):
 
                 observations = odata4_observations
 
+            # Fetch friendly labels scoped to the codes present in the response. This keeps the CONSTRUCT bounded.
+            reserved = {'ID', 'Id', 'Measure', 'Value', 'ValueAttribute', 'StringValue'}
+            present_codes = {str(v) for obs in observations for k, v in obs.items() if k not in reserved and v is not None}
+            self._graph = engine.get_table_graph(table=table, geo_time_codes=present_codes)
+
+            # Get friendly names of codes
+            concept_labels = dict(self._graph.subject_objects(SKOS.prefLabel))
+            concept_definitions = dict(self._graph.subject_objects(SKOS.definition))
+
+            code_labels = CodeLabelMapper(
+                # MSR/DIM-Concept mapping
+                {str(obs).split(Measure.rdf_ns if obs in Measure.rdf_ns else Dimension.rdf_ns)[-1]: str(concept_labels[concept])
+                 for obs, concept in self._graph.subject_objects(QB.concept)} |
+                # Table title
+                {str(table).split(Table.rdf_ns)[-1]: str(title)
+                 for table, title in self._graph.subject_objects(DCT.title)}
+            )
+
+            code_definitions = CodeLabelMapper(
+                # MSR/DIM-Concept mapping
+                {str(obs).split(Measure.rdf_ns if obs in Measure.rdf_ns else Dimension.rdf_ns)[-1]: str(concept_definitions[concept])
+                 for obs, concept in self._graph.subject_objects(QB.concept) if concept in concept_definitions}
+            )
+
             # Filter values
             # CBS' API denies the Value filter in OData4 and Measure filters in OData3, so filtering needs
             #  to happen client-side
-            if self.measure_filter:
-                msr, op, value = self.measure_filter
-                observations = [obs for obs in observations if obs['Measure'] == str(msr)
-                                and COMPARISON_OPERATORS[op](obs['Value'], value)]
+            if self.measure_filters:
+                observations = self._filter_observations(observations)
 
             result_df = pd.DataFrame()
             if len(observations) > 0:
@@ -207,6 +268,6 @@ class ODataExecutor(object):
         except (UnitCompatibilityError, SyntaxError) as e:
             raise e
         except Exception as e:
-            raise RuntimeError(f"Failed to retrieve data from OData{'4' if self._odata4 else '3'} request: {str(e)}")
+            raise RuntimeError(f"Failed to retrieve data from OData{'4' if self._odata4 else '3'} request {str(self._odata_query)}: {str(e)}")
 
-        return result_df, code_labels
+        return result_df, code_labels, code_definitions
