@@ -47,10 +47,10 @@
                     LOCuST is a large-scale text-to-SQL benchmark on real-world statistical data provided by <a href="https://www.cbs.nl/en-gb/" target="_blank">Statistics Netherlands</a>.
                     Our benchmark contains over 2,000 English and Dutch tables covering 22 statistical domains. In concrete, our datasets provide the following:
                     <ul>
-                        <li>2,244 tables containing real-world statistics;</li>
+                        <li>2,241 tables containing real-world statistics;</li>
                         <li>table schemas ranging from small (< 5 columns) to very  large (> 1,200 columns);</li>
                         <li>a coverage of 22 statistical domains;</li>
-                        <li>2,567 manually annotated complex questions and answers;</li>
+                        <li>2,559 expert-annotated complex questions and answers;</li>
                         <li>an extensive metadata knowledge graph accompanying the tables, containing labels, descriptions, units, and other associated metadata for covered concepts.</li>
                     </ul>
                     Our benchmark consists of three tasks: (1) table retrieval; (2) query generation, where tables are given; and (3) end-to-end QA,
@@ -73,7 +73,7 @@
                 <p>
                     The total size of the datasets when extracted are 2.03 GB (en) and 4.68 GB (nl)
                     <ul>
-                        <li><a href="https://locustdataset.blob.core.windows.net/locust-dataset-odata3-tables/en.zip">Here you can download the <b>English</b> OData3 tables</a> (592 MB)</li>
+                        <li><a href="https://locustdataset.blob.core.windows.net/locust-dataset-odata3-tables/en.zip">Here you can download the <b>English</b> OData3 tables</a> (591 MB)</li>
                         <li><a href="https://locustdataset.blob.core.windows.net/locust-dataset-odata3-tables/nl.zip">Here you can download the <b>Dutch</b> OData3 tables</a> (1.44 GB)</li>
                     </ul>
 
@@ -117,26 +117,26 @@
                 <div class="card-body">
                     <ul class="nav nav-pills mb-3" id="pills-tab-en" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="pills-en-qg-tab" data-bs-toggle="pill" data-bs-target="#pills-en-qg" type="button" role="tab" aria-controls="pills-en-qg" aria-selected="true">Query generation</button>
+                            <button class="nav-link active" id="pills-en-e2e-tab" data-bs-toggle="pill" data-bs-target="#pills-en-e2e" type="button" role="tab" aria-controls="pills-en-e2e" aria-selected="true">End-to-end QA</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="pills-en-e2e-tab" data-bs-toggle="pill" data-bs-target="#pills-en-e2e" type="button" role="tab" aria-controls="pills-en-e2e" aria-selected="false">End-to-end QA</button>
+                            <button class="nav-link" id="pills-en-qg-tab" data-bs-toggle="pill" data-bs-target="#pills-en-qg" type="button" role="tab" aria-controls="pills-en-qg" aria-selected="false">Query generation</button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="pills-en-tr-tab" data-bs-toggle="pill" data-bs-target="#pills-en-tr" type="button" role="tab" aria-controls="pills-en-tr" aria-selected="false">Table retrieval</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="pills-tabContent-en">
-                        <div class="tab-pane fade show active" id="pills-en-qg" role="tabpanel" aria-labelledby="pills-en-qg-tab">
-                            <table class="table table-striped table-hover">
-                                <thead id="leaderboard-head-en-qg"></thead>
-                                <tbody id="leaderboard-body-en-qg"></tbody>
-                            </table>
-                        </div>
-                        <div class="tab-pane fade" id="pills-en-e2e" role="tabpanel" aria-labelledby="pills-en-e2e-tab">
+                        <div class="tab-pane fade show active" id="pills-en-e2e" role="tabpanel" aria-labelledby="pills-en-e2e-tab">
                             <table class="table table-striped table-hover">
                                 <thead id="leaderboard-head-en-e2e"></thead>
                                 <tbody id="leaderboard-body-en-e2e"></tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane fade" id="pills-en-qg" role="tabpanel" aria-labelledby="pills-en-qg-tab">
+                            <table class="table table-striped table-hover">
+                                <thead id="leaderboard-head-en-qg"></thead>
+                                <tbody id="leaderboard-body-en-qg"></tbody>
                             </table>
                         </div>
                          <div class="tab-pane fade" id="pills-en-tr" role="tabpanel" aria-labelledby="pills-en-tr-tab">
@@ -158,26 +158,26 @@
                 <div class="card-body">
                     <ul class="nav nav-pills mb-3" id="pills-tab-nl" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="pills-nl-qg-tab" data-bs-toggle="pill" data-bs-target="#pills-nl-qg" type="button" role="tab" aria-controls="pills-nl-qg" aria-selected="true">Query generation</button>
+                            <button class="nav-link active" id="pills-nl-e2e-tab" data-bs-toggle="pill" data-bs-target="#pills-nl-e2e" type="button" role="tab" aria-controls="pills-nl-e2e" aria-selected="true">End-to-end QA</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="pills-nl-e2e-tab" data-bs-toggle="pill" data-bs-target="#pills-nl-e2e" type="button" role="tab" aria-controls="pills-nl-e2e" aria-selected="false">End-to-end QA</button>
+                            <button class="nav-link" id="pills-nl-qg-tab" data-bs-toggle="pill" data-bs-target="#pills-nl-qg" type="button" role="tab" aria-controls="pills-nl-qg" aria-selected="false">Query generation</button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="pills-nl-tr-tab" data-bs-toggle="pill" data-bs-target="#pills-nl-tr" type="button" role="tab" aria-controls="pills-nl-tr" aria-selected="false">Table retrieval</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="pills-tabContent-nl">
-                        <div class="tab-pane fade show active" id="pills-nl-qg" role="tabpanel" aria-labelledby="pills-nl-qg-tab">
-                           <table class="table table-striped table-hover">
-                                <thead id="leaderboard-head-nl-qg"></thead>
-                                <tbody id="leaderboard-body-nl-qg"></tbody>
-                            </table>
-                        </div>
-                        <div class="tab-pane fade" id="pills-nl-e2e" role="tabpanel" aria-labelledby="pills-nl-e2e-tab">
+                        <div class="tab-pane fade show active" id="pills-nl-e2e" role="tabpanel" aria-labelledby="pills-nl-e2e-tab">
                             <table class="table table-striped table-hover">
                                 <thead id="leaderboard-head-nl-e2e"></thead>
                                 <tbody id="leaderboard-body-nl-e2e"></tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane fade" id="pills-nl-qg" role="tabpanel" aria-labelledby="pills-nl-qg-tab">
+                           <table class="table table-striped table-hover">
+                                <thead id="leaderboard-head-nl-qg"></thead>
+                                <tbody id="leaderboard-body-nl-qg"></tbody>
                             </table>
                         </div>
                          <div class="tab-pane fade" id="pills-nl-tr" role="tabpanel" aria-labelledby="pills-nl-tr-tab">

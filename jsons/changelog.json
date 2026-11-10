@@ -1,9 +1,23 @@
 [
   {
+    "date": "Nov 10, 2026",
+    "number": "2",
+    "new": [
+      "New baselines: Claude Sonnet 5, GPT 6 Sol, LLama 4 Maverick and Qwen3.8-27B.",
+      "The metadata graph now includes the hierarchical structures of the OData tables (e.g. municipality X is part of province Y).",
+      "Non-pivoted SQL is now the main query format of the benchmark; pivoted SQL is kept as an ablation."
+    ],
+    "fixes": [
+      "Ambiguous questions in the English and Dutch test sets were rewritten or removed (308 English and 299 Dutch questions).",
+      "Models that fail to generate a query now score 0 on all metrics, instead of the question being ignored.",
+      "Several fixes to the gold SQL queries and the selection metrics."
+    ]
+  },
+  {
     "date": "Mar 3, 2026",
     "number": "1",
     "new": [
-      "Initial release of the LOCuST codebase and dataset."
+      "Initial setup of the LOCuST codebase and dataset."
     ]
   }
 ]

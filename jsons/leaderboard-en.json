@@ -1,15 +1,15 @@
 {
   "Query generation": [
-    { "method": "Claude 4.5 Sonnet", "date": "Baseline", "EX_S": 0.03, "EX_L": 0.14, "obsF1": 0.60 },
-    { "method": "Gemini  2.5 Pro", "date": "Baseline", "EX_S": 0.05, "EX_L": 0.23, "obsF1": 0.74 },
-    { "method": "GPT 5.1", "date": "Baseline", "EX_S": 0.04, "EX_L": 0.18, "obsF1": 0.66 },
-    { "method": "LLama 4 Maverick", "date": "Baseline", "EX_S": 0.01, "EX_L": 0.08, "obsF1": 0.52 }
+    { "method": "Claude Sonnet 5", "date": "Baseline", "EX_S": 0.12, "EX_L": 0.16, "obsF1": 0.84 },
+    { "method": "GPT 6 Sol", "date": "Baseline", "EX_S": 0.10, "EX_L": 0.10, "obsF1": 0.87 },
+    { "method": "LLama 4 Maverick", "date": "Baseline", "EX_S": 0.03, "EX_L": 0.06, "obsF1": 0.73 },
+    { "method": "Qwen3.8-27B", "date": "Baseline", "EX_S": 0.09, "EX_L": 0.11, "obsF1": 0.75 }
   ],
   "End-to-end QA": [
-    { "method": "Claude 4.5 Sonnet", "date": "Baseline", "EX_S": 0.03, "EX_L": 0.12, "obsF1": 0.51 },
-    { "method": "Gemini  2.5 Pro", "date": "Baseline", "EX_S": 0.03, "EX_L": 0.20, "obsF1": 0.55 },
-    { "method": "GPT 5.1", "date": "Baseline", "EX_S": 0.03, "EX_L": 0.14, "obsF1": 0.54 },
-    { "method": "LLama 4 Maverick", "date": "Baseline", "EX_S": 0.00, "EX_L": 0.08, "obsF1": 0.35 }
+    { "method": "Claude Sonnet 5", "date": "Baseline", "EX_S": 0.07, "EX_L": 0.11, "obsF1": 0.57 },
+    { "method": "GPT 6 Sol", "date": "Baseline", "EX_S": 0.10, "EX_L": 0.11, "obsF1": 0.62 },
+    { "method": "LLama 4 Maverick", "date": "Baseline", "EX_S": 0.05, "EX_L": 0.07, "obsF1": 0.47 },
+    { "method": "Qwen3.8-27B", "date": "Baseline", "EX_S": 0.07, "EX_L": 0.09, "obsF1": 0.50 }
   ],
   "Table Retrieval": [
     { "method": "BM25+", "date": "Baseline", "acc@2": 0.27, "acc@5": 0.37, "acc@10": 0.45 },
