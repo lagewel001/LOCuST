@@ -1,0 +1,283 @@
+{
+    "model_path": "models/generators/llm_baseline/qwen_sql_model.py",
+    "dataset_path": "/mnt/batch/tasks/shared/LS_root/mounts/clusters/lucas-1xh100-v1/code/Users/azuadmllgg/LOCuST/data/qa_pairs/nl/complex_nl_test.jsonl",
+    "task": "query-only",
+    "query_type": "sql",
+    "avg_input_token_count": 8029.97,
+    "avg_output_token_count": 166.74,
+    "metrics": {
+        "exact_match_accuracy": 0.02,
+        "record_accuracy": 0.1513571428571429,
+        "numeric_recall": 0.45003306878306887,
+        "execution_accuracy": {
+            "strict": 0.06666666666666667,
+            "lenient": 0.08333333333333333
+        },
+        "selection_metrics": {
+            "strict": {
+                "measure_f1": 0.777,
+                "dimension_f1": 0.6823232097267724,
+                "observation_f1": 0.6775669924815296
+            },
+            "lenient": {
+                "measure_f1": 0.9236666666666667,
+                "dimension_f1": 0.8061398016802936,
+                "observation_f1": 0.7942817278235249
+            }
+        },
+        "component_matching": {
+            "select_f1": 0.5051583715848427,
+            "where_f1": 0.7072319162319162,
+            "groupby_f1": 0.6716666666666666,
+            "orderby_f1": 0.92,
+            "pivot_f1": 0.95
+        }
+    },
+    "error_analysis": {
+        "syntax_error": {
+            "by_type": {
+                "VALUE": 4,
+                "SUM": 4,
+                "AVG": 3,
+                "MIN": 4,
+                "MAX": 8,
+                "JOIN": 10,
+                "PROP": 8,
+                "AGGJOIN": 7
+            },
+            "by_theme": {
+                "Energie": 40,
+                "Industrie": 2,
+                "Internationale handel": 1,
+                "Natuur en milieu": 0,
+                "Onderwijs": 12,
+                "Veiligheid en recht": 4
+            }
+        },
+        "formatting_error": {
+            "by_type": {
+                "VALUE": 0,
+                "SUM": 0,
+                "AVG": 0,
+                "MIN": 0,
+                "MAX": 0,
+                "JOIN": 0,
+                "PROP": 0,
+                "AGGJOIN": 0
+            },
+            "by_theme": {
+                "Energie": 0,
+                "Industrie": 0,
+                "Internationale handel": 0,
+                "Natuur en milieu": 0,
+                "Onderwijs": 0,
+                "Veiligheid en recht": 0
+            }
+        },
+        "wrong_agg_func": {
+            "VALUE": 10,
+            "SUM": 3,
+            "AVG": 2,
+            "MIN": 0,
+            "MAX": 2,
+            "JOIN": 6,
+            "PROP": 2,
+            "AGGJOIN": 2
+        },
+        "table_mismatch": 6,
+        "unit_compatability_errors": 0,
+        "coherence_errors": 0,
+        "extra_measures": 34,
+        "missing_measures": 23,
+        "extra_dimensions": 125,
+        "missing_dimensions": 106
+    },
+    "metrics_by_question_type": {
+        "VALUE": {
+            "exact_match_accuracy": 0.029411764705882353,
+            "record_accuracy": 0.13749999999999998,
+            "numeric_recall": 0.5841503267973857,
+            "execution_accuracy": {
+                "strict": 0.04411764705882353,
+                "lenient": 0.07352941176470588
+            },
+            "selection_metrics": {
+                "lenient": {
+                    "measure_f1": 0.9210784313725489,
+                    "dimension_f1": 0.7518014103033256,
+                    "observation_f1": 0.7511304079037329
+                },
+                "strict": {
+                    "measure_f1": 0.8622549019607841,
+                    "dimension_f1": 0.7352533869707605,
+                    "observation_f1": 0.7289490132719242
+                }
+            },
+            "total_questions": 68,
+            "empty_queries": 0
+        },
+        "SUM": {
+            "exact_match_accuracy": 0.0,
+            "record_accuracy": 0.15683760683760686,
+            "numeric_recall": 0.3717948717948718,
+            "execution_accuracy": {
+                "strict": 0.05128205128205128,
+                "lenient": 0.05128205128205128
+            },
+            "selection_metrics": {
+                "lenient": {
+                    "measure_f1": 0.8376068376068375,
+                    "dimension_f1": 0.8072080843574057,
+                    "observation_f1": 0.7170774382312844
+                },
+                "strict": {
+                    "measure_f1": 0.7606837606837606,
+                    "dimension_f1": 0.727373389138095,
+                    "observation_f1": 0.6558238769777232
+                }
+            },
+            "total_questions": 39,
+            "empty_queries": 0
+        },
+        "AVG": {
+            "exact_match_accuracy": 0.07692307692307693,
+            "record_accuracy": 0.18589743589743593,
+            "numeric_recall": 0.34615384615384615,
+            "execution_accuracy": {
+                "strict": 0.11538461538461539,
+                "lenient": 0.15384615384615385
+            },
+            "selection_metrics": {
+                "lenient": {
+                    "measure_f1": 0.9871794871794872,
+                    "dimension_f1": 0.8314724530029843,
+                    "observation_f1": 0.8507513815090275
+                },
+                "strict": {
+                    "measure_f1": 0.8717948717948717,
+                    "dimension_f1": 0.716087837618369,
+                    "observation_f1": 0.7353667661244121
+                }
+            },
+            "total_questions": 26,
+            "empty_queries": 0
+        },
+        "MIN": {
+            "exact_match_accuracy": 0.06060606060606061,
+            "record_accuracy": 0.2828282828282829,
+            "numeric_recall": 0.6424242424242425,
+            "execution_accuracy": {
+                "strict": 0.21212121212121213,
+                "lenient": 0.21212121212121213
+            },
+            "selection_metrics": {
+                "lenient": {
+                    "measure_f1": 1.0,
+                    "dimension_f1": 0.8687509915739646,
+                    "observation_f1": 0.8862311504556775
+                },
+                "strict": {
+                    "measure_f1": 0.8787878787878788,
+                    "dimension_f1": 0.7778340612254304,
+                    "observation_f1": 0.795310876903897
+                }
+            },
+            "total_questions": 33,
+            "empty_queries": 0
+        },
+        "MAX": {
+            "exact_match_accuracy": 0.0,
+            "record_accuracy": 0.3476190476190476,
+            "numeric_recall": 0.4857142857142857,
+            "execution_accuracy": {
+                "strict": 0.14285714285714285,
+                "lenient": 0.2
+            },
+            "selection_metrics": {
+                "lenient": {
+                    "measure_f1": 1.0,
+                    "dimension_f1": 0.7928944341834452,
+                    "observation_f1": 0.8254131623180438
+                },
+                "strict": {
+                    "measure_f1": 0.7714285714285715,
+                    "dimension_f1": 0.5866046237119047,
+                    "observation_f1": 0.6143612060381966
+                }
+            },
+            "total_questions": 35,
+            "empty_queries": 0
+        },
+        "JOIN": {
+            "exact_match_accuracy": 0.0,
+            "record_accuracy": 0.03571428571428571,
+            "numeric_recall": 0.4393395211191822,
+            "execution_accuracy": {
+                "strict": 0.0,
+                "lenient": 0.0
+            },
+            "selection_metrics": {
+                "lenient": {
+                    "measure_f1": 0.8440677966101696,
+                    "dimension_f1": 0.8414775741481321,
+                    "observation_f1": 0.8009447863052821
+                },
+                "strict": {
+                    "measure_f1": 0.7084745762711865,
+                    "dimension_f1": 0.7028121313714535,
+                    "observation_f1": 0.6839249511498536
+                }
+            },
+            "total_questions": 59,
+            "empty_queries": 0
+        },
+        "PROP": {
+            "exact_match_accuracy": 0.0,
+            "record_accuracy": 0.0,
+            "numeric_recall": 0.17460317460317462,
+            "execution_accuracy": {
+                "strict": 0.0,
+                "lenient": 0.0
+            },
+            "selection_metrics": {
+                "lenient": {
+                    "measure_f1": 0.9365079365079364,
+                    "dimension_f1": 0.7583538245235182,
+                    "observation_f1": 0.7346292699468501
+                },
+                "strict": {
+                    "measure_f1": 0.6031746031746031,
+                    "dimension_f1": 0.4837807694950552,
+                    "observation_f1": 0.499825406881156
+                }
+            },
+            "total_questions": 21,
+            "empty_queries": 0
+        },
+        "AGGJOIN": {
+            "exact_match_accuracy": 0.0,
+            "record_accuracy": 0.07894736842105263,
+            "numeric_recall": 0.21052631578947367,
+            "execution_accuracy": {
+                "strict": 0.0,
+                "lenient": 0.0
+            },
+            "selection_metrics": {
+                "lenient": {
+                    "measure_f1": 0.982456140350877,
+                    "dimension_f1": 0.8224921277552857,
+                    "observation_f1": 0.8581078364360097
+                },
+                "strict": {
+                    "measure_f1": 0.6140350877192983,
+                    "dimension_f1": 0.52046783625731,
+                    "observation_f1": 0.547846889952153
+                }
+            },
+            "total_questions": 19,
+            "empty_queries": 0
+        }
+    },
+    "total_questions": 300,
+    "empty_queries": 0
+}

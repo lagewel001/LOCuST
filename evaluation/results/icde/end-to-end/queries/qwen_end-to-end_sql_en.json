@@ -1,0 +1,1552 @@
+{
+    "concentrated milk 1998": {
+        "query": "SELECT Periods, \"ConcentratedMilk_9\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods = '1998JJ00'",
+        "input_token_count": 41108,
+        "output_token_count": 52
+    },
+    "How much gas and electricity did the transportation sector use in 2019": {
+        "query": "SELECT SectorBranchSIC2008, \"NaturalGasDelivered_1\", \"ElectricityDelivered_2\" FROM \"data/en/odata3/82117ENG.parquet\" WHERE SectorBranchSIC2008 = '383100' AND Periods = '2019JJ00'",
+        "input_token_count": 17019,
+        "output_token_count": 89
+    },
+    "What is the average electricity consumption per square meter for communal healthcare buildings and snackbars built from 1994 with a floor area between 250 and 500 square meters?": {
+        "query": "SELECT BuildingTypesServicesSector, AVG(\"AverageConsumptionOfElectricity_2\") AS \"AVG\" FROM \"data/en/odata3/83376ENG.parquet\" WHERE BuildingTypesServicesSector IN ('A047471', 'A047464') AND FloorareaSize = 'A025412' AND ConstructionPeriod = 'ZW25814' GROUP BY BuildingTypesServicesSector",
+        "input_token_count": 14950,
+        "output_token_count": 111
+    },
+    "How much liquid biofuel was consumed in transport in 2007 and 2008?": {
+        "query": "SELECT Periods, SUM(\"TotalTransport_30\") AS \"SUM\" FROM \"data/en/odata3/84596ENG.parquet\" WHERE EnergyCommodities = 'E007000' AND Periods IN ('2007JJ00', '2008JJ00') GROUP BY Periods",
+        "input_token_count": 13022,
+        "output_token_count": 90
+    },
+    "What was the average amount of natural gas supplied to ict businesses in 2016 and 2017?": {
+        "query": "SELECT AVG(\"NaturalGasDelivered_1\") AS \"AVG\" FROM \"data/en/odata3/82117ENG.parquet\" WHERE SectorBranchSIC2008 = '391600' AND Periods IN ('2016JJ00', '2017JJ00')",
+        "input_token_count": 22648,
+        "output_token_count": 87
+    },
+    "How much electricity was supplied to cultural, sports, and recreation facilities in Cranendonck, Coevorden, Cromstrijen, Culemborg, and Cuijk in 2010?": {
+        "query": "SELECT SUM(\"AverageSupplyOfElectricity_2\") AS \"SUM\" FROM \"data/en/odata3/81528ENG.parquet\" WHERE HousingCharacteristics = 'T001100' AND Regions IN ('GM1706', 'GM0109', 'GM0611', 'GM0216', 'GM1684') AND Periods = '2010JJ00'",
+        "input_token_count": 16180,
+        "output_token_count": 112
+    },
+    "What was the average government spending on high school education in years 1950 to 1952 for years when the amount was at least 63 million euros?": {
+        "query": "SELECT AVG(\"TotalSecondaryEducation_6\") AS \"AVG\" FROM \"data/en/odata3/80509eng.parquet\" WHERE Periods IN ('1950JJ00', '1951JJ00', '1952JJ00') AND \"TotalSecondaryEducation_6\" >= 63",
+        "input_token_count": 12617,
+        "output_token_count": 90
+    },
+    "How many total bankruptcies were declared in August 2014 in corops Alkmaar, Utrecht, Kop van Noord-Holland, Zuidwest-Gelderland, and in the equipment rental industry?": {
+        "query": "SELECT TypeOfBankruptcy, SUM(\"PronouncedBankruptcies_1\") AS \"SUM\" FROM \"data/en/odata3/82522ENG.parquet\" WHERE Periods = '2014MM08' AND (Regions IN ('CR18', 'CR17', 'CR16') OR SIC2008 LIKE '%71%') GROUP BY TypeOfBankruptcy",
+        "input_token_count": 13606,
+        "output_token_count": 104
+    },
+    "How much kidney beans were harvested in the Netherlands and how much skimmed milk powder was produced in 2002?": {
+        "query": "SELECT COALESCE(TableA.ArableCrops, TableB.Periods) AS Dimension, TableA.\"GrossYieldTotal_4\" AS \"Kidney beans harvested (1 000 kg)\", TableB.\"SkimmedMilkPowder_8\" AS \"Skimmed milk powder produced (1 000 kg)\" FROM (SELECT ArableCrops, \"GrossYieldTotal_4\" FROM \"data/en/odata3/85636ENG.parquet\" WHERE ArableCrops = 'A042191' AND Regions = 'NL01' AND Periods = '2002JJ00') AS TableA FULL JOIN (SELECT Periods, \"SkimmedMilkPowder_8\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods = '2002JJ00') AS TableB ON TableA.Periods = TableB.Periods",
+        "input_token_count": 10744,
+        "output_token_count": 227
+    },
+    "How many individuals without a business were declared bankrupt abroad in August 2013?": {
+        "query": "SELECT \"PronouncedBankrupcies_1\" FROM \"data/en/odata3/82243ENG.parquet\" WHERE TypeOfBankruptcy = 'A041718' AND Periods = '2013MM08' AND Regions LIKE 'NL%'",
+        "input_token_count": 7110,
+        "output_token_count": 78
+    },
+    "In which year between 2001 and 2004 did Sint-Eustatius have the highest renewable electricity generation?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY CaribbeanNetherlands ORDER BY \"Renewable_8\" DESC) AS rnk,\n        CaribbeanNetherlands,\n        Periods AS \"MAX[Periods]\",\n        \"Renewable_8\"\n    FROM \"data/en/odata3/81154eng.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9002' AND Periods IN ('2001JJ00', '2002JJ00', '2003JJ00', '2004JJ00')\n)\nSELECT *\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 16785,
+        "output_token_count": 169
+    },
+    "What percentage of companies engaged in continuing vocational training activities in 1993?": {
+        "query": "SELECT Periods, \"EnterprisesWithCVTActivities_1\" FROM \"data/en/odata3/81850ENG.parquet\" WHERE Periods = '1993JJ00'",
+        "input_token_count": 53482,
+        "output_token_count": 59
+    },
+    "How much whole milk powder was produced in April and March of 2005": {
+        "query": "SELECT Periods, SUM(\"WholeMilkPowder_7\") AS \"SUM\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods IN ('2005MM03', '2005MM04') GROUP BY Periods",
+        "input_token_count": 30440,
+        "output_token_count": 76
+    },
+    "How much natural gas was delivered to the health and social work sector in 2011, 2019 and 2022 in the city Velsen": {
+        "query": "SELECT AllPeriods, SUM(\"NaturalGasDelivered_1\") AS \"SUM\" FROM \"data/en/odata3/82538ENG.parquet\" WHERE SectorBranchSIC2008 = '422400' AND Regions = 'GM0453' AND AllPeriods IN ('2011JJ00', '2019JJ00', '2022JJ00') GROUP BY AllPeriods",
+        "input_token_count": 11875,
+        "output_token_count": 116
+    },
+    "What was the sum of renewable energy output in Saba between 2015 and 2018": {
+        "query": "SELECT SUM(\"Renewable_8\") AS \"SUM\" FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands = 'GM9003' AND Periods IN ('2015JJ00', '2016JJ00', '2017JJ00', '2018JJ00')",
+        "input_token_count": 10219,
+        "output_token_count": 97
+    },
+    "How much electricity was delivered to the culture, sports, and recreation sector in Amstelveen in 2010?": {
+        "query": "SELECT \"ElectricityDelivered_2\" FROM \"data/en/odata3/82538ENG.parquet\" WHERE SectorBranchSIC2008 = '428100' AND AllPeriods = '2010JJ00' AND Regions = 'GM0362'",
+        "input_token_count": 12563,
+        "output_token_count": 83
+    },
+    "Which had a higher domestic production in 2018: bark or chips, sawdust and other wood particles?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"IndigenousProductionTonsDryMatter_5\" DESC) AS rnk,\n        EnergyCommodities,\n        \"IndigenousProductionTonsDryMatter_5\"\n    FROM \"data/en/odata3/85899ENG.parquet\"\n    WHERE EnergyCommodities IN ('E007230', 'E007231') AND Periods = '2018JJ00'\n)\nSELECT EnergyCommodities, \"IndigenousProductionTonsDryMatter_5\"\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 10975,
+        "output_token_count": 162
+    },
+    "Which had the lowest natural gas consumption in 2010: transportation companies or restaurants and hotels?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"NaturalGasDelivered_1\" ASC) AS rnk, SectorBranchSIC2008, \"NaturalGasDelivered_1\" FROM \"data/en/odata3/82117ENG.parquet\" WHERE SectorBranchSIC2008 IN ('383100', '389100') AND Periods = '2010JJ00') SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 16142,
+        "output_token_count": 127
+    },
+    "How many businesses and organizations went bankrupt in Midden-Noord-Brabant in October 2010?": {
+        "query": "SELECT SUM(\"PronouncedBankruptcies_1\") AS \"SUM\" FROM \"data/en/odata3/82522ENG.parquet\" WHERE TypeOfBankruptcy = 'A047597' AND Regions = 'CR34' AND Periods = '2010MM10'",
+        "input_token_count": 19239,
+        "output_token_count": 84
+    },
+    "How much CO2 emission was prevented in 2016 by using biomass as fuel in transportation?": {
+        "query": "SELECT \"AvoidedEmission_3\" FROM \"data/en/odata3/84918ENG.parquet\" WHERE EnergySourcesTechniques IN ('E006677') AND EnergyApplication = 'E007028' AND Periods = '2016JJ00'",
+        "input_token_count": 13208,
+        "output_token_count": 82
+    },
+    "In which year between 2017 and 2020 did the country import the most tons of branches, tree tops, and stumps as solid biomass?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY 1 ORDER BY \"ImportsTonsDryMatter_6\" DESC) AS rnk,\n        Periods AS \"MAX[Periods]\",\n        \"ImportsTonsDryMatter_6\"\n    FROM \"data/en/odata3/85899ENG.parquet\"\n    WHERE EnergyCommodities = 'E007224'\n    AND Periods IN ('2017JJ00', '2018JJ00', '2019JJ00', '2020JJ00')\n)\nSELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 20484,
+        "output_token_count": 171
+    },
+    "What is the sum of special primary schools with 5001\u201310001 students across the 1996/97 and 1997/98 school years combined?": {
+        "query": "SELECT SUM(\"SchoolsInstitutions_1\") AS \"SUM\" FROM \"data/en/odata3/03753eng.parquet\" WHERE TypeOfEducation = 'A025281' AND Schoolsize = 'A041912' AND Periods IN ('1997SJ00', '1998SJ00')",
+        "input_token_count": 16310,
+        "output_token_count": 95
+    },
+    "What were the changes in protein content and the rent increase excluding harmonisation for regulated rentals from 2017 to 2020?": {
+        "query": "SELECT Periods, \"RentIncreaseExcludingHarmonisation_2\" FROM \"data/en/odata3/83163ENG.parquet\" WHERE TypeOfRental = 'A049497' AND Periods IN ('2017JJ00', '2020JJ00') ORDER BY Periods",
+        "input_token_count": 7444,
+        "output_token_count": 89
+    },
+    "Which type of home in Noord-Holland had the highest average electricity usage in 2016: rental, owner-occupied, or corner houses?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY Regions, Periods ORDER BY \"AverageNetSupplyOfElectricity_3\" DESC) AS rnk,\n        HousingCharacteristics,\n        \"AverageNetSupplyOfElectricity_3\"\n    FROM \"data/en/odata3/81528ENG.parquet\"\n    WHERE HousingCharacteristics IN ('1014800', '1014850', 'ZW25806') AND Regions = 'PV27' AND Periods = '2016JJ00'\n)\nSELECT HousingCharacteristics, \"AverageNetSupplyOfElectricity_3\"\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 12210,
+        "output_token_count": 176
+    },
+    "Total water production Caribbean Netherlands 2022": {
+        "query": "SELECT Periods, SUM(\"Production_13\") AS \"SUM\" FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands = 'CN01' AND Periods = '2022JJ00' GROUP BY Periods",
+        "input_token_count": 21414,
+        "output_token_count": 75
+    },
+    "What is the average expected growth in investments for the electronics and machinery manufacturing sector from 2021 to 2023?": {
+        "query": "SELECT AVG(\"BalanceInvestmentsCurrentYear_106\") AS \"AVG\" FROM \"data/en/odata3/85611ENG.parquet\" WHERE SectorBranchesSIC2008 IN ('307500') AND Periods IN ('2021JJ00', '2022JJ00', '2023JJ00')",
+        "input_token_count": 29577,
+        "output_token_count": 100
+    },
+    "What was the average number of companies and institutions declaring bankruptcy in the cement, lime, and plaster manufacturing sector and overall in the Veluwe region during the first quarter of 2019?": {
+        "query": "SELECT AVG(\"PronouncedBankruptcies_1\") AS \"AVG\" FROM \"data/en/odata3/82522ENG.parquet\" WHERE TypeOfBankruptcy IN ('A047597') AND Regions = 'CR13' AND Periods = '2019KW01'",
+        "input_token_count": 13597,
+        "output_token_count": 85
+    },
+    "How much fossil fuel and CO2 emissions were saved by using shallow geothermal heat without heat pumps from 2012 to 2015?": {
+        "query": "SELECT Periods, SUM(\"AvoidedEnergy_1\") AS \"SUM[AvoidedEnergy_1]\", SUM(\"AvoidedEmission_3\") AS \"SUM[AvoidedEmission_3]\" FROM \"data/en/odata3/84918ENG.parquet\" WHERE EnergySourcesTechniques = 'E006654' AND Periods IN ('2012JJ00', '2013JJ00', '2014JJ00', '2015JJ00') GROUP BY Periods",
+        "input_token_count": 13680,
+        "output_token_count": 136
+    },
+    "Total number of girls enrolled in primary schools on Bonaire from 2009 to 2012, where enrolment exceeds 782 pupils per year": {
+        "query": "SELECT Periods, SUM(\"ParticipantsEnStudents_1\") AS \"SUM\" FROM \"data/en/odata3/84732ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9001' AND Gender = '4000' AND PupilCharacteristics = 'A025301' AND Periods LIKE '200%' AND \"ParticipantsEnStudents_1\" > 782 AND (Periods BETWEEN '2009SJ00' AND '2012SJ00') GROUP BY Periods",
+        "input_token_count": 13807,
+        "output_token_count": 135
+    },
+    "What was the total water production in the Caribbean Netherlands in 2022?": {
+        "query": "SELECT Periods, SUM(\"Production_13\") AS \"SUM\" FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands = 'CN01' AND Periods = '2022JJ00' GROUP BY Periods",
+        "input_token_count": 21142,
+        "output_token_count": 75
+    },
+    "Total native output of bark and chips, sawdust and other wood particles in 2018": {
+        "query": "SELECT Periods, SUM(\"IndigenousProductionTonsDryMatter_5\") AS \"SUM\" FROM \"data/en/odata3/85899ENG.parquet\" WHERE EnergyCommodities IN ('E007230', 'E007231') AND Periods = '2018JJ00' GROUP BY Periods",
+        "input_token_count": 13879,
+        "output_token_count": 95
+    },
+    "What was the total positive change in biogasoline and bio jet fuel stocks for transport in 2008?": {
+        "query": "SELECT SUM(\"StockChanges_18\") AS \"SUM\" FROM \"data/en/odata3/84596ENG.parquet\" WHERE EnergyCommodities IN ('E007000') AND Periods = '2008JJ00' AND \"StockChanges_18\" > 0",
+        "input_token_count": 16752,
+        "output_token_count": 85
+    },
+    "What was the average percentage reduction in CO2 emissions from using the renewable fraction of municipal waste for electricity generation in 2021 and 2022?": {
+        "query": "SELECT AVG(\"AvoidedEmissionRelative_4\") AS \"AVG\" FROM \"data/en/odata3/84918ENG.parquet\" WHERE EnergySourcesTechniques = 'E006661' AND EnergyApplication = 'E006607' AND Periods IN ('2021JJ00', '2022JJ00')",
+        "input_token_count": 20658,
+        "output_token_count": 98
+    },
+    "What share of electricity consumption in 2020 came from other biogas among biogas sources like landfills, sewage water purification, and co-digestion of manure?": {
+        "query": "SELECT \n    SUM(CASE WHEN EnergySourcesTechniques = 'E006586' THEN AvoidedEnergy_1 ELSE 0 END) AS \"OtherBiogas\",\n    SUM(CASE WHEN EnergySourcesTechniques IN ('E006673', 'E006674', 'E006675') THEN AvoidedEnergy_1 ELSE 0 END) AS \"BiogasSources\",\n    ROUND(SUM(CASE WHEN EnergySourcesTechniques = 'E006586' THEN AvoidedEnergy_1 ELSE 0 END) * 100.0 / SUM(CASE WHEN EnergySourcesTechniques IN ('E006673', 'E006674', 'E006675') THEN AvoidedEnergy_1 ELSE 0 END), 2) AS \"%\"\nFROM \"data/en/odata3/84918ENG.parquet\"\nWHERE EnergyApplication = 'E006607' \n  AND Periods = '2020JJ00' \n  AND EnergySourcesTechniques IN ('E006586', 'E006673', 'E006674', 'E006675')",
+        "input_token_count": 16448,
+        "output_token_count": 296
+    },
+    "How many special primary schools with between 5,001 and 10,001 students were there in the 1996/97 and 1997/98 school years?": {
+        "query": "SELECT Periods, SUM(\"SchoolsInstitutions_1\") AS \"SUM\" FROM \"data/en/odata3/03753eng.parquet\" WHERE TypeOfEducation = 'A025281' AND Schoolsize = 'A041912' AND Periods IN ('1996SJ00', '1997SJ00') GROUP BY Periods",
+        "input_token_count": 12740,
+        "output_token_count": 103
+    },
+    "What was the average number of student enrollments for all large primary schools types having over 10K students in 1991 to '92?": {
+        "query": "SELECT AVG(\"EnrolledPupilsStudents_2\") AS \"AVG\" FROM \"data/en/odata3/03753eng.parquet\" WHERE TypeOfEducation IN ('A025280', 'A025281') AND Schoolsize = 'A041913' AND IdeologicalBasisOfTheSchool = 'T001305' AND Periods = '1991SJ00'",
+        "input_token_count": 12147,
+        "output_token_count": 116
+    },
+    "What was the average monthly cheese production by dairy factories in October, November, and December 1998?": {
+        "query": "SELECT AVG(\"Cheese_5\") AS \"AVG\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods IN ('1998MM10', '1998MM11', '1998MM12')",
+        "input_token_count": 9310,
+        "output_token_count": 75
+    },
+    "What was the summed fat content in milk supplied by dairy factories in May and June 2002?": {
+        "query": "SELECT SUM(\"FatContent_2\") AS \"SUM\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods IN ('2002MM05', '2002MM06')",
+        "input_token_count": 17389,
+        "output_token_count": 65
+    },
+    "What was the average of biodiesel blending and production capacity in 2012 and 2013?": {
+        "query": "SELECT AVG(\"HeatOutput_13\" + \"ElectricalPower_17\") AS \"AVG\" FROM \"data/en/odata3/37823eng.parquet\" WHERE Periods IN ('2012JJ00', '2013JJ00')",
+        "input_token_count": 9552,
+        "output_token_count": 77
+    },
+    "How much electricity did solar panels generate in 2004, and what share did this represent of overall electricity use?": {
+        "query": "SELECT Periods, \"GrossProductionWithNormalisation_2\" AS \"SolarProduction_mln_kWh\", \"GrossProductionOfElectricity_5\" AS \"Share_of_Use_pct\" FROM \"data/en/odata3/82610ENG.parquet\" WHERE EnergySourcesTechniques = 'E006590' AND Periods = '2004JJ00'",
+        "input_token_count": 10996,
+        "output_token_count": 101
+    },
+    "Compare water board capital income to total government spending on education and student support from 1984 to 1988.": {
+        "query": "SELECT Periods, SUM(\"TotalGovernmentExpOnEducation_2\" + \"TotalStudentGrantsLoansAndAllow_12\") AS \"SUM\" FROM \"data/en/odata3/80509eng.parquet\" WHERE Periods IN ('1984JJ00', '1985JJ00', '1986JJ00', '1987JJ00', '1988JJ00') GROUP BY Periods",
+        "input_token_count": 14790,
+        "output_token_count": 118
+    },
+    "How much electricity was delivered to public administration, extraterritorial organizations, and recreation sectors in 2018?": {
+        "query": "SELECT SUM(\"ElectricityDelivered_2\") AS \"SUM\" FROM \"data/en/odata3/82117ENG.parquet\" WHERE SectorBranchSIC2008 IN ('417400', '440900', '428100') AND Periods = '2018JJ00'",
+        "input_token_count": 20486,
+        "output_token_count": 93
+    },
+    "What was the average production volume of whole milk powder in dairy plants during February, March, and April 2017?": {
+        "query": "SELECT AVG(\"WholeMilkPowder_7\") AS \"AVG\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods IN ('2017MM02', '2017MM03', '2017MM04')",
+        "input_token_count": 10708,
+        "output_token_count": 78
+    },
+    "What was the supply price including VAT and tax for electricity consumption between 20,000 and 70,000 MWh in 2009?": {
+        "query": "SELECT Periods, VATAndTax, PriceComponents, \"k_20000Until70000MWh_18\" FROM \"data/en/odata3/85666ENG.parquet\" WHERE Periods = '2009JJ00' AND VATAndTax = 'A047659' AND PriceComponents = 'A047657'",
+        "input_token_count": 17342,
+        "output_token_count": 103
+    },
+    "Compare the export value of chemicals in Luxembourg and total export of Saba for the year 2016": {
+        "query": "WITH LuxembourgChemicals AS (\n    SELECT \n        'Luxembourg Chemicals' AS Category,\n        SUM(\"ExportGrowth_1\") AS \"ExportValue\"\n    FROM \"data/en/odata3/84746ENG.parquet\"\n    WHERE Periods = '2016JJ00'\n      AND ExportCharacteristics = 'L008663'\n      AND SITC = 'A018629'\n),\nSabaTotal AS (\n    SELECT \n        'Saba Total' AS Category,\n        SUM(\"ExportGrowth_1\") AS \"ExportValue\"\n    FROM \"data/en/odata3/84746ENG.parquet\"\n    WHERE Periods = '2016JJ00'\n      AND ExportCharacteristics = 'T001082'\n)\nSELECT \n    Category,\n    \"ExportValue\"\nFROM (\n    SELECT * FROM LuxembourgChemicals\n    UNION ALL BY NAME\n    SELECT * FROM SabaTotal\n) AS CombinedData",
+        "input_token_count": 20971,
+        "output_token_count": 250
+    },
+    "whole milk powder april march 2005": {
+        "query": "SELECT Periods, \"WholeMilkPowder_7\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods IN ('2005MM03', '2005MM04')",
+        "input_token_count": 79385,
+        "output_token_count": 66
+    },
+    "How many kilos of concentrated milk were produced in 1998?": {
+        "query": "SELECT SUM(\"ConcentratedMilk_9\") AS \"SUM\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods = '1998JJ00'",
+        "input_token_count": 32539,
+        "output_token_count": 59
+    },
+    "What was the average number of declared bankruptcies among all types of organizations in Gelderland, Drenthe, Overijssel, Frisia, and Flevoland in March 2019?": {
+        "query": "SELECT AVG(\"PronouncedBankruptcies_1\") AS \"AVG\" FROM \"data/en/odata3/82522ENG.parquet\" WHERE TypeOfBankruptcy IN ('A028820', 'A047596', 'A047597') AND Periods = '2019MM03' AND Regions IN ('PV22', 'PV23', 'PV24', 'PV25')",
+        "input_token_count": 10702,
+        "output_token_count": 118
+    },
+    "What was the lowest anticipated increase in investments in paper production and printing industries for 2021?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY Periods ORDER BY \"InvestmentsExpectedGrowth_1\" ASC) AS rnk,\n        Periods,\n        SIC2008 AS \"MIN[SIC2008]\",\n        \"InvestmentsExpectedGrowth_1\"\n    FROM \"data/en/odata3/85209ENG.parquet\"\n    WHERE SIC2008 = '317105' AND Periods = '2021JJ00'\n)\nSELECT Periods, \"MIN[SIC2008]\", \"InvestmentsExpectedGrowth_1\"\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 27903,
+        "output_token_count": 173
+    },
+    "What was the average amount companies gave as scholarships to pre-primary and primary schools from 2015 to 2017?": {
+        "query": "SELECT AVG(\"Companies_5\") AS \"AVG\" FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands = 'CN01' AND Periods IN ('2015JJ00', '2016JJ00', '2017JJ00')",
+        "input_token_count": 57098,
+        "output_token_count": 85
+    },
+    "What is the total amount of natural gas delivered to the health and social work sector in Velsen in 2011, 2019 and 2022?": {
+        "query": "SELECT AllPeriods, SUM(\"NaturalGasDelivered_1\") AS \"SUM\" FROM \"data/en/odata3/82538ENG.parquet\" WHERE SectorBranchSIC2008 = '422400' AND Regions = 'GM0453' AND AllPeriods IN ('2011JJ00', '2019JJ00', '2022JJ00') GROUP BY AllPeriods",
+        "input_token_count": 12364,
+        "output_token_count": 116
+    },
+    "Which industry had the lowest equipment and inventory expenses between 2011 and 2013 for wood products and pharmaceuticals?": {
+        "query": "WITH RankedRows AS (\n    SELECT \n        RANK() OVER (PARTITION BY SectorBranchesSBI2008 ORDER BY \"ShortageOfMaterialAndOrEquipment_87\" ASC) AS rnk,\n        SectorBranchesSBI2008,\n        \"ShortageOfMaterialAndOrEquipment_87\"\n    FROM \"data/en/odata3/85609ENG.parquet\"\n    WHERE SectorBranchesSBI2008 IN ('315800', '323200') AND regexp_matches(Periods, '^201[123]MM\\d{2}$') AND Margin = 'MW00000' AND SeasonalAdjustment = 'A042501'\n)\nSELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 38034,
+        "output_token_count": 201
+    },
+    "Which year between 2020 and 2021 did Bonaire have its lowest water production below 2120": {
+        "query": "WITH RankedRows AS (\n    SELECT \n        RANK() OVER (ORDER BY \"Production_13\" ASC) AS rnk,\n        Periods AS \"MIN[Periods]\",\n        \"Production_13\"\n    FROM \"data/en/odata3/81154eng.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9001'\n        AND Periods IN ('2020JJ00', '2021JJ00')\n        AND \"Production_13\" < 2120\n)\nSELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 9510,
+        "output_token_count": 153
+    },
+    "What was the highest number of households with main water connections in Sint Eustatius in the Caribbean Netherlands during 2020 and 2021?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"Households_11\" DESC) AS rnk,\n        Periods,\n        CaribbeanNetherlands,\n        \"Households_11\" AS \"MAX[Households_11]\"\n    FROM \"data/en/odata3/81154eng.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9002' AND Periods IN ('2020JJ00', '2021JJ00')\n)\nSELECT Periods, CaribbeanNetherlands, \"MAX[Households_11]\"\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 23298,
+        "output_token_count": 165
+    },
+    "In which year between 2018 and 2020 did government aid for students exceed 5112 million euros by the largest amount?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY (\"TotalStudentGrantsLoansAndAllow_12\" - 5112) DESC) AS rnk,\n        Periods,\n        \"TotalStudentGrantsLoansAndAllow_12\"\n    FROM \"data/en/odata3/80509eng.parquet\"\n    WHERE Periods IN ('2018JJ00', '2019JJ00', '2020JJ00')\n)\nSELECT Periods, \"TotalStudentGrantsLoansAndAllow_12\"\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 12868,
+        "output_token_count": 164
+    },
+    "In the 2024/25 school year on Bonaire, which gender had the fewest students enrolled in lower secondary education?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY CaribbeanNetherlands, Periods ORDER BY \"ParticipantsEnStudents_1\" ASC) AS rnk,\n        Gender,\n        CaribbeanNetherlands,\n        Periods,\n        \"ParticipantsEnStudents_1\"\n    FROM \"data/en/odata3/84732ENG.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9001' AND Periods LIKE '2024SJ%' AND PupilCharacteristics = 'A049060' AND Gender IN ('3000', '4000')\n)\nSELECT Gender, \"ParticipantsEnStudents_1\"\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 11297,
+        "output_token_count": 178
+    },
+    "How many individuals declared bankruptcy in July 2022 in the Kop van Noord-Holland and Utrecht regions, and how many when they were younger than 25?": {
+        "query": "SELECT 'Total' AS Category, SUM(\"PronouncedBankrupcies_1\") AS \"SUM\" FROM \"data/en/odata3/82243ENG.parquet\" WHERE Periods = '2022MM07' AND Regions IN ('CR17', 'CR18') AND TypeOfBankruptcy = 'A041716' UNION ALL SELECT 'YoungerThan25' AS Category, SUM(\"PronouncedBankrupcies_1\") AS \"SUM\" FROM \"data/en/odata3/83719ENG.parquet\" WHERE Periods = '2022MM07' AND Age = '41500' AND TypeOfBankruptcy = 'A041716'",
+        "input_token_count": 8507,
+        "output_token_count": 178
+    },
+    "What proportion of communication expenses and employer social insurance contributions in 2017 were attributed to bakery manufacturing compared to other food manufacturing sectors?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, EnterprisesByActivitySIC93) AS Dimension_Measure, SUM(Value) AS \"SUM[Periods]\", SUM(CASE WHEN EnterprisesByActivitySIC93 IN ('158') THEN Value ELSE 0 END) AS \"Bakery\", SUM(CASE WHEN EnterprisesByActivitySIC93 NOT IN ('158') THEN Value ELSE 0 END) AS \"OtherFood\", ROUND(SUM(CASE WHEN EnterprisesByActivitySIC93 IN ('158') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\" FROM (SELECT Measure, Value, Periods, EnterprisesByActivitySIC93 FROM \"data/en/odata3/7055eng.parquet\" UNPIVOT(Value FOR Measure IN (\"SalesPrices_81\", \"NumberOfEmployees_87\"))) WHERE Periods LIKE '2017MM%' AND EnterprisesByActivitySIC93 IN ('151', '155', '157', '158', '150', '159', '1516') GROUP BY Dimension_Measure",
+        "input_token_count": 27350,
+        "output_token_count": 270
+    },
+    "What was the lowest water production value for Bonaire or the wider Caribbean Netherlands in 2022?": {
+        "query": "WITH RankedRows AS (\n    SELECT \n        RANK() OVER (ORDER BY \"Production_13\" ASC) AS rnk,\n        CaribbeanNetherlands AS \"MIN[CaribbeanNetherlands]\",\n        \"Production_13\"\n    FROM \"data/en/odata3/81154eng.parquet\"\n    WHERE CaribbeanNetherlands IN ('GM9001', 'CN01') \n      AND Periods = '2022JJ00'\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 21877,
+        "output_token_count": 137
+    },
+    "What was the share of domestically produced wood-based biomass in 2021 compared to the years 2019 and 2020?": {
+        "query": "SELECT Periods, \"IndigenousProductionTonsDryMatter_5\" AS \"IndigenousProductionTonsDryMatter_5\", \"TotalFinalConsumptionTonsDryMatter_8\" AS \"TotalFinalConsumptionTonsDryMatter_8\" FROM \"data/en/odata3/85899ENG.parquet\" WHERE EnergyCommodities = 'E007220' AND Periods IN ('2019JJ00', '2020JJ00', '2021JJ00')",
+        "input_token_count": 11593,
+        "output_token_count": 134
+    },
+    "What is the average electricity consumption per square meter for clubs with a floor area between 1,000 and 2,500 square meters?": {
+        "query": "SELECT \"AverageConsumptionOfElectricity_2\" FROM \"data/en/odata3/83374ENG.parquet\" WHERE FloorArea = 'A025416' AND EnergyIntensitiesServicesFloorArea = 'A047474'",
+        "input_token_count": 18585,
+        "output_token_count": 74
+    },
+    "In which year between 2000 and 2002 did aerothermal energy for heating and cooling reach its highest share of total energy consumption?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY EnergyApplication ORDER BY \"AvoidedEnergyRelative_2\" DESC) AS rnk,\n        Periods AS \"MAX[Periods]\",\n        \"AvoidedEnergyRelative_2\"\n    FROM \"data/en/odata3/84918ENG.parquet\"\n    WHERE EnergySourcesTechniques = 'E006656'\n        AND EnergyApplication = 'E006608'\n        AND Periods IN ('2000JJ00', '2001JJ00', '2002JJ00')\n)\nSELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 17122,
+        "output_token_count": 173
+    },
+    "How many companies have electricity connections in Sint Eustatius in 2022?": {
+        "query": "SELECT \"Companies_12\" FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands = 'GM9002' AND Periods = '2022JJ00'",
+        "input_token_count": 55493,
+        "output_token_count": 64
+    },
+    "When was the lowest producer confidence recorded for electronics and machinery manufacturing between October 1996 and February 1997?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"ProducerConfidence_1\" ASC) AS rnk,\n        Periods,\n        \"ProducerConfidence_1\"\n    FROM \"data/en/odata3/81234eng.parquet\"\n    WHERE SectorBranchesSIC2008 = '332905'\n        AND Margins = 'MW00000'\n        AND Periods >= '1996MM10'\n        AND Periods <= '1997MM02'\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 15247,
+        "output_token_count": 158
+    },
+    "What was the production quantity of whole milk powder by dairy factories in March and April 2005?": {
+        "query": "SELECT Periods, \"WholeMilkPowder_7\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods IN ('2005MM03', '2005MM04')",
+        "input_token_count": 27622,
+        "output_token_count": 66
+    },
+    "Which year between 2018 and 2022 had the lowest amount of natural gas supplied to trade, transport, and hospitality businesses?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"NaturalGasDelivered_1\" ASC) AS rnk,\n        Periods AS \"MIN[Periods]\",\n        \"NaturalGasDelivered_1\"\n    FROM \"data/en/odata3/82117ENG.parquet\"\n    WHERE SectorBranchSIC2008 = '300006' AND Periods IN ('2018JJ00', '2019JJ00', '2020JJ00', '2021JJ00', '2022JJ00')\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 16225,
+        "output_token_count": 172
+    },
+    "What was the earliest year between 2015 and 16 in which the number of male and female students in practical secondary education in the Caribbean Netherlands was at most 191?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY Periods ASC) AS rnk, Periods, \"ParticipantsEnStudents_1\" FROM \"data/en/odata3/84732ENG.parquet\" WHERE PupilCharacteristics = 'A049059' AND Gender IN ('3000', '4000') AND CaribbeanNetherlands = 'CN01' AND Periods LIKE '2015SJ%' AND \"ParticipantsEnStudents_1\" <= 191) SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 12951,
+        "output_token_count": 140
+    },
+    "Compare the percentage of fossil energy avoided through deep geothermal heat and the percentage of total renewable energy used for heating and cooling in 2013 and 2014.": {
+        "query": "SELECT CONCAT_WS(', ', Periods, Measure) AS Dimension_Measure, SUM(Value) AS \"SUM\" FROM (SELECT Periods, Measure, Value FROM \"data/en/odata3/84918ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"AvoidedEnergyRelative_2\"))) WHERE Periods IN ('2013JJ00', '2014JJ00') AND EnergySourcesTechniques = 'E006595' GROUP BY Dimension_Measure",
+        "input_token_count": 10799,
+        "output_token_count": 126
+    },
+    "What was the net electricity production percentage in 2023 for other biogas, solar photovoltaic, and onshore wind energy?": {
+        "query": "SELECT EnergySourcesTechniques, \"NetProductionOfElectricity_6\" AS \"NetProductionOfElectricity_6\" FROM \"data/en/odata3/82610ENG.parquet\" WHERE Periods = '2023JJ00' AND EnergySourcesTechniques IN ('E006586', 'E006590', 'E006637')",
+        "input_token_count": 10970,
+        "output_token_count": 103
+    },
+    "What was the lowest number of bankruptcies among sole proprietors or companies located outside the Netherlands in April 2012?": {
+        "query": "WITH RankedRows AS (\n    SELECT \n        RANK() OVER (PARTITION BY Regions ORDER BY \"PronouncedBankruptcies_1\" ASC) AS rnk,\n        Regions,\n        TypeOfBankruptcy AS \"MIN[TypeOfBankruptcy]\",\n        \"PronouncedBankruptcies_1\"\n    FROM \"data/en/odata3/82522ENG.parquet\"\n    WHERE TypeOfBankruptcy IN ('A028820', 'A047597') \n      AND Periods = '2012MM04' \n      AND Regions = 'NL01'\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 7062,
+        "output_token_count": 172
+    },
+    "In which year between 2016 and 2020 did the total stock change for liquid biofuels used in transport reach its lowest point?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"StockChanges_18\" ASC) AS rnk,\n        Periods AS \"MIN[Periods]\",\n        \"StockChanges_18\"\n    FROM \"data/en/odata3/84596ENG.parquet\"\n    WHERE EnergyCommodities = 'E006500' AND Periods IN ('2016JJ00', '2017JJ00', '2018JJ00', '2019JJ00', '2020JJ00')\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 27773,
+        "output_token_count": 167
+    },
+    "What proportion of the total change in stock for liquid biofuels in 2017 was accounted for by biodiesel?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, EnergyCommodities) AS Dimension_Measure, SUM(Value) AS \"SUM[Periods]\", SUM(CASE WHEN EnergyCommodities IN ('E007189') THEN Value ELSE 0 END) AS \"E007189\", ROUND(SUM(CASE WHEN EnergyCommodities IN ('E007189') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\" FROM (SELECT Measure, Value, EnergyCommodities, Periods FROM \"data/en/odata3/83140ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"StockChange_7\"))) WHERE Periods IN ('2017JJ00') AND EnergyCommodities IN ('E007182', 'E007189', 'E007194', 'E007213', 'E007214', 'E007188', 'E007212', 'E007216', 'E006582', 'E006583', 'E006566') GROUP BY Dimension_Measure",
+        "input_token_count": 32313,
+        "output_token_count": 295
+    },
+    "What were the other personnel costs in 2013 for the sectors of cocoa and confectionary manufacturing, wholesale of construction materials, and market research and opinion polling?": {
+        "query": "SELECT SectorBranchesSIC2008, \"OtherPersonnelCosts_17\" FROM \"data/en/odata3/83652ENG.parquet\" WHERE Periods = '2013JJ00' AND SectorBranchesSIC2008 IN ('423100', '427700', '800029')",
+        "input_token_count": 41536,
+        "output_token_count": 101
+    },
+    "What was the average number of bankruptcies for all business entities in August 2014 in Alkmaar and surrounding areas, Kop van Noord-Holland, Zuidwest-Gelderland, Utrecht, and in the machinery and equipment rental sector?": {
+        "query": "SELECT AVG(\"PronouncedBankruptcies_1\") AS \"AVG\" FROM \"data/en/odata3/82522ENG.parquet\" WHERE TypeOfBankruptcy IN ('A047597', 'A028820', 'A047596') AND Periods = '2014MM08' AND Regions IN ('CR18', 'CR16', 'CR17', 'PV26')",
+        "input_token_count": 13641,
+        "output_token_count": 118
+    },
+    "Sum of avoided CO2 emissions less than 96 kton from biogas used for transport and heat in 1992": {
+        "query": "SELECT SUM(\"AvoidedEmission_3\") AS \"SUM\" FROM \"data/en/odata3/84918ENG.parquet\" WHERE EnergySourcesTechniques = 'E006583' AND EnergyApplication IN ('E007028', 'E006608') AND Periods = '1992JJ00' AND \"AvoidedEmission_3\" < 96",
+        "input_token_count": 13092,
+        "output_token_count": 110
+    },
+    "What was the average amount parents paid for school activities in special needs primary schools and pre-primary and primary education in 2010?": {
+        "query": "SELECT Periods, AVG(\"ParentalContributionSchoolActivities_24\") AS \"AVG\" FROM \"data/en/odata3/80393eng.parquet\" WHERE EducationSectors IN ('A048578', 'A048577') AND Periods = '2010JJ00' GROUP BY Periods",
+        "input_token_count": 14050,
+        "output_token_count": 94
+    },
+    "Which industry had the lowest equipment and inventory expenses in 2013: wood products or pharmaceuticals?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"InvestmentsRealizedGrowth_2\" ASC) AS rnk, SIC2008 AS \"MIN[SIC2008]\", \"InvestmentsRealizedGrowth_2\" FROM \"data/en/odata3/85209ENG.parquet\" WHERE SIC2008 IN ('315800', '323200') AND Periods = '2013JJ00') SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 28992,
+        "output_token_count": 135
+    },
+    "What was the highest number of postpaid electricity connections in Bonaire between 2016 and 2018?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"Postpaid_4\" DESC) AS rnk,\n        Periods,\n        \"Postpaid_4\"\n    FROM \"data/en/odata3/81154eng.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9001'\n      AND Periods BETWEEN '2016JJ00' AND '2018JJ00'\n)\nSELECT Periods AS \"MAX[Periods]\", \"Postpaid_4\"\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 12085,
+        "output_token_count": 147
+    },
+    "What was the average producer price index for gravel and sand overall, and for domestic sales by agricultural machinery manufacturers in July 2024?": {
+        "query": "SELECT AllProdComCodes, AVG(\"PriceIndexNumbersExcludingExcise_1\") AS \"AVG\" FROM \"data/en/odata3/85770ENG.parquet\" WHERE AllProdComCodes IN ('A052585', 'A016136') AND Periods = '2024MM07' GROUP BY AllProdComCodes",
+        "input_token_count": 34297,
+        "output_token_count": 99
+    },
+    "What was the reliability margin for dengue cases among people with middle education in Bonaire in 2013, and what was the protein level in dairy products that same year?": {
+        "query": "SELECT CONCAT_WS(', ', Table1.TypeOfFigure, Table2.TypeOfFigure) AS Dimension_TypeOfFigure, Table1.\"Total_20\" AS \"ReliabilityMargin[2013JJ00][GM9001][2018740]\", Table2.\"Total_20\" AS \"ProteinLevel[2013JJ00][GM9001][2018740]\" FROM (SELECT TypeOfFigure, \"Total_20\" FROM \"data/en/odata3/82870ENG.parquet\" WHERE TypeOfFigure = 'B000150' AND CaribbeanNetherlands = 'GM9001' AND PersonalCharacteristics = '2018740' AND Periods = '2013JJ00') AS Table1 FULL JOIN (SELECT TypeOfFigure, \"Total_20\" FROM \"data/en/odata3/82293ENG.parquet\" WHERE TypeOfFigure = 'B000150' AND CarribeanNetherlands = 'GM9001' AND PersonalCharacteristics = '2018740' AND Periods = '2013JJ00') AS Table2 ON Table1.TypeOfFigure = Table2.TypeOfFigure",
+        "input_token_count": 13451,
+        "output_token_count": 300
+    },
+    "What was the average amount of CO2 emissions prevented by using biogas for electricity generation from 2018 to 2020?": {
+        "query": "SELECT AVG(\"AvoidedEmission_3\") AS \"AVG\" FROM \"data/en/odata3/84918ENG.parquet\" WHERE EnergySourcesTechniques = 'E006583' AND EnergyApplication = 'E006607' AND Periods IN ('2018JJ00', '2019JJ00', '2020JJ00')",
+        "input_token_count": 13517,
+        "output_token_count": 106
+    },
+    "How many 11 year old boys were enroled as students on Saba in 2010?": {
+        "query": "SELECT \"ParticipantsEnStudents_1\" FROM \"data/en/odata3/84732ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9003' AND PupilCharacteristics = '11100' AND Gender = '3000' AND Periods = '2010SJ00'",
+        "input_token_count": 9365,
+        "output_token_count": 87
+    },
+    "In which year between 2020 and 2023 did companies in specialised business services receive the highest volume of electricity supply?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"ElectricityDelivered_2\" DESC) AS rnk,\n        Periods AS \"MAX[Periods]\",\n        \"ElectricityDelivered_2\"\n    FROM \"data/en/odata3/82117ENG.parquet\"\n    WHERE SectorBranchSIC2008 = '403300'\n        AND Periods BETWEEN '2020JJ00' AND '2023JJ00'\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 28170,
+        "output_token_count": 147
+    },
+    "What safety rating did people on St. Eustatius give during 2017 and 2018": {
+        "query": "SELECT Periods, \"SafetyRating_8\" FROM \"data/en/odata3/82558ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9002' AND Periods IN ('2017JJ00') AND PersonalCharacteristics = 'T009002' AND Accuracy = 'MW00000'",
+        "input_token_count": 20108,
+        "output_token_count": 92
+    },
+    "Which month in late 2008 had the highest cheese output from dairy plants: September or October?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"Cheese_5\" DESC) AS rnk, Periods, \"Cheese_5\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods IN ('2008MM09', '2008MM10')) SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 29364,
+        "output_token_count": 99
+    },
+    "What was the highest government expenditure on senior vocational and general adult secondary education in 1975 and 1974?": {
+        "query": "SELECT Periods, \"SeniorVocAndGenAdultSecEduc_8\" FROM \"data/en/odata3/80509eng.parquet\" WHERE Periods IN ('1975JJ00', '1974JJ00')",
+        "input_token_count": 12188,
+        "output_token_count": 70
+    },
+    "What safety rating did people on Statia give during 2017 and 2018": {
+        "query": "SELECT Periods, \"SafetyRating_8\" FROM \"data/en/odata3/82558ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9003' AND Periods = '2017JJ00'",
+        "input_token_count": 11990,
+        "output_token_count": 67
+    },
+    "What was the smallest amount the government spent on preschools and elementary education in 2007 or 2008?": {
+        "query": "WITH FilteredData AS (\n    SELECT \n        Periods, \n        \"GovernmentExpenditureAndConsumption_1\" AS Value\n    FROM \"data/en/odata3/84122ENG.parquet\"\n    WHERE Periods IN ('2007JJ00', '2008JJ00')\n      AND FunctionsOfGeneralGovernment = 'A000738'\n      AND InstitutionalSectors = 'A044938'\n)\nSELECT \n    MIN(Value) AS \"MIN[Periods]\"\nFROM FilteredData",
+        "input_token_count": 27351,
+        "output_token_count": 147
+    },
+    "How much natural gas was delivered to public administration, extraterritorial organizations, and recreation sectors in 2018?": {
+        "query": "SELECT SectorBranchSIC2008, SUM(\"NaturalGasDelivered_1\") AS \"SUM\" FROM \"data/en/odata3/82117ENG.parquet\" WHERE SectorBranchSIC2008 IN ('417400', '440900', '428100') AND Periods = '2018JJ00' GROUP BY SectorBranchSIC2008",
+        "input_token_count": 9034,
+        "output_token_count": 113
+    },
+    "What proportion of vocational students at level 2 in the security and sports sector in Bonaire was seen in 2020 compared to 2021 and 2022?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, Periods) AS Dimension_Periods, SUM(Value) AS \"SUM\", SUM(CASE WHEN Periods = '2020SJ00' THEN Value ELSE 0 END) AS \"2020SJ00\", ROUND(SUM(CASE WHEN Periods = '2020SJ00' THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\" FROM (SELECT Measure, Value, Periods FROM \"data/en/odata3/84312ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"MBOstudents_1\"))) WHERE CaribbeanNetherlands = 'GM9001' AND EducationLevel = 'A041755' AND FieldsOfEducation = 'A043935' AND Periods IN ('2020SJ00', '2021SJ00', '2022SJ00') GROUP BY Dimension_Periods",
+        "input_token_count": 9378,
+        "output_token_count": 233
+    },
+    "In 2016, what percentage of homes owned by social landlords had no rent increase, and what was the average protein percentage in milk production that year?": {
+        "query": "SELECT COALESCE(TableA.Periods, TableB.Periods) AS Periods, TableA.\"RentUnchanged_2\" AS \"Percentage of homes with no rent increase (%)\", TableB.\"ProteinContent_3\" AS \"Average protein percentage in milk (%)\"\nFROM (SELECT * FROM \"data/en/odata3/84823ENG.parquet\" WHERE TypeOfRental = 'A048270' AND Periods = '2016JJ00') AS TableA\nFULL JOIN (SELECT * FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods = '2016JJ00') AS TableB\nON TableA.Periods = TableB.Periods;",
+        "input_token_count": 6998,
+        "output_token_count": 179
+    },
+    "What proportion in the budgets for 1985 to 1987 went in 1985 to education spending for primary school for students with special needs?": {
+        "query": "SELECT 'SpecialNeedsPrimaryEducation_5' AS Measure, SUM(\"SpecialNeedsPrimaryEducation_5\") AS \"SUM[Periods]\", SUM(CASE WHEN Periods = '1985JJ00' THEN \"SpecialNeedsPrimaryEducation_5\" ELSE 0 END) AS \"1985JJ00\", ROUND(SUM(CASE WHEN Periods = '1985JJ00' THEN \"SpecialNeedsPrimaryEducation_5\" ELSE 0 END) * 100.0 / SUM(\"SpecialNeedsPrimaryEducation_5\"), 2) AS \"%\" FROM \"data/en/odata3/80509eng.parquet\" WHERE Periods IN ('1985JJ00', '1986JJ00', '1987JJ00')",
+        "input_token_count": 12603,
+        "output_token_count": 188
+    },
+    "What was the average amount of fossil energy saved across all uses from 2012 to 2016?": {
+        "query": "SELECT AVG(\"AvoidedEnergy_1\") AS \"AVG\" FROM \"data/en/odata3/84918ENG.parquet\" WHERE EnergySourcesTechniques IN ('T001028') AND EnergyApplication IN ('E007022') AND Periods IN ('2012JJ00', '2013JJ00', '2014JJ00', '2015JJ00', '2016JJ00')",
+        "input_token_count": 19074,
+        "output_token_count": 123
+    },
+    "Total change in stocks for biodiesel and biogasoline in 2019, excluding when the change equals 142 TJ": {
+        "query": "SELECT Periods, SUM(\"StockChange_7\") AS \"SUM\" FROM \"data/en/odata3/83140ENG.parquet\" WHERE EnergyCommodities IN ('E007189', 'E007212', 'E007188', 'E007213') AND Periods = '2019JJ00' AND \"StockChange_7\" != 142 GROUP BY Periods",
+        "input_token_count": 18172,
+        "output_token_count": 119
+    },
+    "How much renewable electricity from hydropower and offshore wind was generated in 2018, and how much electricity was supplied to the culture, sports, and recreation sector that same year?": {
+        "query": "SELECT T1.Periods, T1.\"GrossProductionOfElectricity_2\" AS \"Hydropower and Offshore Wind Electricity Generated\", T2.\"ElectricityDelivered_2\" AS \"Electricity Supplied to Culture, Sports, and Recreation\" FROM (SELECT Periods, SUM(\"GrossProductionOfElectricity_2\") AS \"GrossProductionOfElectricity_2\" FROM \"data/en/odata3/82610ENG.parquet\" WHERE EnergySourcesTechniques IN ('E006587', 'E006638') AND Periods = '2018JJ00' GROUP BY Periods) AS T1 INNER JOIN (SELECT Periods, \"ElectricityDelivered_2\" FROM \"data/en/odata3/82117ENG.parquet\" WHERE SectorBranchSIC2008 = '428100' AND Periods = '2018JJ00') AS T2 ON T1.Periods = T2.Periods",
+        "input_token_count": 9351,
+        "output_token_count": 239
+    },
+    "How much did we import in 2018 on machine equipment, and how much overall on Saba in the same year?": {
+        "query": "SELECT COALESCE(TableA.Periods, TableB.Periods) AS Periods, TableA.\"ImportValue_1\" AS \"ImportValue_Machinery\", TableB.\"ImportValue_1\" AS \"ImportValue_Total\" FROM (SELECT Periods, \"ImportValue_1\" FROM \"data/en/odata3/82659ENG.parquet\" WHERE Periods = '2018JJ00' AND CategoriesOfGoodsSITC = 'A018743') AS TableA FULL JOIN (SELECT Periods, \"ImportValue_1\" FROM \"data/en/odata3/82658ENG.parquet\" WHERE Periods = '2018JJ00' AND CaribbeanNetherlands = 'GM9003') AS TableB ON TableA.Periods = TableB.Periods",
+        "input_token_count": 15651,
+        "output_token_count": 197
+    },
+    "Which type of public school with 3000 to 5000 students had the lowest enrollment in 2015/16: primary or special?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (PARTITION BY Schoolsize ORDER BY \"EnrolledPupilsStudents_2\" ASC) AS rnk, TypeOfEducation AS \"MIN[TypeOfEducation]\", \"EnrolledPupilsStudents_2\" FROM \"data/en/odata3/03753eng.parquet\" WHERE TypeOfEducation IN ('A025301', 'A025279') AND Schoolsize = 'A041911' AND IdeologicalBasisOfTheSchool = 'A041914' AND Periods LIKE '2015SJ%' ) SELECT \"MIN[TypeOfEducation]\", \"EnrolledPupilsStudents_2\" FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 12644,
+        "output_token_count": 183
+    },
+    "What share of whole milk powder production from August to December 2007 was produced in November?": {
+        "query": "SELECT \n    CONCAT_WS(', ', Measure) AS Dimension_Measure,\n    SUM(Value) AS \"SUM[Periods]\",\n    SUM(CASE WHEN Periods IN ('2007MM11') THEN Value ELSE 0 END) AS \"2007MM11\",\n    ROUND(SUM(CASE WHEN Periods IN ('2007MM11') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\"\nFROM (\n    SELECT Measure, Value, Periods \n    FROM \"data/en/odata3/7425eng.parquet\" \n    UNPIVOT(Value FOR Measure IN (\"WholeMilkPowder_7\"))\n) \nWHERE Periods LIKE '2007MM%' AND Periods >= '2007MM08' AND Periods <= '2007MM12'\nGROUP BY Dimension_Measure",
+        "input_token_count": 28092,
+        "output_token_count": 226
+    },
+    "What was the amount of skimmed milk powder produced nationwide and the harvest per hectare of rape seed in Zuid-Nederland in 2023?": {
+        "query": "SELECT \"GrossYieldTotal_4\" FROM \"data/en/odata3/85636ENG.parquet\" WHERE ArableCrops = 'A042180' AND Regions = 'LD04' AND Periods = '2023JJ00';\nSELECT \"GrossYieldPerHa_3\" FROM \"data/en/odata3/85636ENG.parquet\" WHERE ArableCrops = 'A042180' AND Regions = 'NL01' AND Periods = '2023JJ00';",
+        "input_token_count": 17917,
+        "output_token_count": 145
+    },
+    "What proportion of spending per trainee in vocational courses during 2005 differed from 1190 euros, based on data from 2005 and 2010?": {
+        "query": "SELECT Periods, ROUND(SUM(CASE WHEN Periods = '2005JJ00' THEN \"SpentPerParticipant_11\" ELSE 0 END) * 100.0 / 1190, 2) AS \"%\" FROM \"data/en/odata3/81850ENG.parquet\" WHERE Periods IN ('2005JJ00', '2010JJ00') GROUP BY Periods",
+        "input_token_count": 12697,
+        "output_token_count": 116
+    },
+    "Which region, Haarlem or Zaanstreek, had the lowest number of declared bankruptcies among companies for the first quarter of 2020?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"PronouncedBankruptcies_1\" ASC) AS rnk,\n        Regions,\n        \"PronouncedBankruptcies_1\"\n    FROM \"data/en/odata3/82522ENG.parquet\"\n    WHERE TypeOfBankruptcy = 'A047597' AND Periods = '2020KW01' AND Regions IN ('CR12', 'CR22')\n)\nSELECT Regions AS \"MIN[Regions]\", \"PronouncedBankruptcies_1\"\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 10294,
+        "output_token_count": 161
+    },
+    "Which sector, between basic metals production and rubber and plastic products manufacturing, had the highest closing inventory value in 2023?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY Periods ORDER BY \"IndicesStocksOfFinishedGoods_1\" DESC) AS rnk,\n        EnterprisesByActivitySIC93,\n        Periods AS \"MAX[Periods]\",\n        \"IndicesStocksOfFinishedGoods_1\"\n    FROM \"data/en/odata3/85798ENG.parquet\"\n    WHERE EnterprisesByActivitySIC93 IN ('25', '27')\n      AND Periods = '2023JJ00'\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 14345,
+        "output_token_count": 156
+    },
+    "What is the total price index (excluding excise duties) for domestic salt production and exported electric motors and generators in 2018, June 2019, October 2024, and 2024?": {
+        "query": "SELECT Periods, SUM(\"Production_1\") AS \"SUM\" FROM \"data/en/odata3/85942ENG.parquet\" WHERE SIC2008 IN ('334800') AND Periods IN ('2018JJ00', '2019MM06', '2024MM10', '2024JJ00') GROUP BY Periods",
+        "input_token_count": 13929,
+        "output_token_count": 101
+    },
+    "What was the combined producer price index in June 2020 for total sales of agricultural machinery, rigid pipes, bearings, and for the output prices in the electronic components manufacturing sector?": {
+        "query": "SELECT SUM(\"PriceIndexNumbersExcludingExcise_1\") AS \"SUM\" FROM \"data/en/odata3/85770ENG.parquet\" WHERE AllProdComCodes IN ('A016136', 'A052596', 'A015944', 'A015344') AND Periods = '2020MM06'",
+        "input_token_count": 38693,
+        "output_token_count": 104
+    },
+    "What are the sum of sales costs for the information service activities sector from 2017 to 2021?": {
+        "query": "SELECT SUM(\"PriceIndex_1\") AS \"SUM\" FROM \"data/en/odata3/85817ENG.parquet\" WHERE CPA2015 = 'A024199' AND Periods BETWEEN '2017JJ00' AND '2021JJ00'",
+        "input_token_count": 34455,
+        "output_token_count": 83
+    },
+    "What proportion of five-year-old girls are enrolled in primary and secondary schools on St Eustatius compared to boys for the 2024/25 academic year?": {
+        "query": "SELECT Gender, SUM(\"ParticipantsEnStudents_1\") AS \"SUM\", ROUND(SUM(CASE WHEN Gender IN ('4000') THEN \"ParticipantsEnStudents_1\" ELSE 0 END) * 100.0 / SUM(\"ParticipantsEnStudents_1\"), 2) AS \"%\" FROM \"data/en/odata3/84732ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9002' AND PupilCharacteristics IN ('A025301', 'T001578') AND Periods = '2024SJ00' AND Gender IN ('3000', '4000') GROUP BY Gender",
+        "input_token_count": 13928,
+        "output_token_count": 165
+    },
+    "In August 2011, what proportion of declared insolvencies among businesses and organizations occurred in Overig Groningen compared to other regions?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, Regions) AS Dimension_Measure, SUM(Value) AS \"SUM[Periods]\", SUM(CASE WHEN Regions IN ('CR03') THEN Value ELSE 0 END) AS \"CR03\", ROUND(SUM(CASE WHEN Regions IN ('CR03') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\" FROM (SELECT Measure, Value, Periods, Regions FROM \"data/en/odata3/82522ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"PronouncedBankruptcies_1\"))) WHERE Periods IN ('2011MM08') AND TypeOfBankruptcy IN ('A047597') AND Regions LIKE 'CR%' GROUP BY Dimension_Measure",
+        "input_token_count": 13566,
+        "output_token_count": 191
+    },
+    "What was the average amount of additional income in 2020 for amusement parks and the security services sector?": {
+        "query": "SELECT Periods, AVG(\"OtherRevenues_7\") AS \"AVG\" FROM \"data/en/odata3/85211ENG.parquet\" WHERE Periods = '2020JJ00'",
+        "input_token_count": 20396,
+        "output_token_count": 62
+    },
+    "Total combined import value of chemical products from Russia and in total to St. Eustatius in 2021": {
+        "query": "SELECT \n    Periods,\n    SUM(\"ImportValue_1\") AS \"CombinedImportValue\"\nFROM \"data/en/odata3/82658ENG.parquet\"\nWHERE CaribbeanNetherlands = 'GM9002' \n    AND Periods = '2021JJ00'\nGROUP BY Periods",
+        "input_token_count": 24314,
+        "output_token_count": 90
+    },
+    "Which of the islands in the Caribbean Netherlands had the lowest renewable electricity production in 2022, not equal to 2.9 million kWh?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY Periods ORDER BY \"Renewable_8\" ASC) AS rnk,\n        CaribbeanNetherlands AS \"MIN[CaribbeanNetherlands]\",\n        \"Renewable_8\"\n    FROM \"data/en/odata3/81154eng.parquet\"\n    WHERE CaribbeanNetherlands IN ('GM9001', 'GM9002', 'GM9003')\n      AND Periods = '2022JJ00'\n      AND \"Renewable_8\" <> 2.9\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 20448,
+        "output_token_count": 167
+    },
+    "Which area, Urk or Utrecht, received the highest amount of electricity for transport and storage activities in 2010?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (PARTITION BY Periods ORDER BY \"TransportPerformance_1\" DESC) AS rnk, RegionCharacteristics AS \"MAX[RegionCharacteristics]\", \"TransportPerformance_1\" FROM \"data/en/odata3/84687ENG.parquet\" WHERE RegionCharacteristics IN ('PV25', 'PV26') AND Periods = '2010JJ00') SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 14198,
+        "output_token_count": 120
+    },
+    "Which year from 1997 to 1999 saw the least amount of fossil fuel saved thanks to solar panels generating electricity?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"AvoidedEnergy_1\" ASC) AS rnk,\n        Periods AS \"MIN[Periods]\",\n        \"AvoidedEnergy_1\"\n    FROM \"data/en/odata3/84918ENG.parquet\"\n    WHERE EnergySourcesTechniques = 'E006590'\n      AND EnergyApplication = 'E006607'\n      AND Periods IN ('1997JJ00', '1998JJ00', '1999JJ00')\n)\nSELECT *\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 12377,
+        "output_token_count": 168
+    },
+    "What proportion of fossil fuel avoided by wind energy in total energy use in 2009 was from onshore wind?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, EnergySourcesTechniques) AS Dimension_Measure, SUM(Value) AS \"SUM[Periods]\", SUM(CASE WHEN Periods IN ('2009JJ00') THEN Value ELSE 0 END) AS \"2009JJ00\", ROUND(SUM(CASE WHEN Periods IN ('2009JJ00') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\" FROM (SELECT Measure, Value, Periods, EnergySourcesTechniques FROM \"data/en/odata3/84918ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"AvoidedEnergy_1\"))) WHERE Periods IN ('2009JJ00') AND EnergySourcesTechniques IN ('E006637', 'E006588') GROUP BY Dimension_Measure",
+        "input_token_count": 12407,
+        "output_token_count": 211
+    },
+    "In which year between 2016 and 2018 did biogasoline total consumption, excluding values exactly equal to 7146 TJ, reach its peak?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY 1 ORDER BY \"TotalConsumption_19\" DESC) AS rnk,\n        Periods AS \"MAX[Periods]\",\n        \"TotalConsumption_19\"\n    FROM \"data/en/odata3/83989ENG.parquet\"\n    WHERE EnergyCommodities = 'E006568' AND Sectors = 'E007030' AND Periods IN ('2016JJ00', '2017JJ00', '2018JJ00') AND \"TotalConsumption_19\" != 7146\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 19249,
+        "output_token_count": 183
+    },
+    "What was the total sum of biogasoline available for use from 2012 to 2016?": {
+        "query": "SELECT SUM(\"TotalSupply_1\") AS \"SUM\" FROM \"data/en/odata3/84596ENG.parquet\" WHERE EnergyCommodities = 'E007000' AND Periods IN ('2012JJ00', '2013JJ00', '2014JJ00', '2015JJ00', '2016JJ00')",
+        "input_token_count": 13059,
+        "output_token_count": 108
+    },
+    "How much clean post-consumer wood and shreds were exported from The Netherlands in 2022, and how much mineral fuels from Bonaire by ship in 2013?": {
+        "query": "SELECT \"ExportGrowth_1\" FROM \"data/en/odata3/84746ENG.parquet\" WHERE ExportCharacteristics IN ('A018689', 'A018591') AND Periods IN ('2022JJ00', '2013JJ00')",
+        "input_token_count": 20559,
+        "output_token_count": 85
+    },
+    "Years when domestic generation of contaminated recycled wood reached 1844 TJ": {
+        "query": "SELECT Periods, \"IndigenousProduction_1\" FROM \"data/en/odata3/85899ENG.parquet\" WHERE EnergyCommodities = 'E007236' AND \"IndigenousProduction_1\" = 1844",
+        "input_token_count": 11747,
+        "output_token_count": 73
+    },
+    "How many tons of dry solid biomass, including bark, clean recycled wood, paper sludge, and other types, were exported in 2018?": {
+        "query": "SELECT SUM(\"ExportGrowth_1\") AS \"SUM\" FROM \"data/en/odata3/84746ENG.parquet\" WHERE Periods = '2018JJ00' AND ExportCharacteristics IN ('A018553', 'A018693', 'A018689', 'A018562', 'A018680', 'A018655', 'A018780', 'A018696', 'A018642', 'A018541', 'A018577', 'A018571', 'A018840', 'A018539', 'A018817', 'A018671', 'A018769', 'A018527', 'A018528', 'A045276', 'A018525', 'A018857', 'A045279', 'A018677', 'A018658', 'A018587', 'A018733', 'A018592', 'A018621', 'A018714', 'A045281', 'A018753', 'A018763', 'A018560', 'A018855', 'A018851', 'A018666', 'A018678', 'A018601', 'A018745', 'A018549', 'A018629', 'A018530', 'A018614', 'A018829', 'A018809', 'A018685', 'A018789', 'A018630', 'A018706', 'A018534', 'A018637', 'A018590', 'A018819', 'A018545', 'A018596', 'A018743', 'A018628', 'A018607', 'A018850', 'A018815', 'A018859', 'A018647', 'A018827', 'A018617', 'A018811', 'A018804', 'A018742', 'A018724', 'A018834', 'A018540', 'A018524', 'A018526', 'A018529', 'A018531', 'A018532', 'A018533', 'A018535', 'A018536', 'A018537', 'A018538', 'A018542', 'A018543', 'A018544', 'A018546', 'A018547', 'A018548', 'A018550', 'A018551', 'A018552', 'A018554', 'A018555', 'A018556', 'A018557', 'A018558', 'A018559', 'A018561', 'A018563', 'A018564', 'A018565', 'A018566', 'A018567', 'A018568', 'A018569', 'A018570', 'A018572', 'A018573', 'A018574', 'A018575', 'A018576', 'A018578', 'A018579', 'A018580', 'A018581', 'A018582', 'A018583', 'A018584', 'A018585', 'A018586', 'A018588', 'A018589', 'A018591', 'A018593', 'A018594', 'A018595', 'A018597', 'A018598', 'A018599', 'A018600', 'A018602', 'A018603', 'A018604', 'A018605', 'A018606', 'A018608', 'A018609', 'A018610', 'A018613', 'A018615', 'A018616', 'A018618', 'A018619', 'A018620', 'A018622', 'A018623', 'A018624', 'A018625', 'A018626', 'A018627', 'A018631', 'A018632', 'A018633', 'A018634', 'A018635', 'A018636', 'A018638', 'A018639', 'A018640', 'A018641', 'A018643', 'A018644', 'A018645', 'A018646', 'A018648', 'A018649', 'A018651', 'A018652', 'A018653', 'A018654', 'A018656', 'A018657', 'A018659', 'A018660', 'A018661', 'A018662', 'A018663', 'A018664', 'A018665', 'A018667', 'A018668', 'A018669', 'A018670', 'A018672', 'A018673', 'A018674', 'A018675', 'A018676', 'A018679', 'A018681', 'A018682', 'A018683', 'A018684', 'A018686', 'A018687', 'A018688', 'A018690', 'A018691', 'A018692', 'A018694', 'A018695', 'A018697', 'A018698', 'A018699', 'A018700', 'A018701', 'A018702', 'A018703', 'A018704', 'A018705', 'A018707', 'A018708', 'A018709', 'A018710', 'A018711', 'A018712', 'A018713', 'A018715', 'A018716', 'A018717', 'A018718', 'A018719', 'A018720', 'A018721', 'A018722', 'A018723', 'A018725', 'A018726', 'A018727', 'A018728', 'A018729', 'A018730', 'A018731', 'A018732', 'A018734', 'A018735', 'A018736', 'A018737', 'A018738', 'A018739', 'A018740', 'A018741', 'A018744', 'A018746', 'A018747', 'A018748', 'A018749', 'A018750', 'A018751', 'A018752', 'A018754', 'A018755', 'A018756', 'A018757', 'A018758', 'A018759', 'A018760', 'A018761', 'A018762', 'A018764', 'A018765', 'A018766', 'A018767', 'A018768', 'A018770', 'A018771', 'A018772', 'A018773', 'A018774', 'A018775', 'A018776', 'A018777', 'A018778', 'A018779', 'A018781', 'A018782', 'A018783', 'A018785', 'A018786', 'A018787', 'A018788', 'A018790', 'A018791', 'A018792', 'A018793', 'A018794', 'A018795', 'A018796', 'A018798', 'A018799', 'A018800', 'A018801', 'A018802', 'A018803', 'A018805', 'A018806', 'A018807', 'A018810', 'A018812', 'A018813', 'A018814', 'A018816', 'A018818', 'A018820', 'A018821', 'A018822', 'A018823', 'A018824', 'A018825', 'A018826', 'A018828', 'A018830', 'A018831', 'A018832', 'A018833', 'A018835', 'A018836', 'A018837', 'A018838', 'A018839', 'A018841', 'A018842', 'A018843', 'A018844', 'A018845', 'A018846', 'A018847', 'A018848', 'A018849', 'A018852', 'A018854', 'A018856', 'A018858', 'A018860', 'A018861', 'A045277', 'A045278', 'A045280', 'A045282', 'A045283', 'A045284', 'A045285', 'A045286', 'A045287', 'A045288', 'A045289', 'A045290', 'A045291', 'A045292', 'A045293', 'A045294', 'A045295', 'A045296', 'A045297', 'A045298', 'A045299', 'A045300')",
+        "input_token_count": 17418,
+        "output_token_count": 3267
+    },
+    "How much wood-based biomass was exported from the country in 2015?": {
+        "query": "SELECT \"ExportGrowth_1\" FROM \"data/en/odata3/84746ENG.parquet\" WHERE ExportCharacteristics = 'A018553' AND Periods = '2015JJ00'",
+        "input_token_count": 18496,
+        "output_token_count": 67
+    },
+    "Which years did the percentage of normalized electricity produced from biogas fall below one percent between 2019 and 2021?": {
+        "query": "SELECT Periods FROM \"data/en/odata3/82610ENG.parquet\" WHERE EnergySourcesTechniques IN ('E006674', 'E006675', 'E006586', 'E006673', 'E006583') AND Periods IN ('2019JJ00', '2020JJ00', '2021JJ00') AND \"GrossProductionWithNormalisation_4\" < 1",
+        "input_token_count": 12438,
+        "output_token_count": 132
+    },
+    "How much wind power capacity was installed at the end of 2023, and what share of electricity generation came from wind that year?": {
+        "query": "SELECT Periods, \"ElectricalCapacityEndOfYear_8\" AS \"Capacity\", \"GrossProductionWithNormalisation_4\" AS \"ProductionShare\" FROM \"data/en/odata3/82610ENG.parquet\" WHERE EnergySourcesTechniques = 'E006588' AND Periods = '2023JJ00'",
+        "input_token_count": 11352,
+        "output_token_count": 92
+    },
+    "In which year between 2005 and 2007 was the highest use of renewable energy (excluding statistical transfers) recorded for transportation?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY Sectors ORDER BY \"TotalEnergyConsumption_7\" DESC) AS rnk,\n        Periods,\n        \"TotalEnergyConsumption_7\"\n    FROM \"data/en/odata3/83989ENG.parquet\"\n    WHERE Sectors IN ('E007030', 'E007031', 'E007032', 'E007033', 'E007034', 'E007029') AND EnergyCommodities IN ('E006588', 'E006583', 'E006567', 'E006587', 'E006629', 'E006591', 'E006595', 'E006568', 'E006576', 'E006590') AND Periods IN ('2005JJ00', '2006JJ00', '2007JJ00')\n)\nSELECT Periods AS \"MAX[Periods]\", \"TotalEnergyConsumption_7\"\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 14898,
+        "output_token_count": 307
+    },
+    "What was the supply cost per cubic meter for natural gas purchases between 2.8 and 28.4 million m3, without VAT and tax, in the first half of 2017?": {
+        "query": "SELECT Periods, \"k_2843332Until28433324M3_7\" FROM \"data/en/odata3/85666ENG.parquet\" WHERE Periods = '2017HJ01' AND PriceComponents = 'A047657' AND VATAndTax = 'A047661'",
+        "input_token_count": 28676,
+        "output_token_count": 101
+    },
+    "What was the supply cost per kWh for medium electricity usage (between 20 and 500 MWh) in 2018, factoring in taxes but no VAT?": {
+        "query": "SELECT Periods, \"k_20Unitl500MWh_15\" AS \"k_20Unitl500MWh_15\" FROM \"data/en/odata3/85666ENG.parquet\" WHERE VATAndTax = 'A047660' AND Periods = '2018JJ00'",
+        "input_token_count": 19141,
+        "output_token_count": 96
+    },
+    "How many business and institutional bankruptcies were declared in the Netherlands during the third quarter of 2017?": {
+        "query": "SELECT Periods, SUM(\"PronouncedBankruptcies_1\") AS \"SUM\" FROM \"data/en/odata3/82242ENG.parquet\" WHERE TypeOfBankruptcy = 'A047597' AND Periods = '2017KW03' GROUP BY Periods",
+        "input_token_count": 21285,
+        "output_token_count": 84
+    },
+    "Lowest number of business and sole proprietorship bankruptcies declared in Frysia during May 2014": {
+        "query": "WITH RankedRows AS (\n    SELECT \n        RANK() OVER (ORDER BY \"PronouncedBankruptcies_1\" ASC) AS rnk,\n        Regions AS \"MIN[Regions]\",\n        \"PronouncedBankruptcies_1\"\n    FROM \"data/en/odata3/82522ENG.parquet\"\n    WHERE TypeOfBankruptcy IN ('A047597', 'A028820') AND Periods = '2014MM05' AND Regions LIKE 'PV%'\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 7060,
+        "output_token_count": 151
+    },
+    "Average number of sole proprietors declaring bankruptcy in Groot-Rijnmond, Zuidoost-Zuid-Holland, Oost-Zuid-Holland, and Zeeuwsch-Vlaanderen during the second quarter of 2014": {
+        "query": "SELECT AVG(\"PronouncedBankrupcies_1\") AS \"AVG\" FROM \"data/en/odata3/82243ENG.parquet\" WHERE TypeOfBankruptcy = 'A028820' AND Periods = '2014KW02' AND Regions IN ('CR29', 'CR31', 'CR28', 'CR30')",
+        "input_token_count": 11941,
+        "output_token_count": 100
+    },
+    "What was the average number of personal bankruptcies in 2019 for Groningen, Friesland, Drenthe, and Overijssel, considering only cases with 58 or more bankruptcy judgments?": {
+        "query": "SELECT AVG(\"PronouncedBankrupcies_1\") AS \"AVG\" FROM \"data/en/odata3/82243ENG.parquet\" WHERE Regions IN ('PV20', 'PV21', 'PV22', 'PV23') AND Periods = '2019JJ00' AND \"PronouncedBankrupcies_1\" >= 58",
+        "input_token_count": 11853,
+        "output_token_count": 101
+    },
+    "How many individual sole traders were declared bankrupt in Limburg during the second quarter of 2017?": {
+        "query": "SELECT SUM(\"PronouncedBankrupcies_1\") AS \"SUM\" FROM \"data/en/odata3/82243ENG.parquet\" WHERE TypeOfBankruptcy = 'A028820' AND Regions = 'PV31' AND Periods = '2017KW02'",
+        "input_token_count": 19277,
+        "output_token_count": 84
+    },
+    "Did the sentiment indicator for refineries, chemical companies, or repair companies remain at or below 5.7 percent in December 2023 according to the upper 95% confidence interval in seasonally adjusted results?": {
+        "query": "SELECT SectorBranchesSIC2008, \"ProducerConfidence_1\" AS \"ProducerConfidence_1\" FROM \"data/en/odata3/81234eng.parquet\" WHERE SectorBranchesSIC2008 IN ('320005', '300023') AND Margins = 'MBG0095' AND SeasonalAdjustment = 'A042500' AND Periods = '2023MM12'",
+        "input_token_count": 14835,
+        "output_token_count": 125
+    },
+    "For food and beverage manufacturers, what were the seasonally adjusted lower 95% confidence limit values for finished product inventories from May to July 2023, and which months showed levels greater than minus twelve percent?": {
+        "query": "SELECT Periods, \"StocksOfFinishedProducts_4\" FROM \"data/en/odata3/81234eng.parquet\" WHERE SectorBranchesSIC2008 = '307610' AND Margins = 'MOG0095' AND SeasonalAdjustment = 'A042500' AND Periods LIKE '2023MM%' AND Periods >= '2023MM05' AND Periods <= '2023MM07' AND \"StocksOfFinishedProducts_4\" > -12",
+        "input_token_count": 12030,
+        "output_token_count": 143
+    },
+    "What was the anticipated change in investment for companies producing alternative transport equipment in 2015?": {
+        "query": "SELECT Periods, \"InvestmentsExpectedGrowth_1\" FROM \"data/en/odata3/85209ENG.parquet\" WHERE SIC2008 = '340200' AND Periods = '2015JJ00'",
+        "input_token_count": 21008,
+        "output_token_count": 73
+    },
+    "How did actual and forecasted investment growth in the manufacture of other transport equipment compare from 2014 to 2016?": {
+        "query": "SELECT Periods, \"GrossFixedCapitalFormation_63\" AS \"Actual\", \"GrossFixedCapitalFormation_63\" AS \"Forecast\" FROM \"data/en/odata3/85871ENG.parquet\" WHERE InstitutionalSectors = 'A044924' AND Periods IN ('2014JJ00', '2015JJ00', '2016JJ00')",
+        "input_token_count": 38505,
+        "output_token_count": 109
+    },
+    "Show the yearly percentage change in actual investments for the paper manufacturing sector between 2020 and 2022, excluding years with a 6% increase": {
+        "query": "SELECT Periods, \"InvestmentsRealizedGrowth_2\" FROM \"data/en/odata3/85209ENG.parquet\" WHERE SIC2008 = '317100' AND Periods IN ('2020JJ00', '2021JJ00', '2022JJ00') AND \"InvestmentsRealizedGrowth_2\" != 6 ORDER BY Periods",
+        "input_token_count": 14289,
+        "output_token_count": 111
+    },
+    "In which year between 1996 and 1999 did the West Rijn river produce the highest amount of wet sewage sludge?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (PARTITION BY 1 ORDER BY \"TotalWetSludge_81\" DESC) AS rnk, Periods, \"TotalWetSludge_81\" FROM \"data/en/odata3/7477eng.parquet\" WHERE Periods IN ('1996JJ00', '1997JJ00', '1998JJ00', '1999JJ00') AND Regions LIKE 'UnknownRegion%') SELECT Periods AS \"MAX[Periods]\", \"TotalWetSludge_81\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 24256,
+        "output_token_count": 157
+    },
+    "Total count of parallel waste water treatment facilities in Utrecht, Noord-Holland, Zuid-Holland, and Zeeland in 1996": {
+        "query": "SELECT SUM(\"ParallelInstallations_9\") AS \"SUM\" FROM \"data/en/odata3/7477eng.parquet\" WHERE Periods = '1996JJ00' AND Regions IN ('PV26', 'PV27', 'PV28', 'PV29')",
+        "input_token_count": 23927,
+        "output_token_count": 80
+    },
+    "Which industries among wood products, pharmaceuticals, apparel, and other manufacturing had a seasonally adjusted foreign turnover different from 72.7 in 2011?": {
+        "query": "SELECT SectorBranchesSIC2008\nFROM \"data/en/odata3/85842ENG.parquet\"\nWHERE SectorBranchesSIC2008 IN ('315800', '323200', '314000', '342400')\nAND SeasonalAdjustment = 'A042500'\nAND Margins = 'MW00000'\nAND regexp_matches(Periods, '^2011MM[0-9]{2}$')\nAND \"TurnoverLast3Months_1\" != 72.7",
+        "input_token_count": 14232,
+        "output_token_count": 158
+    },
+    "Production value for paper manufacturing and other durable consumer goods industries in 2013": {
+        "query": "SELECT EnterprisesByActivitySIC93, SUM(\"RealisationProduction_72\") AS \"SUM\" FROM \"data/en/odata3/7055eng.parquet\" WHERE EnterprisesByActivitySIC93 IN ('21', '31360') AND regexp_matches(Periods, '^2013MM\\d{2}$') GROUP BY EnterprisesByActivitySIC93",
+        "input_token_count": 12819,
+        "output_token_count": 102
+    },
+    "Which month between August and November 2003 saw the lowest output of skimmed-milk powder by dairy plants?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"SkimmedMilkPowder_8\" ASC) AS rnk,\n        Periods AS \"MIN[Periods]\",\n        \"SkimmedMilkPowder_8\"\n    FROM \"data/en/odata3/7425eng.parquet\"\n    WHERE regexp_matches(Periods, '^2003MM(08|09|10|11)$')\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 10567,
+        "output_token_count": 137
+    },
+    "What was the percentage of protein found in milk produced by dairy factories in January 1997?": {
+        "query": "SELECT \"ProteinContent_3\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods = '1997MM01'",
+        "input_token_count": 28324,
+        "output_token_count": 52
+    },
+    "Which month in early 2011 had the lowest production of milk powder by dairy factories?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"TotalMilkPowder_6\" ASC) AS rnk,\n        Periods AS \"MIN[Periods]\",\n        \"TotalMilkPowder_6\"\n    FROM \"data/en/odata3/7425eng.parquet\"\n    WHERE regexp_matches(Periods, '^\\d{4}MM\\d{2}$') AND Periods LIKE '2011MM%'\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 14693,
+        "output_token_count": 137
+    },
+    "What was the percentage of protein found in milk produced by dairy plants in October, November, and December 2021?": {
+        "query": "SELECT Periods, AVG(\"ProteinContent_3\") AS \"AVG\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods IN ('2021MM10', '2021MM11', '2021MM12') GROUP BY Periods",
+        "input_token_count": 10681,
+        "output_token_count": 84
+    },
+    "Which month between April and July 2018 saw the lowest production volume of condensed milk from dairy factories?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"ConcentratedMilk_9\" ASC) AS rnk,\n        Periods AS \"MIN[Periods]\",\n        \"ConcentratedMilk_9\"\n    FROM \"data/en/odata3/7425eng.parquet\"\n    WHERE regexp_matches(Periods, '^\\d{4}MM\\d{2}$')\n      AND Periods >= '2018MM04'\n      AND Periods <= '2018MM07'\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 11256,
+        "output_token_count": 156
+    },
+    "How many vocational students were enrolled in economics programs in Bonaire during the 2018/19 academic year?": {
+        "query": "SELECT CaribbeanNetherlands, FieldsOfEducation, EducationLevel, Periods, SUM(\"MBOstudents_1\") AS \"SUM\" FROM \"data/en/odata3/84312ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9001' AND FieldsOfEducation = 'A009921' AND Periods LIKE '2018%' GROUP BY CaribbeanNetherlands, FieldsOfEducation, EducationLevel, Periods",
+        "input_token_count": 11592,
+        "output_token_count": 111
+    },
+    "How many students were in total enrolled in MBO entry training for Media and Design in Bonaire from 2017 to 2019 combined?": {
+        "query": "SELECT SUM(\"MBOstudents_1\") AS \"SUM\" FROM \"data/en/odata3/84312ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9001' AND EducationLevel = 'A041751' AND FieldsOfEducation = 'A043929' AND regexp_matches(Periods, '^20(17|18|19)SJ\\d{2}$')",
+        "input_token_count": 12141,
+        "output_token_count": 111
+    },
+    "How many vocational students were enrolled in construction, woodworking, and maintenance programs at the MBO level in Bonaire during the 2023/24 school year?": {
+        "query": "SELECT Periods, SUM(\"MBOstudents_1\") AS \"SUM\" FROM \"data/en/odata3/84312ENG.parquet\" WHERE FieldsOfEducation IN ('A043926') AND EducationLevel = 'T001336' AND CaribbeanNetherlands = 'GM9001' AND Periods LIKE '2023SJ%' GROUP BY Periods",
+        "input_token_count": 12114,
+        "output_token_count": 103
+    },
+    "How many students enrolled in entrance-level vocational training for unclassified study areas in the Caribbean Netherlands during the 2017/18 academic year?": {
+        "query": "SELECT \"MBOstudents_1\" FROM \"data/en/odata3/84312ENG.parquet\" WHERE CaribbeanNetherlands = 'CN01' AND EducationLevel = 'A041751' AND FieldsOfEducation = 'A043941' AND Periods = '2017SJ00'",
+        "input_token_count": 11581,
+        "output_token_count": 90
+    },
+    "How many students of both genders were enrolled in vocational CVQ education in the Caribbean Netherlands during the 2022/23 school year?": {
+        "query": "SELECT Periods, SUM(\"ParticipantsEnStudents_1\") AS \"SUM\" FROM \"data/en/odata3/84732ENG.parquet\" WHERE PupilCharacteristics = 'A049063' AND Gender = 'T001038' AND CaribbeanNetherlands = 'CN01' AND Periods LIKE '2022SJ%' GROUP BY Periods",
+        "input_token_count": 11670,
+        "output_token_count": 101
+    },
+    "How much green energy was generated on Saba from 2018 to 2022?": {
+        "query": "SELECT Periods, SUM(\"Renewable_8\") AS \"SUM\" FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands = 'GM9003' AND Periods IN ('2018JJ00', '2019JJ00', '2020JJ00', '2021JJ00', '2022JJ00') GROUP BY Periods",
+        "input_token_count": 11538,
+        "output_token_count": 114
+    },
+    "Total amount of electricity generated from fossil fuels in the Caribbean Netherlands, Saba, and Sint-Eustatius in 2015": {
+        "query": "SELECT Periods, SUM(\"Fossil_7\") AS \"SUM\" FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands IN ('GM9003', 'GM9002') AND Periods = '2015JJ00' GROUP BY Periods",
+        "input_token_count": 19045,
+        "output_token_count": 84
+    },
+    "What is the highest recorded number of households in Bonaire between 2021 and 2022?": {
+        "query": "SELECT MAX(\"PopulationOnJanuary1st_1\") AS \"MAX\" FROM \"data/en/odata3/83698ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9001' AND Periods IN ('2021JJ00', '2022JJ00') AND Sex = 'T001038' AND Age = '10000' AND MaritalStatus = 'T001019'",
+        "input_token_count": 24802,
+        "output_token_count": 117
+    },
+    "How did the number of households in Sint-Eustatius and the count of Surinamese nationals with temporary permits for other types of work change between 2020 and 2021?": {
+        "query": "SELECT COALESCE(TableA.Periods, TableB.Periods) AS Periods, TableA.\"Households_1\", TableB.\"JobsOfEmployees_1\" FROM (SELECT * FROM \"data/en/odata3/83364ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9002' AND Periods IN ('2020JJ00', '2021JJ00')) AS TableA FULL JOIN (SELECT * FROM \"data/en/odata3/82518ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9002' AND Periods IN ('2020JJ00', '2021JJ00')) AS TableB ON TableA.Periods = TableB.Periods",
+        "input_token_count": 13697,
+        "output_token_count": 182
+    },
+    "How much did Bonaire export in food and mineral fuels during the last quarter of 2019?": {
+        "query": "SELECT SUM(\"ExportGrowth_1\") AS \"SUM\" FROM \"data/en/odata3/84746ENG.parquet\" WHERE ExportCharacteristics IN ('A018524', 'A018591') AND Periods = '2019JJ00'",
+        "input_token_count": 19868,
+        "output_token_count": 81
+    },
+    "What was the total value of goods brought into St. Eustatius in 2016?": {
+        "query": "SELECT CaribbeanNetherlands, Periods, \"ImportValue_1\" FROM \"data/en/odata3/82658ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9002' AND Periods = '2016JJ00'",
+        "input_token_count": 14530,
+        "output_token_count": 71
+    },
+    "How much did Bonaire, Saba, and St. Eustatius spend on importing goods in the last quarter of 2015?": {
+        "query": "SELECT SUM(\"ImportValue_1\") AS \"SUM\" FROM \"data/en/odata3/82658ENG.parquet\" WHERE CaribbeanNetherlands IN ('GM9001', 'GM9002', 'GM9003') AND Periods = '2015KW04'",
+        "input_token_count": 20569,
+        "output_token_count": 83
+    },
+    "Which island in the Caribbean Netherlands had the highest import value in the second quarter of 2014?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"ImportValue_1\" DESC) AS rnk,\n        CaribbeanNetherlands AS \"MAX[CaribbeanNetherlands]\",\n        \"ImportValue_1\"\n    FROM \"data/en/odata3/82658ENG.parquet\"\n    WHERE Periods = '2014KW02'\n)\nSELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 18171,
+        "output_token_count": 116
+    },
+    "What proportion of people with intermediate education in Saba reported nuisance in their neighbourhood during 2017/2018, including the reliability margin?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, Accuracy) AS Dimension_Measure, \"TotalReportedNuisance_1\" AS Value FROM \"data/en/odata3/82557ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9003' AND PersonalCharacteristics = '2018740' AND Periods = '2017JJ00' AND Accuracy IN ('MW00000', 'B000150')",
+        "input_token_count": 12896,
+        "output_token_count": 118
+    },
+    "What is the average typical electricity usage per square meter for small-space motor repair shops and companies and outdoor sports facilities built after 1994 and public office locations with medium-sized floor space?": {
+        "query": "SELECT AVG(\"AverageConsumptionOfElectricity_2\") AS \"AVG\" FROM \"data/en/odata3/83376ENG.parquet\" WHERE BuildingTypesServicesSector IN ('A047461', 'A047477') AND ConstructionPeriod = 'ZW25814' AND FloorareaSize IN ('A025412', 'A025413') UNION ALL SELECT AVG(\"AverageConsumptionOfElectricity_2\") AS \"AVG\" FROM \"data/en/odata3/83376ENG.parquet\" WHERE BuildingTypesServicesSector = 'A047466' AND FloorareaSize IN ('A025416', 'A025417')",
+        "input_token_count": 16490,
+        "output_token_count": 182
+    },
+    "What was the percentage of people with arthrosis in their hips or knees in the Caribbean Netherlands in 2017 for those aged 15-24 and those 65 or older with a high education level, and what was the fat content percentage in the same year?": {
+        "query": "SELECT 'Not available' AS Response",
+        "input_token_count": 12317,
+        "output_token_count": 23
+    },
+    "What were the reported parking problems in St. Eustatius during 2017/2018 among men, women, and people aged 45 and older?": {
+        "query": "SELECT \n    CASE \n        WHEN PersonalCharacteristics = '3000' THEN 'Men'\n        WHEN PersonalCharacteristics = '4000' THEN 'Women'\n        WHEN PersonalCharacteristics = '21100' THEN '45 years or older'\n    END AS \"PersonalCharacteristics\",\n    \"ParkingIssues_13\" AS \"ParkingIssues_13\"\nFROM \"data/en/odata3/82557ENG.parquet\"\nWHERE \n    CaribbeanNetherlands = 'GM9002' \n    AND Periods = '2017JJ00' \n    AND PersonalCharacteristics IN ('3000', '4000', '21100')\n    AND Accuracy = 'MW00000';",
+        "input_token_count": 13481,
+        "output_token_count": 195
+    },
+    "In 2017 on Bonaire, what was the rate of heavy tobacco use among low-educated adults, and how much protein was found in dairy products that year?": {
+        "query": "SELECT COALESCE(Table1.Periods, Table2.Periods) AS Periods, Table1.\"HeavySmokersInThePopulation_2\", Table2.\"ProteinContent_3\" FROM (SELECT * FROM \"data/en/odata3/82292ENG.parquet\" WHERE PersonalCharacteristics = '2018700' AND CarribeanNetherlands = 'GM9001' AND TypeOfFigure = 'MW00000' AND Periods = '2017JJ00') AS Table1 FULL JOIN (SELECT * FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods = '2017JJ00') AS Table2 ON Table1.Periods = Table2.Periods",
+        "input_token_count": 11476,
+        "output_token_count": 183
+    },
+    "How many individual business owner bankruptcies occurred in December 2012 across the regions Het Gooi en Vechtstreek, The Hague, Leiden en Bollenstreek, and Delft en Westland?": {
+        "query": "SELECT SUM(\"PronouncedBankruptcies_1\") AS \"SUM\" FROM \"data/en/odata3/82522ENG.parquet\" WHERE TypeOfBankruptcy = 'A028820' AND Periods = '2012MM12' AND Regions IN ('CR24', 'CR27', 'CR26', 'CR28')",
+        "input_token_count": 14467,
+        "output_token_count": 99
+    },
+    "What was the anticipated change in investment for companies manufacturing electrical equipment in 2013 and how did it trend between 2013 and 2016?": {
+        "query": "SELECT Periods, \"InvestmentsExpectedGrowth_1\" FROM \"data/en/odata3/85209ENG.parquet\" WHERE SIC2008 = '334800' AND Periods BETWEEN '2013JJ00' AND '2016JJ00' ORDER BY Periods",
+        "input_token_count": 17098,
+        "output_token_count": 88
+    },
+    "In Bonaire during the 2018/19 school year, how many students were enrolled in MBO level 2 technology programs and how many male students were attending practical secondary education?": {
+        "query": "WITH MBO_Students AS (\n    SELECT CaribbeanNetherlands, Periods, SUM(\"MBOstudents_1\") AS \"MBO_Level2_Tech_Students\"\n    FROM \"data/en/odata3/84312ENG.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9001'\n      AND Periods = '2018SJ00'\n      AND EducationLevel = 'A041755'\n      AND FieldsOfEducation = 'A009922'\n    GROUP BY CaribbeanNetherlands, Periods\n),\nPractical_Sec_Edu_Male AS (\n    SELECT CaribbeanNetherlands, Periods, SUM(\"ParticipantsEnStudents_1\") AS \"Practical_Sec_Edu_Male_Students\"\n    FROM \"data/en/odata3/84732ENG.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9001'\n      AND Periods = '2018SJ00'\n      AND PupilCharacteristics = 'A049059'\n      AND Gender = '3000'\n    GROUP BY CaribbeanNetherlands, Periods\n)\nSELECT \n    COALESCE(MBO_Students.CaribbeanNetherlands, Practical_Sec_Edu_Male.CaribbeanNetherlands) AS CaribbeanNetherlands,\n    COALESCE(MBO_Students.Periods, Practical_Sec_Edu_Male.Periods) AS Periods,\n    MBO_Students.\"MBO_Level2_Tech_Students\",\n    Practical_Sec_Edu_Male.\"Practical_Sec_Edu_Male_Students\"\nFROM MBO_Students\nFULL JOIN Practical_Sec_Edu_Male\nON MBO_Students.CaribbeanNetherlands = Practical_Sec_Edu_Male.CaribbeanNetherlands\nAND MBO_Students.Periods = Practical_Sec_Edu_Male.Periods;",
+        "input_token_count": 10876,
+        "output_token_count": 431
+    },
+    "Total electricity use for public offices, outdoor sports facilities, and car-related service buildings, for sports facilities and car-related buildings built since 1994 sized up to 250 m2 and public offices between 500\u20131,000 m2": {
+        "query": "WITH CombinedData AS (\n    SELECT \n        BuildingTypesServicesSector AS Dimension1,\n        FloorareaSize AS Dimension2,\n        NULL AS Dimension3,\n        \"AverageConsumptionOfElectricity_2\" AS Value\n    FROM \"data/en/odata3/83376ENG.parquet\"\n    WHERE BuildingTypesServicesSector IN ('A047477', 'A047460')\n      AND FloorareaSize = 'A025415'\n      AND ConstructionPeriod = 'ZW25814'\n    UNION ALL BY NAME\n    SELECT \n        BuildingTypesServicesSector,\n        FloorareaSize,\n        NULL,\n        \"AverageConsumptionOfElectricity_2\"\n    FROM \"data/en/odata3/83376ENG.parquet\"\n    WHERE BuildingTypesServicesSector = 'A047466'\n      AND FloorareaSize = 'A025413'\n    UNION ALL BY NAME\n    SELECT \n        BuildingTypesServicesSector,\n        FloorareaSize,\n        ConstructionPeriod,\n        \"AverageConsumptionOfElectricity_2\"\n    FROM \"data/en/odata3/83376ENG.parquet\"\n    WHERE BuildingTypesServicesSector IN ('A047477', 'A047460')\n      AND FloorareaSize = 'A025415'\n      AND ConstructionPeriod = 'ZW25814'\n)\nSELECT SUM(Value) AS \"SUM\"\nFROM CombinedData",
+        "input_token_count": 12431,
+        "output_token_count": 363
+    },
+    "How many hydropower plants were operational at the end of 1994 and 1995, and what was the number of deaths in men aged 80 to 85 due to unknown causes during those years?": {
+        "query": "SELECT Periods, SUM(\"TotalDeaths_1\") AS \"TotalDeaths\" FROM \"data/en/odata3/37979eng.parquet\" WHERE Gender = '3000' AND Periods IN ('1994JJ00', '1995JJ00') GROUP BY Periods",
+        "input_token_count": 22748,
+        "output_token_count": 79
+    },
+    "What was the expected growth rate of investments in the chemical manufacturing industry in 2021 compared to 2020?": {
+        "query": "WITH Values AS (\n    SELECT \n        Periods,\n        \"ExpenditureRDOnInHouseActivities_3\"\n    FROM \"data/en/odata3/84985ENG.parquet\"\n    WHERE SectorBranchesSIC2008 = '320700'\n      AND Periods IN ('2020JJ00', '2021JJ00')\n)\nSELECT \n    2021JJ00 AS \"2021\", \n    2020JJ00 AS \"2020\", \n    ROUND((2021JJ00 - 2020JJ00) * 100.0 / 2020JJ00, 2) AS \"Growth Rate\"\nFROM (\n    SELECT \n        SUM(CASE WHEN Periods = '2021JJ00' THEN \"ExpenditureRDOnInHouseActivities_3\" ELSE 0 END) AS 2021JJ00,\n        SUM(CASE WHEN Periods = '2020JJ00' THEN \"ExpenditureRDOnInHouseActivities_3\" ELSE 0 END) AS 2020JJ00\n    FROM Values\n)",
+        "input_token_count": 15690,
+        "output_token_count": 299
+    },
+    "What was the electricity network cost per kWh for medium-sized businesses (between 2 and 20 GWh) in 2019, excluding VAT but including other taxes?": {
+        "query": "SELECT \"k_500Until2000MWh_16\" AS \"NetworkPricePerkWh\" FROM \"data/en/odata3/85666ENG.parquet\" WHERE VATAndTax = 'A047660' AND Periods = '2019JJ00' AND PriceComponents = 'A047658'",
+        "input_token_count": 18473,
+        "output_token_count": 98
+    },
+    "What was the average import value of machinery on Bonaire and total import value of Saba in 2018?": {
+        "query": "SELECT AVG(\"ImportValue_1\") AS \"AVG\" FROM \"data/en/odata3/82659ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9001' AND CategoriesOfGoodsSITC = 'A018743' AND Periods = '2018JJ00' UNION ALL SELECT SUM(\"ImportValue_1\") AS \"SUM\" FROM \"data/en/odata3/82658ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9003' AND Periods = '2018JJ00'",
+        "input_token_count": 9733,
+        "output_token_count": 143
+    },
+    "Compare the electricity usage per square meter in secondary schools of 2000 to 5000 m2 with that in old public office buildings of medium size": {
+        "query": "SELECT 'No data available' AS result",
+        "input_token_count": 12484,
+        "output_token_count": 24
+    },
+    "What was the average number of vocational students at level 3 in fields like IT and healthcare in Bonaire for 2011/12?": {
+        "query": "SELECT AVG(\"MBOstudents_1\") AS \"AVG\" FROM \"data/en/odata3/84312ENG.parquet\" WHERE EducationLevel = 'A041759' AND FieldsOfEducation IN ('A043930', 'A043939') AND CaribbeanNetherlands = 'GM9001' AND Periods = '2011SJ12'",
+        "input_token_count": 13626,
+        "output_token_count": 107
+    },
+    "In which school year did Bonaire have the lowest number of students, under 13, enrolled in MBO level 4 media and design programs?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"MBOstudents_1\" ASC) AS rnk,\n        Periods AS \"MIN[Periods]\",\n        \"MBOstudents_1\"\n    FROM \"data/en/odata3/84312ENG.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9001'\n      AND FieldsOfEducation = 'A043929'\n      AND EducationLevel = 'A041763'\n) \nSELECT * \nFROM RankedRows \nWHERE rnk = 1",
+        "input_token_count": 26294,
+        "output_token_count": 150
+    },
+    "In which year between 2010 and 2013 did the output of electricity from biogas reach its lowest level below 1005 million kWh?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"GrossProductionWithNormalisation_1\" ASC) AS rnk,\n        Periods AS \"MIN[Periods]\",\n        \"GrossProductionWithNormalisation_1\"\n    FROM \"data/en/odata3/82610ENG.parquet\"\n    WHERE Periods IN ('2010JJ00', '2011JJ00', '2012JJ00', '2013JJ00')\n      AND EnergySourcesTechniques = 'E006583'\n      AND \"GrossProductionWithNormalisation_1\" < 1005\n)\nSELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 12424,
+        "output_token_count": 185
+    },
+    "What percentage of people aged 15 to 24 in the Caribbean Netherlands were victims of violent crimes in 2017/2018, considering the reliability margin?": {
+        "query": "SELECT \n    \"VictimsOfViolentCrimes_2\", \n    \"B000150\" AS \"ReliabilityMargin\"\nFROM \"data/en/odata3/82559ENG.parquet\"\nWHERE \n    CaribbeanNetherlands = 'CN01' \n    AND PersonalCharacteristics = '53050' \n    AND Periods = '2017JJ00' \n    AND Accuracy = 'B000150';",
+        "input_token_count": 15596,
+        "output_token_count": 127
+    },
+    "How did rent increase excluding harmonisation and milk protein content change from 2017 to 2020?": {
+        "query": "SELECT Periods, \"RentIncreaseExcludingHarmonisation_2\" FROM \"data/en/odata3/83163ENG.parquet\" WHERE TypeOfRental = 'T001549' AND Periods IN ('2017JJ00', '2020JJ00') ORDER BY Periods",
+        "input_token_count": 7334,
+        "output_token_count": 89
+    },
+    "What is the mean electricity usage in retail and wholesale buildings (without cooling) built since 1994, comparing those with 2,500\u20135,000 m2 to those with 1,000\u20132,500 m2 of floor space?": {
+        "query": "SELECT FloorareaSize, AVG(\"AverageConsumptionOfElectricity_2\") AS \"AVG\" FROM \"data/en/odata3/83376ENG.parquet\" WHERE EnergyIntensitiesServicesFloorArea IN ('A047457', 'A047459') AND ConstructionPeriod = 'ZW25814' AND FloorareaSize IN ('A025416', 'A025417') GROUP BY FloorareaSize",
+        "input_token_count": 11469,
+        "output_token_count": 121
+    },
+    "Which level of schooling had the lowest education spending per capita in 2009: higher professional or university education?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY Periods ORDER BY \"PerCapita_57\" ASC) AS rnk,\n        Periods,\n        EducationSectors AS \"MIN[EducationSectors]\",\n        \"PerCapita_57\"\n    FROM \"data/en/odata3/80393eng.parquet\"\n    WHERE Periods = '2009JJ00'\n    AND EducationSectors IN ('A048426', 'A048427')\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 15168,
+        "output_token_count": 155
+    },
+    "What was the average government spending on secondary education between 1996 and 2000?": {
+        "query": "SELECT AVG(\"TotalSecondaryEducation_6\") AS \"AVG\" FROM \"data/en/odata3/80509eng.parquet\" WHERE Periods BETWEEN '1996JJ00' AND '2000JJ00'",
+        "input_token_count": 12801,
+        "output_token_count": 69
+    },
+    "What was the prevalence of hip or knee arthrosis in the Caribbean Netherlands in 2017 among different age groups and individuals with a high level of education, and what was the fat content of milk at that time?": {
+        "query": "SELECT PersonalCharacteristics, \"ArthrosisOfHipsOrKnees_13\" FROM \"data/en/odata3/82291ENG.parquet\" WHERE CarribeanNetherlands = 'CN01' AND Periods = '2017JJ00' AND PersonalCharacteristics IN ('53050', '53310', '53715', '80200', '2018790') AND TypeOfFigure = 'MW00000'",
+        "input_token_count": 12327,
+        "output_token_count": 131
+    },
+    "Combined total producer-confidence balance for finished goods inventory in the manufacturing sector for February and March 2003": {
+        "query": "SELECT SUM(\"StocksOfFinishedProducts_4\") AS \"SUM\" FROM \"data/en/odata3/81234eng.parquet\" WHERE SectorBranchesSIC2008 = '307500' AND Periods IN ('2003MM02', '2003MM03') AND Margins = 'MW00000' AND SeasonalAdjustment = 'A042500'",
+        "input_token_count": 32598,
+        "output_token_count": 115
+    },
+    "How much electricity is typically used per square meter in buildings like restaurants, car repair shops, bars, and offices with a floor area of 250 to 500 m2 built since 1994?": {
+        "query": "SELECT AVG(\"AverageConsumptionOfElectricity_2\") AS \"AVG\" FROM \"data/en/odata3/83376ENG.parquet\" WHERE FloorareaSize = 'A025412' AND BuildingTypesServicesSector IN ('A047462', 'A047463', 'A047461', 'A047466', 'A047467') AND ConstructionPeriod = 'ZW25814'",
+        "input_token_count": 15273,
+        "output_token_count": 126
+    },
+    "Which island in the Caribbean Netherlands had the highest number of electricity connections for households and businesses in 2021, with the value reaching 2005?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"TotalHouseholdsAndCompanies_10\" DESC) AS rnk,\n        CaribbeanNetherlands AS \"MAX[CaribbeanNetherlands]\",\n        \"TotalHouseholdsAndCompanies_10\"\n    FROM \"data/en/odata3/81154ENG.parquet\"\n    WHERE Periods = '2021JJ00' AND CaribbeanNetherlands LIKE 'GM%' AND \"TotalHouseholdsAndCompanies_10\" = 2005\n)\nSELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 28304,
+        "output_token_count": 149
+    },
+    "How did overall water production in the Caribbean Netherlands in 2023 compare to the production levels of metal product manufacturing in the same year in the entirety of The Netherlands?": {
+        "query": "SELECT COALESCE(TableA.Periods, TableB.Periods) AS Periods, TableA.\"Production\" AS \"WaterProduction_CaribbeanNetherlands\", TableB.\"ProducerConfidence\" AS \"MetalProductManufacturing_Netherlands\" FROM (SELECT * FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands = 'CN01' AND Periods = '2023JJ00') AS TableA FULL JOIN (SELECT * FROM \"data/en/odata3/81234eng.parquet\" WHERE SectorBranchesSIC2008 = '328105' AND Margins = 'MW00000' AND SeasonalAdjustment = 'A042500' AND regexp_matches(Periods, '^2023MM\\d{2}$')) AS TableB ON TableA.Periods = TableB.Periods",
+        "input_token_count": 8914,
+        "output_token_count": 211
+    },
+    "What was the average number of individual bankruptcies in both the Zeeuwsch-Vlaanderen region and among people aged 35-39 and 45-49 in the first quarter of 2013?": {
+        "query": "SELECT AVG(\"PronouncedBankrupcies_1\") AS \"AVG\" FROM \"data/en/odata3/82243ENG.parquet\" WHERE TypeOfBankruptcy = 'A041718' AND Regions = 'CR31' AND Periods = '2013KW01'",
+        "input_token_count": 10466,
+        "output_token_count": 85
+    },
+    "How many students were enrolled in lower secondary classes on St Eustatius and what was the count of public primary school with 3000 pupils in NL during the 2022 acadeemic year?": {
+        "query": "SELECT CONCAT_WS(', ', CaribbeanNetherlands, PupilCharacteristics, Gender, Periods) AS Dimension, SUM(\"ParticipantsEnStudents_1\") AS \"SUM\" FROM \"data/en/odata3/84732ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9002' AND PupilCharacteristics = 'A049060' AND Gender = 'T001038' AND Periods LIKE '2022SJ%' GROUP BY CaribbeanNetherlands, PupilCharacteristics, Gender, Periods;",
+        "input_token_count": 13675,
+        "output_token_count": 132
+    },
+    "How many households were there in St. Eustatius, and how many people in Bonaire earned a gross annual wage of 50,000 to 99,999 dollars in accommodation and food services jobs in 2022?": {
+        "query": "SELECT 'Households in St. Eustatius' AS \"Metric\", SUM(\"Households_1\") AS \"Value\" FROM \"data/en/odata3/83364ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9002' AND Periods = '2022JJ00' AND Characteristics = '1050010' UNION ALL BY NAME SELECT 'Jobs in Bonaire with wage 50k-99k in accommodation and food services' AS \"Metric\", SUM(\"JobsOfEmployees_1\") AS \"Value\" FROM \"data/en/odata3/82519ENG.parquet\" WHERE CarribeanNetherlands = 'GM9001' AND Periods = '2022JJ00' AND SectorBranchesSIC2008 = '389100' AND EarningGroups = 'A045228'",
+        "input_token_count": 14879,
+        "output_token_count": 216
+    },
+    "Total amount of electricity supplied to specialized business services from 2012 to 2014, where delivery exceeded 1138 million kWh": {
+        "query": "SELECT SUM(\"ElectricityDelivered_2\") AS \"SUM\" FROM \"data/en/odata3/82117ENG.parquet\" WHERE SectorBranchSIC2008 = '403300' AND Periods IN ('2012JJ00', '2013JJ00', '2014JJ00') AND \"ElectricityDelivered_2\" > 1138",
+        "input_token_count": 26012,
+        "output_token_count": 111
+    },
+    "In Bonaire during 2021, what was the percentage of women and of people aged 45-64 and 65+ with high blood pressure, and how does that compare to the dairy fat content for the same year?": {
+        "query": "WITH HypertensionData AS (\n    SELECT \n        PersonalCharacteristics,\n        \"Hypertension_14\"\n    FROM \"data/en/odata3/82291ENG.parquet\"\n    WHERE CarribeanNetherlands = 'GM9001'\n      AND Periods = '2021JJ00'\n      AND TypeOfFigure = 'MW00000'\n      AND PersonalCharacteristics IN ('4000', '53715', '80200')\n),\nDairyFatData AS (\n    SELECT \n        \"MilkAndMilkProducts_6\" AS DairyFat\n    FROM \"data/en/odata3/82292ENG.parquet\"\n    WHERE CarribeanNetherlands = 'GM9001'\n      AND Periods = '2021JJ00'\n      AND TypeOfFigure = 'MW00000'\n      AND PersonalCharacteristics = 'T009002'\n)\nSELECT \n    h.PersonalCharacteristics,\n    h.\"Hypertension_14\",\n    d.DairyFat\nFROM HypertensionData h\nCROSS JOIN DairyFatData d;",
+        "input_token_count": 14531,
+        "output_token_count": 293
+    },
+    "Show the trends for the share of male employees taking vocational trainings and spending on hotels for every five years starting from 1999 until 2015": {
+        "query": "SELECT Periods, \"MaleEmployees_4\", \"SpentPerEmployee_10\" FROM \"data/en/odata3/81850ENG.parquet\" WHERE Periods IN ('1999JJ00', '2004JJ00', '2009JJ00', '2014JJ00') ORDER BY Periods",
+        "input_token_count": 41955,
+        "output_token_count": 96
+    },
+    "How many students were enrolled in public secondary schools in the Netherlands and in the MBO level 2 health and welfare domain in Bonaire for the 2014 school year, specifically in secondary schools with 201 to 501 students?": {
+        "query": "SELECT CaribbeanNetherlands, SUM(\"MBOstudents_1\") AS \"SUM\" FROM \"data/en/odata3/84312ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9001' AND FieldsOfEducation = 'A043939' AND EducationLevel = 'A041755' AND Periods = '2014SJ00' GROUP BY CaribbeanNetherlands",
+        "input_token_count": 23355,
+        "output_token_count": 107
+    },
+    "How much electricity on average did corner houses in the province of Groningen use in 2022?": {
+        "query": "SELECT Periods, AVG(\"AverageNetSupplyOfElectricity_3\") AS \"AVG\" FROM \"data/en/odata3/81528ENG.parquet\" WHERE HousingCharacteristics = 'ZW25806' AND Regions = 'PV20' AND Periods = '2022JJ00' GROUP BY Periods",
+        "input_token_count": 13797,
+        "output_token_count": 91
+    },
+    "How did the import value change of animal and plant oils on Bonaire compare the the import value changes between Bonaire and St. Eustatius in 2014?": {
+        "query": "WITH BonaireOils AS (\n    SELECT \n        \"ImportValue_1\",\n        LAG(\"ImportValue_1\") OVER (ORDER BY Periods) AS PrevImportValue\n    FROM \"data/en/odata3/82659ENG.parquet\"\n    WHERE CategoriesOfGoodsSITC = 'A018612'\n      AND Periods IN ('2013JJ00', '2014JJ00')\n),\nBonaireTotal AS (\n    SELECT \n        \"ImportValue_1\",\n        LAG(\"ImportValue_1\") OVER (ORDER BY Periods) AS PrevImportValue\n    FROM \"data/en/odata3/82658ENG.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9001'\n      AND Periods IN ('2013JJ00', '2014JJ00')\n),\nStEustatiusTotal AS (\n    SELECT \n        \"ImportValue_1\",\n        LAG(\"ImportValue_1\") OVER (ORDER BY Periods) AS PrevImportValue\n    FROM \"data/en/odata3/82658ENG.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9002'\n      AND Periods IN ('2013JJ00', '2014JJ00')\n)\nSELECT \n    (B.\"ImportValue_1\" - B.PrevImportValue) AS \"BonaireOilsChange\",\n    (BT.\"ImportValue_1\" - BT.PrevImportValue) AS \"BonaireTotalChange\",\n    (S.\"ImportValue_1\" - S.PrevImportValue) AS \"StEustatiusChange\"\nFROM BonaireOils B\nJOIN BonaireTotal BT ON B.Periods = BT.Periods AND B.Periods = '2014JJ00'\nJOIN StEustatiusTotal S ON S.Periods = '2014JJ00';",
+        "input_token_count": 13882,
+        "output_token_count": 470
+    },
+    "What was the mean amount spent per person on continuing vocational training, excluding personal absences, averaged across 2010 and 2015?": {
+        "query": "SELECT AVG(\"SpentPerEmployee_10\") AS \"AVG\" FROM \"data/en/odata3/81850ENG.parquet\" WHERE Periods IN ('2010JJ00', '2015JJ00')",
+        "input_token_count": 28432,
+        "output_token_count": 70
+    },
+    "What's the average producer price index without excise taxes for salt extraction activities and exports of electric motors over 2018 to 2024?": {
+        "query": "SELECT AVG(\"PriceIndexNumbersExcludingExcise_1\") AS \"AVG\" FROM \"data/en/odata3/85770ENG.parquet\" WHERE AllProdComCodes IN ('A012500', 'A015591') AND Periods LIKE '20%JJ00' AND Periods BETWEEN '2018JJ00' AND '2024JJ00'",
+        "input_token_count": 46192,
+        "output_token_count": 109
+    },
+    "How much was typically spent per person on continuing education including personal absence costs in 2015, and what was the typical price of an existing home that year?": {
+        "query": "SELECT COALESCE(TableA.Periods, TableB.Periods) AS Periods, TableA.\"AveragePurchasePrice_7\" AS \"SpentPerPerson\", TableB.\"AveragePurchasePrice_7\" AS \"PriceOfExistingHome\" FROM (SELECT * FROM \"data/en/odata3/83625ENG.parquet\" WHERE Periods = '2015JJ00' AND Regions = 'NL01') AS TableA FULL JOIN (SELECT * FROM \"data/en/odata3/85791ENG.parquet\" WHERE Periods = '2015JJ00' AND TypeOfDwelling = 'T001100') AS TableB ON TableA.Periods = TableB.Periods",
+        "input_token_count": 9693,
+        "output_token_count": 179
+    },
+    "Which month between Feb and Apr 1996 saw the highest production of milk powder, excluding months when it was 13946 tons?": {
+        "query": "WITH FilteredData AS (\n    SELECT \n        Periods,\n        \"TotalMilkPowder_6\"\n    FROM \"data/en/odata3/7425eng.parquet\"\n    WHERE Periods LIKE '1996MM%' AND Periods IN ('1996MM02', '1996MM03', '1996MM04') AND \"TotalMilkPowder_6\" <> 13946\n),\nRankedData AS (\n    SELECT \n        Periods,\n        \"TotalMilkPowder_6\",\n        RANK() OVER (ORDER BY \"TotalMilkPowder_6\" DESC) AS rnk\n    FROM FilteredData\n)\nSELECT \n    Periods,\n    \"TotalMilkPowder_6\"\nFROM RankedData\nWHERE rnk = 1",
+        "input_token_count": 27660,
+        "output_token_count": 210
+    },
+    "How many people were in total declared bankrupt in December 2013 coming either from Zeeland, Noord-Brabant and Limburg, or being 40 years old?": {
+        "query": "SELECT SUM(\"PronouncedBankrupcies_1\") AS \"SUM\" FROM \"data/en/odata3/82243ENG.parquet\" WHERE TypeOfBankruptcy = 'A041716' AND Periods = '2013MM12' AND Regions IN ('PV29', 'PV30', 'PV31')",
+        "input_token_count": 11687,
+        "output_token_count": 94
+    },
+    "What share of the natural gas supplied to cultural, sports, and recreational organizations in Gulpen-Wittem in the period 2015-2018 was supplied in 2015": {
+        "query": "SELECT CONCAT_WS(', ', Measure, SectorBranchSIC2008) AS Dimension_Measure, SUM(Value) AS \"SUM[AllPeriods]\", SUM(CASE WHEN AllPeriods IN ('2015JJ00') THEN Value ELSE 0 END) AS \"2015JJ00\", ROUND(SUM(CASE WHEN AllPeriods IN ('2015JJ00') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\" FROM (SELECT Measure, Value, AllPeriods, SectorBranchSIC2008 FROM \"data/en/odata3/82538ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"NaturalGasDelivered_1\"))) WHERE AllPeriods IN ('2015JJ00', '2016JJ00', '2017JJ00', '2018JJ00') AND SectorBranchSIC2008 IN ('428100') AND Regions IN ('GM1729') GROUP BY Dimension_Measure",
+        "input_token_count": 12598,
+        "output_token_count": 256
+    },
+    "In which years did higher education receive zero funding from EU subsidies?": {
+        "query": "SELECT Periods, \"EUSubsidies_16\" FROM \"data/en/odata3/80393eng.parquet\" WHERE EducationSectors = 'A048425' AND \"EUSubsidies_16\" = 0",
+        "input_token_count": 13948,
+        "output_token_count": 75
+    },
+    "What is the highest percentage of people with an intermediate or high level of education in St. Eustatius who never feel unsafe during 2017/2018?": {
+        "query": "SELECT MAX(\"NeverFeelsUnsafe_4\") AS \"MAX[NeverFeelsUnsafe_4]\" FROM \"data/en/odata3/82558ENG.parquet\" WHERE PersonalCharacteristics IN ('2018740', '2018790') AND CaribbeanNetherlands = 'GM9002' AND Accuracy = 'MW00000' AND Periods = '2017JJ00'",
+        "input_token_count": 12383,
+        "output_token_count": 111
+    },
+    "What was the net production of electricity from other biogas, solar photovoltaic, and onshore wind energy in 2023, as a percentage of total electricity use?": {
+        "query": "SELECT SUM(CASE WHEN EnergySourcesTechniques IN ('E006586', 'E006590', 'E006637') THEN \"NetProductionOfElectricity_6\" ELSE 0 END) * 100.0 / SUM(CASE WHEN EnergySourcesTechniques = 'T001028' THEN \"NetProductionOfElectricity_6\" ELSE 0 END) AS \"percentage\" FROM \"data/en/odata3/82610ENG.parquet\" WHERE Periods = '2023JJ00' AND EnergySourcesTechniques IN ('E006586', 'E006590', 'E006637', 'T001028')",
+        "input_token_count": 11003,
+        "output_token_count": 184
+    },
+    "What percentage of males experienced problems with speeding cars in their neighbourhood in Statia in 2013?": {
+        "query": "SELECT \"SpeedingCars_12\" AS \"PERCENT\" FROM \"data/en/odata3/82557ENG.parquet\" WHERE PersonalCharacteristics = '3000' AND CaribbeanNetherlands = 'GM9002' AND Accuracy = 'MW00000' AND Periods = '2013JJ00'",
+        "input_token_count": 12450,
+        "output_token_count": 93
+    },
+    "During the months of February, March, and April 1996, which month had the highest production of milk powder excluding the case when the quantity was exactly 10,269 tonnes?": {
+        "query": "WITH RankedMonths AS (\n    SELECT\n        RANK() OVER (ORDER BY \"TotalMilkPowder_6\" DESC) AS rnk,\n        Periods AS \"MAX[Periods]\",\n        \"TotalMilkPowder_6\"\n    FROM \"data/en/odata3/7425eng.parquet\"\n    WHERE Periods IN ('1996MM02', '1996MM03', '1996MM04')\n      AND \"TotalMilkPowder_6\" != 10269\n)\nSELECT * FROM RankedMonths WHERE rnk = 1;",
+        "input_token_count": 28119,
+        "output_token_count": 156
+    },
+    "Which sector among water transportation services and transport agents had the lowest non-categorised operating costs in 2013?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"TotalOperatingCosts\" ASC) AS rnk,\n        SIC2008 AS \"SIC2008\"\n    FROM \"data/en/odata3/83652ENG.parquet\"\n    WHERE SIC2008 IN ('426400', '426500') AND Periods = '2013JJ00'\n)\nSELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 26527,
+        "output_token_count": 132
+    },
+    "Which level, university or higher professional, had the highest government spending on educational institutions in 2002?": {
+        "query": "WITH RankedRows AS (\n    SELECT \n        RANK() OVER (ORDER BY \"TotalOnEducationInstitutions_21\" DESC) AS rnk,\n        EducationSectors,\n        \"TotalOnEducationInstitutions_21\" AS \"Value\"\n    FROM \"data/en/odata3/80393eng.parquet\"\n    WHERE Periods = '2002JJ00' \n      AND EducationSectors IN ('A048426', 'A048427')\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 11802,
+        "output_token_count": 147
+    },
+    "What was the average import value less than 102,853 thousand US dollars for Bonaire and Saba during the third quarter of 2022?": {
+        "query": "SELECT AVG(\"ImportValue_1\") AS \"AVG\" FROM \"data/en/odata3/82658ENG.parquet\" WHERE CaribbeanNetherlands IN ('GM9001', 'GM9003') AND Periods = '2022KW03' AND \"ImportValue_1\" < 102.853",
+        "input_token_count": 20821,
+        "output_token_count": 94
+    },
+    "How did textile and leather manufacturers rate their order book outlook in July 2019? Give me both the raw value and upper limit. And what was the annual export growth of machinery and transport goods to Guatemala during the same month?": {
+        "query": "SELECT ExportCharacteristics, \"ExportGrowth_1\" FROM \"data/en/odata3/84746ENG.parquet\" WHERE Periods = '2019JJ00' AND ExportCharacteristics = 'A018680' AND Countries = 'L008635';",
+        "input_token_count": 20513,
+        "output_token_count": 84
+    },
+    "What proportion of average electricity usage is accounted for by car dealerships with floor space between 1,000 and 2,500 square meters, compared with car dealerships of 500 to 1,000 square meters?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, FloorArea) AS Dimension_Measure, AVG(Value) AS \"AVG\", AVG(CASE WHEN FloorArea = 'A025416' THEN Value ELSE 0 END) AS \"1 000 to 2 500 m2\", ROUND(AVG(CASE WHEN FloorArea = 'A025416' THEN Value ELSE 0 END) * 100.0 / AVG(Value), 2) AS \"%\" FROM (SELECT Measure, Value, FloorArea FROM \"data/en/odata3/83374ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"AverageConsumptionOfElectricity_2\"))) WHERE EnergyIntensitiesServicesFloorArea = 'A047460' AND FloorArea IN ('A025413', 'A025416') GROUP BY Dimension_Measure",
+        "input_token_count": 9739,
+        "output_token_count": 214
+    },
+    "How did the trade balance for crude raw materials and goods not classified elsewhere in 2013 compare with the trade balance for St. Eustatius in the same year?": {
+        "query": "WITH CrudeMaterialsAndOthers AS (\n    SELECT \n        'Crude raw materials and goods not classified elsewhere' AS Category,\n        \"BalanceOfTrade_3\" AS Balance\n    FROM \"data/en/odata3/82659ENG.parquet\"\n    WHERE Periods = '2013JJ00' \n      AND CategoriesOfGoodsSITC IN ('A018540', 'A018851')\n),\nStEustatius AS (\n    SELECT \n        'St. Eustatius' AS Category,\n        \"BalanceOfTrade_3\" AS Balance\n    FROM \"data/en/odata3/82658ENG.parquet\"\n    WHERE Periods = '2013JJ00' \n      AND CaribbeanNetherlands = 'GM9002'\n)\nSELECT \n    Category,\n    Balance\nFROM (\n    SELECT Category, Balance FROM CrudeMaterialsAndOthers\n    UNION ALL\n    SELECT Category, Balance FROM StEustatius\n) Combined;",
+        "input_token_count": 10612,
+        "output_token_count": 253
+    },
+    "In which year between 2016 and 2018 did the turnover from operations peak for shoe manufacturers?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (PARTITION BY 'shoe manufacturers' ORDER BY \"Production_1\" DESC) AS rnk, Periods AS \"MAX[Periods]\", \"Production_1\" FROM \"data/en/odata3/85942ENG.parquet\" WHERE SIC2008 = '312505' AND Periods IN ('2016JJ00', '2017JJ00', '2018JJ00') AND Multinationality = 'T001684') SELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 15234,
+        "output_token_count": 152
+    },
+    "Which area in the Caribbean Netherlands had the highest number of households and businesses connected to utilities in 2019?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (PARTITION BY Periods ORDER BY \"TotalHouseholdsAndCompanies_6\" DESC) AS rnk, CaribbeanNetherlands AS \"MAX[CaribbeanNetherlands]\", \"TotalHouseholdsAndCompanies_6\" FROM \"data/en/odata3/85799ENG.parquet\" WHERE CaribbeanNetherlands IN ('GM9001', 'GM9002', 'GM9003') AND Periods = '2019JJ00') SELECT CaribbeanNetherlands AS \"MAX[CaribbeanNetherlands]\", \"TotalHouseholdsAndCompanies_6\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 10708,
+        "output_token_count": 159
+    },
+    "In 2023, how did the forecasted investment growth in other manufacturing and repair industries relate to the proportion of girls aged 10 to 14 who received corticosteroid ear preparations (ATC S02B)?": {
+        "query": "SELECT \"InvestmentsExpectedGrowth_1\" FROM \"data/en/odata3/85209ENG.parquet\" WHERE SIC2008 = '300023' AND Periods = '2023JJ00'",
+        "input_token_count": 22658,
+        "output_token_count": 70
+    },
+    "How many eight-year-old students participated in primary and secondary education in Bonaire during the 2023/24 school year, and how many students were enrolled in MBO entrance training in the technical and process industry fields in the same period?": {
+        "query": "SELECT COALESCE(TableA.Periods, TableB.Periods) AS Periods, TableA.\"ParticipantsEnStudents\" AS \"PrimarySecondary_8Years\", TableB.\"MBOstudents\" AS \"MBO_EmpireTraining_TechProcess\" FROM (SELECT Periods, \"ParticipantsEnStudents\" FROM \"data/en/odata3/84732ENG.parquet\" WHERE PupilCharacteristics IN ('10800', 'A025301', 'T001578') AND CaribbeanNetherlands = 'GM9001' AND Periods LIKE '%SJ%' AND Periods LIKE '%2023%' GROUP BY Periods) AS TableA FULL JOIN (SELECT Periods, \"MBOstudents\" FROM \"data/en/odata3/84312ENG.parquet\" WHERE EducationLevel = 'A041751' AND FieldsOfEducation = 'A043927' AND CaribbeanNetherlands = 'GM9001' AND Periods LIKE '%SJ%' AND Periods LIKE '%2023%' GROUP BY Periods) AS TableB ON TableA.Periods = TableB.Periods",
+        "input_token_count": 9943,
+        "output_token_count": 271
+    },
+    "What is the netto sum of pure biodiesel, biogasoline, and bio jet kerosene imported for transport in 2009 combined?": {
+        "query": "SELECT SUM(\"TotalImports_8\") AS \"SUM\" FROM \"data/en/odata3/84596ENG.parquet\" WHERE EnergyCommodities IN ('E007000', 'E006524', 'E006525') AND Periods = '2009JJ00'",
+        "input_token_count": 12388,
+        "output_token_count": 90
+    },
+    "What was the average number of students attending small Roman Catholic special primary schools on a per-year basis during 2003 and 2004?": {
+        "query": "SELECT AVG(\"EnrolledPupilsStudents_2\") AS \"AVG\" FROM \"data/en/odata3/03753eng.parquet\" WHERE TypeOfEducation = 'A025281' AND IdeologicalBasisOfTheSchool = 'A041917' AND Schoolsize IN ('A041906', 'A041907') AND Periods IN ('2003SJ00', '2004SJ00')",
+        "input_token_count": 11869,
+        "output_token_count": 125
+    },
+    "In the Caribbean Netherlands during the 2011/2012 school year, which sector of education had the fewest students enrolled at MBO level 4?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY CaribbeanNetherlands ORDER BY \"MBOstudents_1\" ASC) AS rnk,\n        CaribbeanNetherlands,\n        FieldsOfEducation AS \"MIN[FieldsOfEducation]\",\n        \"MBOstudents_1\"\n    FROM \"data/en/odata3/84312ENG.parquet\"\n    WHERE EducationLevel = 'A041763'\n      AND Periods = '2011SJ00'\n      AND CaribbeanNetherlands = 'CN01'\n      AND FieldsOfEducation IN ('A009921', 'A009922', 'A009923', 'A009924')\n)\nSELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 40970,
+        "output_token_count": 200
+    },
+    "What is the summed mass of by-products imported as solid biomass across 2021 and 2022?": {
+        "query": "SELECT SUM(\"Imports_2\") AS \"SUM\" FROM \"data/en/odata3/85899ENG.parquet\" WHERE EnergyCommodities = 'E007220' AND Periods IN ('2021JJ00', '2022JJ00')",
+        "input_token_count": 18042,
+        "output_token_count": 80
+    },
+    "Sum of business water connections in the Caribbean Netherlands for 2021 and 2022": {
+        "query": "SELECT SUM(\"Companies_8\") AS \"SUM\" FROM \"data/en/odata3/85799ENG.parquet\" WHERE CaribbeanNetherlands = 'CN01' AND Periods IN ('2021JJ00', '2022JJ00')",
+        "input_token_count": 36850,
+        "output_token_count": 75
+    },
+    "In 2021, what was the reliability margin for daily smoking among people with an intermediate education in the Caribbean Netherlands, and what was the fat content reported by dairy factories in the same year?": {
+        "query": "SELECT 'Reliability margin' AS Indicator, SUM(Value) AS \"SUM[PersonalCharacteristics]\" FROM (SELECT PersonalCharacteristics, Value FROM \"data/en/odata3/82870ENG.parquet\" UNPIVOT(Value FOR Indicator IN (\"Total_20\"))) WHERE TypeOfFigure = 'B000150' AND PersonalCharacteristics = '2018740' AND CaribbeanNetherlands = 'CN01' AND Periods = '2013JJ00' GROUP BY Indicator UNION ALL SELECT 'Fat content' AS Indicator, SUM(Value) AS \"SUM[PersonalCharacteristics]\" FROM (SELECT PersonalCharacteristics, Value FROM \"data/en/odata3/7425eng.parquet\" UNPIVOT(Value FOR Indicator IN (\"FatContent_2\"))) WHERE Periods = '2021JJ00' GROUP BY Indicator",
+        "input_token_count": 11299,
+        "output_token_count": 210
+    },
+    "Which region had the lowest number of personal bankruptcies in Noord- and Zuid-Drenthe and Overijssel during the second quarter of 2009?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"PronouncedBankrupcies_1\" ASC) AS rnk,\n        Regions AS \"MIN[Regions]\",\n        \"PronouncedBankrupcies_1\"\n    FROM \"data/en/odata3/82243ENG.parquet\"\n    WHERE TypeOfBankruptcy = 'A041716' AND Periods = '2009KW02' AND Regions LIKE 'CR%' AND (Regions LIKE 'CR%' AND (Regions LIKE '%Drenthe%' OR Regions LIKE '%Overijssel%'))\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 12288,
+        "output_token_count": 165
+    },
+    "What was the average annual number of completed offshore wind power installations between 2009 and 2013?": {
+        "query": "SELECT AVG(\"AverageNumberOfMooringDays_3\") AS \"AVG\" FROM \"data/en/odata3/85015ENG.parquet\" WHERE Periods BETWEEN '2009JJ00' AND '2013JJ00'",
+        "input_token_count": 12175,
+        "output_token_count": 66
+    },
+    "What is the reported rate of not-daily passive smoking among non-smokers in the bottom 20% wealth group in 2024, and what is the fat content of milk produced in the same year?": {
+        "query": "SELECT \"FatContent_2\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods = '2024JJ00'",
+        "input_token_count": 12422,
+        "output_token_count": 51
+    },
+    "What is the average amount paid by parents for activities at kindergarten schools between 1995 and 1999, excluding the years when the contribution was exactly 55 million euros?": {
+        "query": "SELECT AVG(\"ParentalContributionSchoolActivities_24\") AS \"AVG\" FROM \"data/en/odata3/80393eng.parquet\" WHERE Periods BETWEEN '1995JJ00' AND '1999JJ00' AND EducationSectors = 'A048577' AND \"ParentalContributionSchoolActivities_24\" != 55",
+        "input_token_count": 18030,
+        "output_token_count": 104
+    },
+    "What proportion of the operational results of manufacturing companies with operational results over 837 million euros in 2021 came from the food and drinks industry?": {
+        "query": "SELECT \n    CONCAT_WS(', ', SIC2008) AS Dimension_Measure,\n    SUM(\"OperatingResults_19\") AS \"SUM[Periods]\",\n    SUM(CASE WHEN SIC2008 IN ('307610') THEN \"OperatingResults_19\" ELSE 0 END) AS \"FoodAndDrinks\",\n    ROUND(SUM(CASE WHEN SIC2008 IN ('307610') THEN \"OperatingResults_19\" ELSE 0 END) * 100.0 / SUM(\"OperatingResults_19\"), 2) AS \"%\"\nFROM \n    \"data/en/odata3/83652ENG.parquet\"\nWHERE \n    Periods = '2021JJ00'\n    AND SIC2008 IN ('307500', '307610')\n    AND \"OperatingResults_19\" > 837\nGROUP BY \n    Dimension_Measure",
+        "input_token_count": 46410,
+        "output_token_count": 241
+    },
+    "What was the month between July and November 2018 with the lowest production of condensed milk, counting only months when it was at or below 32,935 thousand kilograms?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"ConcentratedMilk_9\" ASC) AS rnk,\n        Periods AS \"MIN[Periods]\",\n        \"ConcentratedMilk_9\"\n    FROM \"data/en/odata3/7425eng.parquet\"\n    WHERE regexp_matches(Periods, '^2018MM(07|08|09|10|11)$')\n      AND \"ConcentratedMilk_9\" <= 32935\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 28180,
+        "output_token_count": 155
+    },
+    "What proportion of total government spending on special needs primary schools over the years 1993\u20131997 was used in 1995?": {
+        "query": "SELECT \n    CONCAT_WS(', ', Measure, Periods) AS Dimension_Measure,\n    SUM(Value) AS \"SUM[Periods]\",\n    SUM(CASE WHEN Periods = '1995JJ00' THEN Value ELSE 0 END) AS \"1995JJ00\",\n    ROUND(SUM(CASE WHEN Periods = '1995JJ00' THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\" \nFROM (\n    SELECT Measure, Value, Periods \n    FROM \"data/en/odata3/80509eng.parquet\" \n    UNPIVOT(Value FOR Measure IN (\"SpecialNeedsPrimaryEducation_5\")) \n) \nWHERE Periods BETWEEN '1993JJ00' AND '1997JJ00' \nGROUP BY Dimension_Measure",
+        "input_token_count": 15554,
+        "output_token_count": 217
+    },
+    "What were the export values in 2018 for crude materials, fuels, and chemicals in Bonaire compared to the total export in St. Eustatius?": {
+        "query": "WITH BonaireExports AS (\n    SELECT \n        SUM(\"ExportGrowth_1\") AS \"ExportValue\"\n    FROM \"data/en/odata3/84746ENG.parquet\"\n    WHERE Periods = '2018JJ00'\n      AND ExportCharacteristics IN ('A018540', 'A018591', 'A018629')\n      AND Regions = 'GM0837'\n),\nStEustatiusTotal AS (\n    SELECT \n        SUM(\"ExportGrowth_1\") AS \"TotalExportValue\"\n    FROM \"data/en/odata3/84746ENG.parquet\"\n    WHERE Periods = '2018JJ00'\n      AND Regions = 'GM0838'\n      AND ExportCharacteristics = 'T001082'\n)\nSELECT \n    B.\"ExportValue\" AS \"Bonaire_Export_Value\",\n    S.\"TotalExportValue\" AS \"StEustatius_Total_Export_Value\"\nFROM BonaireExports B\nCROSS JOIN StEustatiusTotal S",
+        "input_token_count": 20859,
+        "output_token_count": 276
+    },
+    "What proportion of the emissions prevented by using shallow geothermal heat for heating (without heat pumps) in 2018\u20132022, counting only years in which they reached 9 kilotons, fell in 2018?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, EnergyApplication) AS Dimension_Measure, SUM(Value) AS \"SUM[Periods]\", SUM(CASE WHEN Periods IN ('2018JJ00') THEN Value ELSE 0 END) AS \"2018JJ00\", ROUND(SUM(CASE WHEN Periods IN ('2018JJ00') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\" FROM (SELECT Measure, Value, Periods, EnergyApplication FROM \"data/en/odata3/84918ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"AvoidedEmission_3\"))) WHERE Periods IN ('2018JJ00', '2019JJ00', '2020JJ00', '2021JJ00', '2022JJ00') AND EnergySourcesTechniques = 'E006654' AND EnergyApplication = 'E006608' AND Value >= 9.0 GROUP BY Dimension_Measure",
+        "input_token_count": 13358,
+        "output_token_count": 255
+    },
+    "What was the average amount of money parents paid for school events in (pre-)primary education from 1995 to 1999, excluding years where the contribution was exactly 63 million euros?": {
+        "query": "SELECT AVG(\"ParentalContributionSchoolActivities_24\") AS \"AVG\" FROM \"data/en/odata3/80393eng.parquet\" WHERE EducationSectors IN ('A048576') AND Periods BETWEEN '1995JJ00' AND '1999JJ00' AND \"ParentalContributionSchoolActivities_24\" != 63",
+        "input_token_count": 15514,
+        "output_token_count": 104
+    },
+    "In the third quarter of 2016, what was the percentage of temporary employment agencies with one employed person experiencing declining turnover, and how did that compare to the relative year-on-year change in the import value for Bonaire during the same period?": {
+        "query": "WITH TempAgencies AS (\n    SELECT \n        Periods,\n        \"DecliningTurnover\" AS \"PercentageDecliningTurnover\"\n    FROM \"data/en/odata3/82659ENG.parquet\" -- Placeholder, actual table for temporary employment agencies needed\n    WHERE SIC2008 = '781000' -- Temporary employment agencies (example code)\n        AND Periods = '2016KW03'\n        AND EmployeesInFTE = 1 -- One employed person\n),\nBonaireImports AS (\n    SELECT \n        Periods,\n        \"ImportValue_4\" AS \"YoYChangeImportValue\"\n    FROM \"data/en/odata3/82659ENG.parquet\" -- Placeholder, actual table for Bonaire imports needed\n    WHERE CaribbeanNetherlands = 'GM9001' -- Bonaire\n        AND Periods = '2016KW03'\n)\nSELECT \n    TA.\"PercentageDecliningTurnover\",\n    BI.\"YoYChangeImportValue\",\n    ROUND(BI.\"YoYChangeImportValue\" - TA.\"PercentageDecliningTurnover\", 2) AS \"Difference\"\nFROM TempAgencies TA\nFULL JOIN BonaireImports BI ON TA.Periods = BI.Periods",
+        "input_token_count": 14811,
+        "output_token_count": 305
+    },
+    "Which island in the Caribbean Netherlands had the highest number of households and businesses in 2021, with a maximum value of 15,388?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY Periods ORDER BY \"TotalHouseholdsAndCompanies_6\" DESC) AS rnk,\n        CaribbeanNetherlands AS \"MAX[CaribbeanNetherlands]\",\n        \"TotalHouseholdsAndCompanies_6\"\n    FROM \"data/en/odata3/85799ENG.parquet\"\n    WHERE CaribbeanNetherlands LIKE 'GM%' AND Periods = '2021JJ00'\n)\nSELECT *\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 51781,
+        "output_token_count": 137
+    },
+    "How many people combined went bankrupt in Drenthe in the second quarter of 2013 and how many were aged between 60 and 64?": {
+        "query": "SELECT \n    t1.Periods,\n    t1.Regions,\n    t1.\"PronouncedBankrupcies_1\" AS \"TotalBankruptcies\",\n    t2.\"PronouncedBankrupcies_1\" AS \"Aged60To64Bankruptcies\"\nFROM \n    (SELECT * FROM \"data/en/odata3/82243ENG.parquet\" \n     WHERE Regions = 'PV22' \n       AND Periods = '2013KW02' \n       AND TypeOfBankruptcy = 'A041716') AS t1\nFULL JOIN \n    (SELECT * FROM \"data/en/odata3/83719ENG.parquet\" \n     WHERE Periods = '2013KW02' \n       AND Age = '71300' \n       AND TypeOfBankruptcy = 'A041716') AS t2\nON t1.Periods = t2.Periods",
+        "input_token_count": 9226,
+        "output_token_count": 243
+    },
+    "What was the average final consumption of biogasoline in transportation for 2012 and 2013?": {
+        "query": "SELECT AVG(\"FinalEnergyConsumption_19\") AS \"AVG\" FROM \"data/en/odata3/83989ENG.parquet\" WHERE Sectors = 'E007030' AND EnergyCommodities = 'E006568' AND Periods IN ('2012JJ00', '2013JJ00')",
+        "input_token_count": 18799,
+        "output_token_count": 98
+    },
+    "How much electricity was delivered to the culture, sports and recreation sector in Amstelveen in 2010?": {
+        "query": "SELECT \"ElectricityDelivered_2\" FROM \"data/en/odata3/82538ENG.parquet\" WHERE SectorBranchSIC2008 = '428100' AND Regions = 'GM0362' AND AllPeriods = '2010JJ00'",
+        "input_token_count": 13148,
+        "output_token_count": 83
+    },
+    "How much net electricity was generated in 2019 from hydropower and biogas produced by manure co-digestion?": {
+        "query": "SELECT EnergySourcesTechniques, SUM(\"NetProductionOfElectricity_3\") AS \"SUM\" FROM \"data/en/odata3/82610ENG.parquet\" WHERE EnergySourcesTechniques IN ('E006587', 'E006675') AND Periods = '2019JJ00' GROUP BY EnergySourcesTechniques",
+        "input_token_count": 11499,
+        "output_token_count": 96
+    },
+    "Compare the typical natural gas usage per square meter between communal healthcare facilities sized under 500 sq meters by construction year, and indoor sports buildings with floor areas under 250 sq meters.": {
+        "query": "SELECT ConstructionPeriod, BuildingTypesServicesSector, AVG(\"AverageConsumptionOfNaturalGas_1\") AS \"AVG\" FROM \"data/en/odata3/83376ENG.parquet\" WHERE (BuildingTypesServicesSector = 'A047471' AND FloorareaSize = 'A025415') OR (BuildingTypesServicesSector = 'A047475' AND FloorareaSize = 'A025415') GROUP BY ConstructionPeriod, BuildingTypesServicesSector",
+        "input_token_count": 14763,
+        "output_token_count": 127
+    },
+    "What were the harmonized real rent increase rates for regulated landlords and the protein content in milk from 2020 to 2022?": {
+        "query": "SELECT Periods, TypeOfRental, \"RealRentIncreaseInclHarmonisation_1\" FROM \"data/en/odata3/84822ENG.parquet\" WHERE Periods IN ('2020JJ00', '2021JJ00', '2022JJ00') AND TypeOfRental = 'A049497'",
+        "input_token_count": 7074,
+        "output_token_count": 99
+    },
+    "Total natural gas consumption in 2011 for financial services, trade and hospitality, and business support sectors where the delivered amount exceeds 81 million cubic meters": {
+        "query": "SELECT \"SectorBranchSIC2008\", SUM(\"NaturalGasDelivered_1\") AS \"SUM\" FROM \"data/en/odata3/82117ENG.parquet\" WHERE Periods = '2011JJ00' AND \"SectorBranchSIC2008\" IN ('396300', '354200', '389100', '410200') GROUP BY \"SectorBranchSIC2008\" HAVING SUM(\"NaturalGasDelivered_1\") > 81000",
+        "input_token_count": 10253,
+        "output_token_count": 144
+    },
+    "Compare the average electricity usage per square meter in large hotels versus public offices built between 1977 and 1993, for floor sizes ranging from 2,500 to 25,000 square meter.": {
+        "query": "SELECT BuildingTypesServicesSector, AVG(\"AverageConsumptionOfElectricity_2\") AS \"AVG\" FROM \"data/en/odata3/83376ENG.parquet\" WHERE BuildingTypesServicesSector IN ('A047465', 'A047466') AND FloorareaSize IN ('A025417', 'A025418', 'A025419') AND ConstructionPeriod = 'ZW25813' GROUP BY BuildingTypesServicesSector",
+        "input_token_count": 27193,
+        "output_token_count": 129
+    },
+    "How many students were enrolled in MBO entrance training focused on technology and process industry in Saba during the 2012 school year, and how many girls aged 10 were enrolled as pupils there?": {
+        "query": "SELECT \"MBOstudents_1\" FROM \"data/en/odata3/84312ENG.parquet\" WHERE EducationLevel = 'A041751' AND FieldsOfEducation = 'A043927' AND CaribbeanNetherlands = 'GM9003' AND Periods = '2012SJ00'",
+        "input_token_count": 22385,
+        "output_token_count": 92
+    },
+    "Which island in the caribbean had 1335 households and companies with electricity connections in 2021?": {
+        "query": "SELECT CaribbeanNetherlands FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands IN ('GM9001', 'GM9002', 'GM9003') AND Periods = '2021JJ00' AND \"TotalHouseholdsAndCompanies_10\" = 1335",
+        "input_token_count": 10415,
+        "output_token_count": 93
+    },
+    "How many female students attended secondary general education and how many students attended vocational courses in construction and infrastructure in Bonaire in 2022 to 24?": {
+        "query": "WITH Part1 AS (\n    SELECT Periods, \"ParticipantsEnStudents_1\" AS Value\n    FROM \"data/en/odata3/84732ENG.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9001'\n      AND PupilCharacteristics = 'A049058'\n      AND Gender = '4000'\n      AND regexp_matches(Periods, '^202[2-4]SJ\\d{2}$')\n),\nPart2 AS (\n    SELECT Periods, \"MBOstudents_1\" AS Value\n    FROM \"data/en/odata3/84312ENG.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9001'\n      AND FieldsOfEducation = 'A043925'\n      AND EducationLevel = 'T001336'\n      AND regexp_matches(Periods, '^202[2-4]SJ\\d{2}$')\n)\nSELECT 'Female students in secondary general education' AS Category, Periods, Value FROM Part1\nUNION ALL BY NAME\nSELECT 'Students in vocational courses in construction and infrastructure' AS Category, Periods, Value FROM Part2",
+        "input_token_count": 11351,
+        "output_token_count": 286
+    },
+    "Which province had the fewest declared businesses bankruptcies for sole proprietors in June 2021: Gelderland, Utrecht, or Flevoland?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"PronouncedBankruptcies_1\" ASC) AS rnk,\n        Regions AS \"MIN[Regions]\",\n        \"PronouncedBankruptcies_1\"\n    FROM \"data/en/odata3/82522ENG.parquet\"\n    WHERE Regions IN ('PV25', 'PV26', 'PV24')\n      AND Periods = '2021MM06'\n      AND TypeOfBankruptcy = 'A028820'\n)\nSELECT *\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 14131,
+        "output_token_count": 159
+    },
+    "Which month in summer 2018 had the lowest butter production while still reaching at least 10,383 metric tons?": {
+        "query": "WITH RankedMonths AS (\n    SELECT\n        RANK() OVER (ORDER BY \"Butter_4\" ASC) AS rnk,\n        Periods,\n        \"Butter_4\"\n    FROM \"data/en/odata3/7425eng.parquet\"\n    WHERE Periods LIKE '2018MM%' \n      AND regexp_matches(Periods, '^2018MM0[45678]$')\n      AND \"Butter_4\" >= 10383\n)\nSELECT \n    Periods AS \"MIN[Periods]\",\n    \"Butter_4\"\nFROM RankedMonths\nWHERE rnk = 1;",
+        "input_token_count": 11765,
+        "output_token_count": 167
+    },
+    "In which year between 2019 and 2022 did international funding from the EU for higher education reach its highest point, with the funding amount?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY Sectors ORDER BY \"HigherEducation_4\" DESC) AS rnk,\n        Sectors,\n        Periods AS \"MAX[Periods]\",\n        \"HigherEducation_4\"\n    FROM \"data/en/odata3/85002ENG.parquet\"\n    WHERE Sectors = 'A048275' AND Periods BETWEEN '2019JJ00' AND '2022JJ00'\n)\nSELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 13600,
+        "output_token_count": 146
+    },
+    "What proportion of bankruptcy cases in Gelderland in 2022 involved private individuals without a sole proprietorship?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, TypeOfBankruptcy) AS Dimension_Measure, SUM(Value) AS \"SUM[Regions, Periods]\", SUM(CASE WHEN TypeOfBankruptcy IN ('A041718') THEN Value ELSE 0 END) AS \"A041718\", ROUND(SUM(CASE WHEN TypeOfBankruptcy IN ('A041718') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\" FROM (SELECT Measure, Value, Periods, TypeOfBankruptcy, Regions FROM \"data/en/odata3/82243ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"PronouncedBankrupcies_1\"))) WHERE Periods = '2022JJ00' AND Regions = 'PV25' AND TypeOfBankruptcy IN ('A041718', 'A041716') GROUP BY Dimension_Measure",
+        "input_token_count": 7010,
+        "output_token_count": 230
+    },
+    "How many students were enrolled in large primary schools (between 500 and 1K students) during the 1996/97 school year, broken down by Roman Catholic, Protestant, and special schools, where enrollment was greater than zero?": {
+        "query": "SELECT IdeologicalBasisOfTheSchool, SUM(\"EnrolledPupilsStudents_2\") AS \"SUM\" FROM \"data/en/odata3/03753eng.parquet\" WHERE TypeOfEducation IN ('A025280', 'A025282') AND Schoolsize = 'A041909' AND IdeologicalBasisOfTheSchool IN ('A041917', 'A041916', 'A041915') AND Periods LIKE '%96%97%' AND \"EnrolledPupilsStudents_2\" > 0 GROUP BY IdeologicalBasisOfTheSchool",
+        "input_token_count": 12624,
+        "output_token_count": 163
+    },
+    "In 2019, what was the median growth in purchasing power for partners of main earners in the Caribbean Netherlands, and what was the fat content of the milk produced, if it was less than 5%?": {
+        "query": "SELECT A.Periods, A.\"MedianDevelopmentPurchasingPower_1\", B.\"FatContent_2\" FROM (SELECT Periods, \"MedianDevelopmentPurchasingPower_1\" FROM \"data/en/odata3/83551ENG.parquet\" WHERE CharacteristicsHouseholdsAndPersons = '1016420' AND CaribbeanNetherlands = 'CN01' AND Periods = '2019JJ00') AS A FULL JOIN (SELECT Periods, \"FatContent_2\" FROM \"data/en/odata3/7425eng.parquet\" WHERE Periods = '2019JJ00' AND \"FatContent_2\" < 5) AS B ON A.Periods = B.Periods",
+        "input_token_count": 11454,
+        "output_token_count": 179
+    },
+    "What was the average amount paid per person (including personal absence costs) for workplace training courses that cost less than 2,360 euros in 1999 and 2005?": {
+        "query": "SELECT AVG(\"SpentPerParticipant_15\") AS \"AVG\" FROM \"data/en/odata3/81850ENG.parquet\" WHERE Periods IN ('1999JJ00', '2005JJ00') AND \"SpentPerParticipant_15\" < 2360",
+        "input_token_count": 22700,
+        "output_token_count": 87
+    },
+    "In which years between 1996 and 1997 did spending on secondary schools fall below 5347 million euros?": {
+        "query": "SELECT Periods, \"TotalSecondaryEducation_13\" FROM \"data/en/odata3/80509eng.parquet\" WHERE Periods IN ('1996JJ00', '1997JJ00') AND \"TotalSecondaryEducation_13\" < 5347",
+        "input_token_count": 12641,
+        "output_token_count": 82
+    },
+    "Compare the export earnings for food products in Bonaire and overall for Eustatius during the second and third quarters of 2018": {
+        "query": "SELECT \n    CaribbeanNetherlands, \n    Periods, \n    SUM(CASE WHEN CaribbeanNetherlands = 'GM9001' THEN \"ExportValue_2\" ELSE 0 END) AS \"Bonaire_ExportValue\",\n    SUM(CASE WHEN CaribbeanNetherlands = 'GM9002' THEN \"ExportValue_2\" ELSE 0 END) AS \"St_Eustatius_ExportValue\"\nFROM \"data/en/odata3/82658ENG.parquet\"\nWHERE CaribbeanNetherlands IN ('GM9001', 'GM9002') \n  AND Periods IN ('2018KW02', '2018KW03')\nGROUP BY CaribbeanNetherlands, Periods\nORDER BY CaribbeanNetherlands, Periods",
+        "input_token_count": 12226,
+        "output_token_count": 191
+    },
+    "What percentage of female employees participated in continuing vocational training in 2015, and how much was spent per participant, excluding costs for personell not working?": {
+        "query": "SELECT Periods, \"FemaleEmployees_5\", \"SpentPerParticipant_11\" FROM \"data/en/odata3/81850ENG.parquet\" WHERE Periods = '2015JJ00'",
+        "input_token_count": 14688,
+        "output_token_count": 64
+    },
+    "Compare the number of businesses and homes connected with water piping in Bonaire with the count of goats raised in Smilde en Centr. Zandgebied for 2022 and 2023.": {
+        "query": "SELECT 'WaterConnections_Bonaire' AS Category, Periods, \"TotalHouseholdsAndCompanies_6\" AS Value FROM \"data/en/odata3/85799ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9001' AND Periods IN ('2022JJ00', '2023JJ00') UNION ALL BY NAME SELECT 'Goats_SmildeCentrZandgebied' AS Category, Periods, NULL AS Value FROM (SELECT 1) WHERE 1=0",
+        "input_token_count": 17287,
+        "output_token_count": 130
+    },
+    "How many students started MBO entrance training in ICT fields in Bonaire during 2014-16 compared to the number of pupils enrolled in small primary schools with a special educational basis in the same years?": {
+        "query": "WITH MBOData AS (\n    SELECT \n        Periods,\n        'MBO entrance training ICT Bonaire' AS Category,\n        \"MBOstudents_1\" AS Value\n    FROM \"data/en/odata3/84312ENG.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9001'\n      AND EducationLevel = 'A041751'\n      AND FieldsOfEducation = 'A043930'\n      AND Periods IN ('2014SJ00', '2015SJ00', '2016SJ00')\n),\nPrimaryData AS (\n    SELECT \n        Periods,\n        'Small primary schools special basis' AS Category,\n        \"EnrolledPupilsStudents_2\" AS Value\n    FROM \"data/en/odata3/03753eng.parquet\"\n    WHERE TypeOfEducation = 'A025281'\n      AND IdeologicalBasisOfTheSchool = 'T001305'\n      AND Schoolsize = 'A041906'\n      AND Periods IN ('2014SJ00', '2015SJ00', '2016SJ00')\n)\nSELECT \n    Category,\n    SUM(Value) AS Total\nFROM (\n    SELECT * FROM MBOData\n    UNION ALL BY NAME\n    SELECT * FROM PrimaryData\n) AS CombinedData\nGROUP BY Category",
+        "input_token_count": 11890,
+        "output_token_count": 351
+    },
+    "Show the number of households in Bonaire and the male population over 90 from Asia living in St Eustatius in 2022 and 2023": {
+        "query": "SELECT COALESCE(TableA.Periods, TableB.Periods) AS Periods, TableA.\"PopulationOnJanuary1st_1\" AS Bonaire_Population, TableB.\"PopulationOnJanuary1st_1\" AS St_Eustatius_Population FROM (SELECT * FROM \"data/en/odata3/83774ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9001' AND Periods IN ('2022JJ00', '2023JJ00')) AS TableA FULL JOIN (SELECT * FROM \"data/en/odata3/85902ENG.parquet\" WHERE DutchCaribbean = 'GM9002' AND Sex = '3000' AND CountryOfBirth = 'G008524' AND Age IN ('71900', '72000', '22200') AND Periods IN ('2022JJ00', '2023JJ00')) AS TableB ON TableA.Periods = TableB.Periods",
+        "input_token_count": 24070,
+        "output_token_count": 250
+    },
+    "Compare the average natural gas use in public offices and restaurants built between 1977 and 1993, across building size ranges from 250 to 1,000 square meters, and also include data for outdoor sports facilities around the same size.": {
+        "query": "SELECT \n    BuildingTypesServicesSector AS \"Building Type\",\n    FloorareaSize AS \"Floor Area Size\",\n    \"AverageConsumptionOfNaturalGas_1\" AS \"Average Natural Gas Use\"\nFROM \"data/en/odata3/83376ENG.parquet\"\nWHERE ConstructionPeriod = 'ZW25813'\nAND (BuildingTypesServicesSector IN ('A047466', 'A047463') AND FloorareaSize IN ('A025412', 'A025413'))\nUNION ALL\nSELECT \n    BuildingTypesServicesSector AS \"Building Type\",\n    FloorareaSize AS \"Floor Area Size\",\n    \"AverageConsumptionOfNaturalGas_1\" AS \"Average Natural Gas Use\"\nFROM \"data/en/odata3/83374ENG.parquet\"\nWHERE BuildingTypesServicesSector = 'A047477'\nAND FloorArea IN ('A025412', 'A025413');",
+        "input_token_count": 14166,
+        "output_token_count": 244
+    },
+    "How many households and businesses connected to the water network were there in the Caribbean Netherlands in 2020, and what was the total number of university-trained medical graduates during the same year?": {
+        "query": "SELECT COALESCE(TableA.Periods, TableB.Periods) AS Periods, TableA.\"TotalHouseholdsAndCompanies_6\", TableB.\"MedicalGraduates_1\" FROM (SELECT * FROM \"data/en/odata3/85799ENG.parquet\" WHERE Periods = '2020JJ00' AND CaribbeanNetherlands = 'CN01') AS TableA FULL JOIN (SELECT * FROM \"data/en/odata3/85799ENG.parquet\" WHERE Periods = '2020JJ00' AND CaribbeanNetherlands = 'CN01' AND \"MedicalGraduates_1\" IS NOT NULL) AS TableB ON TableA.Periods = TableB.Periods AND TableA.CaribbeanNetherlands = TableB.CaribbeanNetherlands",
+        "input_token_count": 12256,
+        "output_token_count": 189
+    },
+    "What was the average number of declared bankruptcies among all business types in the east of The Netherlands and for businesses in civil engineering throughout The Netherlands during the fourth quarter of 2010?": {
+        "query": "SELECT 'Average' AS Metric, AVG(\"PronouncedBankruptcies_1\") AS \"AVG\" FROM \"data/en/odata3/82522ENG.parquet\" WHERE TypeOfBankruptcy IN ('A028820', 'A047597') AND Regions = 'LD02' AND Periods = '2010KW04'",
+        "input_token_count": 22023,
+        "output_token_count": 100
+    },
+    "How did food and drink manufacturers\u2019 confidence and export volumes change from April to May 2010?": {
+        "query": "SELECT Periods, \"ExportValue_1\" AS \"Export value\" FROM \"data/en/odata3/86068ENG.parquet\" WHERE ExportFlows IN ('A051717', 'A041807', 'T001295') AND Periods IN ('2010MM04', '2010MM05')",
+        "input_token_count": 18446,
+        "output_token_count": 102
+    },
+    "What was the share of government spending on primary schools and universities in 1974 compared to the years 1971 to 1975?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, Periods) AS Dimension_Measure_Periods, SUM(Value) AS \"SUM\", SUM(CASE WHEN Periods IN ('1974JJ00') THEN Value ELSE 0 END) AS \"1974JJ00\", ROUND(SUM(CASE WHEN Periods IN ('1974JJ00') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\" FROM (SELECT Measure, Value, Periods FROM \"data/en/odata3/80509eng.parquet\" UNPIVOT(Value FOR Measure IN (\"UniversityEducation_18\", \"PrePrimaryAndPrimaryEducation_4\"))) WHERE Periods BETWEEN '1971JJ00' AND '1975JJ00' GROUP BY Dimension_Measure_Periods",
+        "input_token_count": 16165,
+        "output_token_count": 201
+    },
+    "In 2024, what percentage of people with self-reported OK health in the third income quintile or as a partner with children compares with the average fat percentage in dairy produced by factories?": {
+        "query": "SELECT 'GoodOrVeryGood' AS Measure, \"GoodOrVeryGood\" FROM \"data/en/odata3/82291ENG.parquet\" WHERE Periods = '2021JJ00' AND PersonalCharacteristics = 'T009002' AND TypeOfFigure = 'MW00000' AND CarribeanNetherlands = 'CN01'",
+        "input_token_count": 13747,
+        "output_token_count": 100
+    },
+    "How many accidental poisoning deaths occurred in 1999 among children aged 5-10 and adults aged 35-40 in relation to the total households and companies connected to the main grid in Bonaire?": {
+        "query": "SELECT 'AccidentalPoisoningDeaths' AS Dimension_AccidentalPoisoningDeaths, SUM(Value) AS \"SUM\" FROM (SELECT Measure, Value FROM \"data/en/odata3/83652ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"Deaths_3\"))) WHERE Periods = '1999JJ00' UNION ALL SELECT 'TotalHouseholdsAndCompanies' AS Dimension_AccidentalPoisoningDeaths, SUM(Value) AS \"SUM\" FROM (SELECT Measure, Value FROM \"data/en/odata3/85201ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"Total_1\"))) WHERE Regions = 'NL0060' AND Periods = '1999JJ00'",
+        "input_token_count": 68034,
+        "output_token_count": 180
+    },
+    "What was the average trade balance in 2013 for crude materials and miscellaneous goods in Bonaire and for all goods in st. Eustatius?": {
+        "query": "WITH BonaireData AS (\n    SELECT AVG(\"BalanceOfTrade_3\") AS \"AVG_Bonaire\"\n    FROM \"data/en/odata3/82659ENG.parquet\"\n    WHERE CategoriesOfGoodsSITC IN ('A018540', 'A018809') AND Periods = '2013JJ00'\n),\nStEustatiusData AS (\n    SELECT AVG(\"BalanceOfTrade_3\") AS \"AVG_StEustatius\"\n    FROM \"data/en/odata3/82658ENG.parquet\"\n    WHERE CaribbeanNetherlands = 'GM9002' AND Periods = '2013JJ00'\n)\nSELECT \n    'Bonaire (Crude materials and Misc. goods)' AS Category, \n    \"AVG_Bonaire\" AS \"AverageTradeBalance\" \nFROM BonaireData\nUNION ALL\nSELECT \n    'St. Eustatius (All goods)' AS Category, \n    \"AVG_StEustatius\" AS \"AverageTradeBalance\" \nFROM StEustatiusData",
+        "input_token_count": 8607,
+        "output_token_count": 277
+    },
+    "Number of businesses in Bonaire for water use and energy production in the year 2000": {
+        "query": "SELECT CaribbeanNetherlands, SUM(\"Companies_12\") AS \"SUM\" FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands = 'GM9001' AND Periods = '2000JJ00' GROUP BY CaribbeanNetherlands",
+        "input_token_count": 41720,
+        "output_token_count": 79
+    },
+    "In the Caribbean Netherlands, how did the number of households and companies with a water connection, as well as jobs held by employees just before retirement earning a modal income, change from 2021 to 2022?": {
+        "query": "SELECT Periods, \"Households_1\" FROM \"data/en/odata3/83364ENG.parquet\" WHERE CaribbeanNetherlands = 'CN01' AND Characteristics = '1050010' AND Periods IN ('2021JJ00', '2022JJ00') UNION ALL SELECT Periods, \"JobsOfEmployees_1\" FROM \"data/en/odata3/82519ENG.parquet\" WHERE CarribeanNetherlands = 'CN01' AND SectorBranchesSIC2008 = 'T001081' AND EarningGroups = 'A045228' AND Periods IN ('2021JJ00', '2022JJ00')",
+        "input_token_count": 20303,
+        "output_token_count": 184
+    },
+    "How many students at MBO level 2 were enrolled in health, economics, and combined sectors in the Caribbean Netherlands during 2023, and how does this compare to the total number of pupils aged 7 in primary and secondary education over there?": {
+        "query": "SELECT\n    COALESCE(TableA.Periods, TableB.Periods) AS Periods,\n    TableA.\"SUM_MBOStudents_1\" AS MBOStudents_1,\n    TableB.\"SUM_ParticipantsEnStudents_1\" AS ParticipantsEnStudents_1\nFROM\n(SELECT\n    Periods,\n    SUM(\"MBOstudents_1\") AS \"SUM_MBOStudents_1\"\nFROM\n    \"data/en/odata3/84312ENG.parquet\"\nWHERE\n    EducationLevel IN ('A041755')\n    AND FieldsOfEducation IN ('A009923', 'A009921', 'A009924')\n    AND CaribbeanNetherlands IN ('CN01')\n    AND Periods LIKE '2023SJ%'\nGROUP BY\n    Periods) AS TableA\nFULL JOIN\n(SELECT\n    Periods,\n    SUM(\"ParticipantsEnStudents_1\") AS \"SUM_ParticipantsEnStudents_1\"\nFROM\n    \"data/en/odata3/84732ENG.parquet\"\nWHERE\n    PupilCharacteristics IN ('A025301', 'T001578')\n    AND CaribbeanNetherlands IN ('CN01')\n    AND Gender IN ('T001038')\n    AND Periods LIKE '2023SJ%'\nGROUP BY\n    Periods) AS TableB\nON\n    TableA.Periods = TableB.Periods",
+        "input_token_count": 26579,
+        "output_token_count": 360
+    },
+    "Compare the average electricity use per square meter in non-public office buildings constructed before 1921 with floor areas up to 250 square meters versus home healthcare buildings with floor areas up to 500 square meters.": {
+        "query": "SELECT \n    BuildingTypesServicesSector, \n    AVG(\"AverageConsumptionOfElectricity_2\") AS \"AVG\"\nFROM \"data/en/odata3/83376ENG.parquet\"\nWHERE \n    (\n        BuildingTypesServicesSector = 'A047467' \n        AND FloorareaSize = 'A025415' \n        AND ConstructionPeriod = 'ZW25811'\n    )\n    OR \n    (\n        BuildingTypesServicesSector = 'A047473' \n        AND FloorareaSize IN ('A025415', 'A025412')\n    )\nGROUP BY BuildingTypesServicesSector",
+        "input_token_count": 14771,
+        "output_token_count": 181
+    },
+    "How much of the total electricity supplied in 2014 went to culture, sports, and leisure organizations consuming at least 1530000 kWh, compared to government and health sectors?": {
+        "query": "SELECT CONCAT_WS(', ', SectorBranchSIC2008) AS Dimension_Measure, SUM(\"ElectricityDelivered_2\") AS \"SUM[Periods]\", ROUND(SUM(\"ElectricityDelivered_2\") * 100.0 / (SELECT SUM(\"ElectricityDelivered_2\") FROM \"data/en/odata3/82117ENG.parquet\" WHERE Periods = '2014JJ00'), 2) AS \"%\" FROM \"data/en/odata3/82117ENG.parquet\" WHERE Periods = '2014JJ00' AND SectorBranchSIC2008 IN ('428100', '417400', '422400') AND \"ElectricityDelivered_2\" >= 1.53 GROUP BY Dimension_Measure",
+        "input_token_count": 23557,
+        "output_token_count": 204
+    },
+    "What was the average number of personal bankruptcies in Drenthe during the second quarter of 2013 and among people aged 60 to 64?": {
+        "query": "SELECT AVG(\"PronouncedBankrupcies_1\") AS \"AVG\" FROM \"data/en/odata3/83719ENG.parquet\" WHERE Periods = '2013KW02' AND Age = '71300'",
+        "input_token_count": 9464,
+        "output_token_count": 72
+    },
+    "How many businesses and organizations were declared bankrupt nationwide and in unspecified regions combined in December 2019?": {
+        "query": "SELECT SUM(\"PronouncedBankruptcies_1\") AS \"SUM\" FROM \"data/en/odata3/82522ENG.parquet\" WHERE TypeOfBankruptcy IN ('A047597', 'A028820') AND Periods = '2019MM12' AND Regions IN ('NL00', 'NL01')",
+        "input_token_count": 6721,
+        "output_token_count": 98
+    },
+    "Total electricity consumption in Aalburg in 2013 for branches consuming less than 1214 million kwh within real estate activities, hospitality businesses, and renting business services": {
+        "query": "SELECT SUM(\"AverageConsumptionOfElectricity_2\") AS \"SUM\" FROM \"data/en/odata3/83374ENG.parquet\" WHERE EnergyIntensitiesServicesFloorArea IN ('A047462', 'A047463', 'A047465') AND FloorArea IN ('A025412', 'A025413', 'A025415', 'A025416', 'A025417', 'A025418', 'A025419') AND Periods = '2013JJ00' AND Regions = 'GM0117'",
+        "input_token_count": 13310,
+        "output_token_count": 174
+    },
+    "How much conventional energy and what percentage of total consumption was saved by using biomass boilers for heating from 2006 to 2010?": {
+        "query": "SELECT Periods, SUM(\"TotalFinalConsumption_4\") AS \"SUM\", ROUND(SUM(\"TotalFinalConsumption_4\") * 100.0 / SUM(\"TotalFinalConsumption_4\"), 2) AS \"%\" FROM \"data/en/odata3/85899ENG.parquet\" WHERE EnergyCommodities = 'E007220' AND Periods IN ('2006JJ00', '2007JJ00', '2008JJ00', '2009JJ00', '2010JJ00') GROUP BY Periods",
+        "input_token_count": 13227,
+        "output_token_count": 153
+    },
+    "How much conventional energy was saved by using pellet stoves, wood stoves, and solar thermal for heating in 2000?": {
+        "query": "SELECT Periods, EnergySourcesTechniques, SUM(\"AvoidedEnergy_1\") AS \"SUM\" FROM \"data/en/odata3/84918ENG.parquet\" WHERE EnergySourcesTechniques IN ('E007204', 'E006667', 'E006591') AND EnergyApplication = 'E006608' AND Periods = '2000JJ00' GROUP BY Periods, EnergySourcesTechniques",
+        "input_token_count": 11406,
+        "output_token_count": 122
+    },
+    "What were the amounts of bio jet fuel and biogasoline blended, and how much woody biomass was exported, in 2018?": {
+        "query": "SELECT * FROM \"data/en/odata3/84746ENG.parquet\" WHERE Periods = '2018JJ00' AND ExportCharacteristics IN ('A018596', 'A018553')",
+        "input_token_count": 15204,
+        "output_token_count": 70
+    },
+    "Which alternative transportation fuel\u2014biogasoline or biodiesel\u2014had the highest total supply in 2006, with values of at least 798 TJ?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (PARTITION BY EnergyCommodities ORDER BY \"TotalPrimaryEnergySupplyTPES_1\" DESC) AS rnk,\n        EnergyCommodities,\n        \"TotalPrimaryEnergySupplyTPES_1\"\n    FROM \"data/en/odata3/83140ENG.parquet\"\n    WHERE Periods = '2006JJ00'\n      AND EnergyCommodities IN ('E007213', 'E007188', 'E007212', 'E007189')\n      AND \"TotalPrimaryEnergySupplyTPES_1\" >= 798\n)\nSELECT EnergyCommodities, \"TotalPrimaryEnergySupplyTPES_1\"\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 17141,
+        "output_token_count": 202
+    },
+    "How has the use of biodiesel in domestic shipping and the heat savings from commercial biomass boilers changed from 2018 to 2021?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, EnergySourcesTechniques) AS Dimension_Measure, SUM(Value) AS \"SUM[Periods]\", SUM(CASE WHEN Periods IN ('2018JJ00') THEN Value ELSE 0 END) AS \"2018JJ00\", SUM(CASE WHEN Periods IN ('2019JJ00') THEN Value ELSE 0 END) AS \"2019JJ00\", SUM(CASE WHEN Periods IN ('2020JJ00') THEN Value ELSE 0 END) AS \"2020JJ00\", SUM(CASE WHEN Periods IN ('2021JJ00') THEN Value ELSE 0 END) AS \"2021JJ00\" FROM (SELECT Measure, Value, Periods, EnergySourcesTechniques FROM \"data/en/odata3/84918ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"AvoidedEnergy_1\", \"AvoidedEmission_3\"))) WHERE Periods IN ('2018JJ00', '2019JJ00', '2020JJ00', '2021JJ00') AND EnergySourcesTechniques IN ('E006679', 'E006669', 'E006670', 'E006671') AND EnergyApplication = 'E006608' GROUP BY Dimension_Measure",
+        "input_token_count": 14803,
+        "output_token_count": 334
+    },
+    "Which renewable energy types in 2018 had net electricity generation of 5.83% or less, among onshore wind and biogas from sewage?": {
+        "query": "WITH FilteredData AS (\n    SELECT \n        EnergySourcesTechniques,\n        \"NetProductionOfElectricity_6\"\n    FROM \"data/en/odata3/82610ENG.parquet\"\n    WHERE Periods = '2018JJ00'\n      AND EnergySourcesTechniques IN ('E006637', 'E006674')\n)\nSELECT EnergySourcesTechniques, \"NetProductionOfElectricity_6\"\nFROM FilteredData\nWHERE \"NetProductionOfElectricity_6\" <= 5.83",
+        "input_token_count": 11903,
+        "output_token_count": 145
+    },
+    "How many offshore wind turbines were in place at the end of each year from 2010 to 2014, and what was the number of suicides by drugs, medicines or alcohol among men aged 40 to 49 during those same years?": {
+        "query": "SELECT COALESCE(TableA.Periods, TableB.Periods) AS Periods, TableA.\"MeasureA\", TableB.\"DrugsMedicinesAlcohol_7\" FROM (SELECT Periods, \"MeasureA\" FROM \"data/en/odata3/table1.parquet\" WHERE Periods IN ('2010JJ00', '2011JJ00', '2012JJ00', '2013JJ00', '2014JJ00')) AS TableA FULL JOIN (SELECT Periods, \"DrugsMedicinesAlcohol_7\" FROM \"data/en/odata3/7022eng.parquet\" WHERE Sex = '3000' AND Age = '60500' AND Periods IN ('2010JJ00', '2011JJ00', '2012JJ00', '2013JJ00', '2014JJ00')) AS TableB ON TableA.Periods = TableB.Periods",
+        "input_token_count": 39797,
+        "output_token_count": 246
+    },
+    "What net share of electricity use came from biogas from water purification, biomass boilers, biomass co-firing, and onshore wind energy in 2000?": {
+        "query": "SELECT SUM(Value) AS \"SUM\", ROUND(SUM(CASE WHEN EnergySourcesTechniques IN ('E006674', 'E006669', 'E006662', 'E006637') THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\" FROM (SELECT Measure, Value, EnergySourcesTechniques, EnergyApplication, Periods FROM \"data/en/odata3/82610ENG.parquet\" UNPIVOT(Value FOR Measure IN (\"NetProductionOfElectricity_6\"))) WHERE Periods = '2000JJ00' AND EnergyApplication = 'E007022'",
+        "input_token_count": 9896,
+        "output_token_count": 173
+    },
+    "What proportion of total renewable energy use for heating and cooling in households came from open fireplaces burning biomass in 2023 compared to the two years before??": {
+        "query": "SELECT \n    CONCAT_WS(', ', Measure, EnergySourcesTechniques) AS Dimension_Measure,\n    SUM(Value) AS \"SUM[Periods]\",\n    SUM(CASE WHEN Periods = '2023JJ00' THEN Value ELSE 0 END) AS \"2023JJ00\",\n    ROUND(SUM(CASE WHEN Periods = '2023JJ00' THEN Value ELSE 0 END) * 100.0 / SUM(Value), 2) AS \"%\"\nFROM (\n    SELECT \n        Measure, \n        Value, \n        Periods, \n        EnergySourcesTechniques\n    FROM \"data/en/odata3/84918ENG.parquet\"\n    UNPIVOT(Value FOR Measure IN (\"AvoidedEnergy_1\"))\n) AS UnpivotedData\nWHERE \n    Periods IN ('2021JJ00', '2022JJ00', '2023JJ00')\n    AND EnergySourcesTechniques IN ('E006566', 'E006665')\n    AND EnergyApplication = 'E006608'\nGROUP BY \n    Dimension_Measure",
+        "input_token_count": 11615,
+        "output_token_count": 293
+    },
+    "Which renewable energy sources made up more than 0% of total energy use for all purposes in 2013?": {
+        "query": "SELECT CONCAT_WS(', ', EnergyCommodities) AS Dimension_EnergyCommodities, \"TotalEnergyConsumption_7\" FROM \"data/en/odata3/83989ENG.parquet\" WHERE Sectors = 'E007201' AND Periods = '2013JJ00' AND EnergyCommodities IN ('E006565', 'E006566', 'E006590', 'E006588', 'E006595', 'E006591', 'E006587', 'E006576', 'E006629', 'E006583', 'E006568', 'E006589', 'E006567') AND \"TotalEnergyConsumption_7\" > 0",
+        "input_token_count": 14701,
+        "output_token_count": 220
+    },
+    "Which renewable energy options in 2012 contributed more than zero percent to total energy consumption, among biomass boilers with CHP, heat only, and co-firing biomass in power stations?": {
+        "query": "SELECT EnergySourcesTechniques, \"AvoidedEnergyRelative_2\" FROM \"data/en/odata3/84918ENG.parquet\" WHERE Periods = '2012JJ00' AND EnergySourcesTechniques IN ('E006670', 'E006671', 'E006662') AND \"AvoidedEnergyRelative_2\" > 0",
+        "input_token_count": 15086,
+        "output_token_count": 105
+    },
+    "What are the 2024 network tariffs for natural gas between 284,000 and 2,843,000 cubic meters, both with and without VAT and other taxes?": {
+        "query": "SELECT VATAndTax, \"k_284333Until2843332M3_6\" AS \"NetworkTariff\" FROM \"data/en/odata3/85666ENG.parquet\" WHERE Periods = '2024JJ00' AND PriceComponents = 'A047658' AND VATAndTax IN ('A047660', 'A047661')",
+        "input_token_count": 11519,
+        "output_token_count": 114
+    },
+    "How many bankruptcies occurred in August 2015 for firms and sole traders nationally and in the North Netherlands region?": {
+        "query": "SELECT Regions, SUM(\"PronouncedBankruptcies_1\") AS \"SUM\" FROM \"data/en/odata3/82522ENG.parquet\" WHERE TypeOfBankruptcy IN ('A028820', 'A047597') AND Regions IN ('NL01', 'LD01') AND Periods = '2015MM08' GROUP BY Regions",
+        "input_token_count": 13221,
+        "output_token_count": 104
+    },
+    "How many bankruptcies were declared in April 2021 for sole proprietors versus all business entities in Achterhoek, Noord-Overijssel, Twente, Veluwe, and Zuidwest-Overijssel?": {
+        "query": "SELECT TypeOfBankruptcy, SUM(\"PronouncedBankruptcies_1\") AS \"SUM\" FROM \"data/en/odata3/82522ENG.parquet\" WHERE Regions IN ('CR12', 'CR10', 'CR13', 'CR11', 'CR14') AND Periods = '2021MM04' AND TypeOfBankruptcy IN ('A028820', 'A047596') GROUP BY TypeOfBankruptcy",
+        "input_token_count": 13829,
+        "output_token_count": 125
+    },
+    "What was the average number of companies that went bankrupt in Groot-Rijnmond and Zuidoost-Zuid-Holland during the first quarter of 2019?": {
+        "query": "SELECT AVG(\"PronouncedBankruptcies_1\") AS \"AVG\" FROM \"data/en/odata3/82522ENG.parquet\" WHERE TypeOfBankruptcy = 'A047597' AND Periods = '2019KW01' AND Regions IN ('CR29', 'CR30')",
+        "input_token_count": 13173,
+        "output_token_count": 90
+    },
+    "How many individual bankruptcies were officially declared in Gelderland province in 2022?": {
+        "query": "SELECT SUM(\"PronouncedBankrupcies_1\") AS \"SUM\" FROM \"data/en/odata3/82243ENG.parquet\" WHERE TypeOfBankruptcy = 'A041718' AND Regions = 'PV25' AND Periods = '2022JJ00'",
+        "input_token_count": 9069,
+        "output_token_count": 84
+    },
+    "How many individuals were declared bankrupt in Zeeland during the second quarter of 2020?": {
+        "query": "SELECT \"PronouncedBankrupcies_1\" FROM \"data/en/odata3/82243ENG.parquet\" WHERE TypeOfBankruptcy = 'A041716' AND Periods = '2020KW02' AND Regions = 'PV29'",
+        "input_token_count": 8686,
+        "output_token_count": 79
+    },
+    "What was the actual increase or decrease in business investment for energy, electronics, basic metals, and clothing sectors in 2024?": {
+        "query": "SELECT SIC2008, SUM(\"InvestmentsInTangibleFixedAssets_1\") AS \"SUM\" FROM \"data/en/odata3/81352ENG.parquet\" WHERE SIC2008 IN ('346600', '332900', '328100', '314000') AND Periods = '2024JJ00' GROUP BY SIC2008",
+        "input_token_count": 61561,
+        "output_token_count": 115
+    },
+    "Which industries in 2024 saw actual investment growth at or below 27 percent in textiles, petroleum, or transport manufacturing?": {
+        "query": "WITH FilteredData AS (\n    SELECT\n        SIC2008,\n        \"InvestmentsRealizedGrowth_2\"\n    FROM \"data/en/odata3/85209ENG.parquet\"\n    WHERE Periods = '2024JJ00'\n      AND SIC2008 IN ('312500', '800013', '339205')\n      AND \"InvestmentsRealizedGrowth_2\" <= 27\n)\nSELECT\n    SIC2008 AS \"MIN[SIC2008]\",\n    \"InvestmentsRealizedGrowth_2\"\nFROM FilteredData",
+        "input_token_count": 40420,
+        "output_token_count": 169
+    },
+    "What is the average amount of ferrous and non-ferrous metal waste separated from leftover household garbage generated in Nijmegen during 2023?": {
+        "query": "SELECT AVG(\"MixedHouseholdWasteTonnes_2\") AS \"AVG\" FROM \"data/en/odata3/86053ENG.parquet\" WHERE MunicipalWaste IN ('A052834', 'A052835') AND Periods = '2023JJ00' AND Region = 'GM0268'",
+        "input_token_count": 24204,
+        "output_token_count": 96
+    },
+    "How much mixed household garbage was generated per person in Gorinchem, and what was the amount of expanded polystyrene waste per person in Frysia in 2023?": {
+        "query": "SELECT Region, SUM(CASE WHEN Region = 'GM0512' THEN \"MixedHouseholdWasteKgPerCapita_1\" ELSE 0 END) AS \"MixedHouseholdWaste_Gorinchem\", SUM(CASE WHEN Region = 'GM0064' THEN \"MixedHouseholdWasteKgPerCapita_1\" ELSE 0 END) AS \"EPSWaste_Frysia\" FROM \"data/en/odata3/86053ENG.parquet\" WHERE Periods = '2023JJ00' AND Region IN ('GM0512', 'GM0064') AND MunicipalWaste IN ('A025450', 'A025489') GROUP BY Region",
+        "input_token_count": 12189,
+        "output_token_count": 172
+    },
+    "What was the average number of urban wastewater treatment plants with parallel installations in West, East, and South Netherlands in 2013, counting only regions with at least five such plants?": {
+        "query": "SELECT AVG(\"ParallelInstallations_9\") AS \"AVG\" FROM \"data/en/odata3/7477eng.parquet\" WHERE Regions LIKE 'PV%' AND Periods = '2013JJ00' AND \"ParallelInstallations_9\" >= 5",
+        "input_token_count": 23747,
+        "output_token_count": 76
+    },
+    "How many vocational students were enrolled in construction, wood, and maintenance programs in Bonaire during the 2019/20 school year?": {
+        "query": "SELECT SUM(\"MBOstudents_1\") AS \"SUM\" FROM \"data/en/odata3/84312ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9001' AND FieldsOfEducation IN ('A043925', 'A043926') AND regexp_matches(Periods, '^\\d{4}SJ\\d{2}$')",
+        "input_token_count": 12054,
+        "output_token_count": 100
+    },
+    "How many residential and business electricity connections were there in the Caribbean Netherlands in 2018?": {
+        "query": "SELECT CaribbeanNetherlands, Periods, SUM(\"Households_11\" + \"Companies_12\") AS \"SUM\" FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands IN ('CN01', 'GM9001', 'GM9002', 'GM9003') AND Periods = '2018JJ00' GROUP BY CaribbeanNetherlands, Periods",
+        "input_token_count": 31919,
+        "output_token_count": 112
+    },
+    "What is the lowest number of household electricity connections in the Caribbean Netherlands in the years 2022 and 2023?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"Households_11\" ASC) AS rnk,\n        Periods,\n        \"Households_11\"\n    FROM \"data/en/odata3/81154eng.parquet\"\n    WHERE CaribbeanNetherlands = 'CN01' AND Periods IN ('2022JJ00', '2023JJ00')\n)\nSELECT Periods, \"Households_11\"\nFROM RankedRows\nWHERE rnk = 1;",
+        "input_token_count": 23163,
+        "output_token_count": 139
+    },
+    "What is the lowest number of households recorded in the Caribbean Netherlands between 2021 and 2022?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"PopulationOnJanuary1st_1\" ASC) AS rnk,\n        Periods AS \"MIN[Periods]\",\n        \"PopulationOnJanuary1st_1\"\n    FROM \"data/en/odata3/85723ENG.parquet\"\n    WHERE CaribbeanNetherlands = 'CN01'\n      AND Nationality = 'T001059'\n      AND CountryOfBirth = 'T001175'\n      AND Periods IN ('2021JJ00', '2022JJ00')\n)\nSELECT * FROM RankedRows WHERE rnk = 1;",
+        "input_token_count": 23582,
+        "output_token_count": 171
+    },
+    "Compare water production levels in Sint-Eustatius in 2021 and 2022 to output in tobacco manufacturing for the same years": {
+        "query": "SELECT COALESCE(TableA.Periods, TableB.Periods) AS Periods, TableA.\"Production_13\" AS \"WaterProduction\", TableB.\"InvestmentsInTangibleFixedAssets_1\" AS \"TobaccoOutput\" FROM (SELECT * FROM \"data/en/odata3/81154eng.parquet\" WHERE CaribbeanNetherlands = 'GM9002' AND Periods IN ('2021JJ00', '2022JJ00')) AS TableA FULL JOIN (SELECT * FROM \"data/en/odata3/81351ENG.parquet\" WHERE SIC2008 = '312300' AND Periods IN ('2021JJ00', '2022JJ00') AND Regions = 'NL01') AS TableB ON TableA.Periods = TableB.Periods",
+        "input_token_count": 20027,
+        "output_token_count": 209
+    },
+    "How much did Bonaire import and export chemicals and related products in the first and second quarter of 2022?": {
+        "query": "SELECT Periods, \"ImportValue_1\", \"ExportValue_2\" FROM \"data/en/odata3/82659ENG.parquet\" WHERE CategoriesOfGoodsSITC = 'A018629' AND Periods IN ('2022KW01', '2022KW02')",
+        "input_token_count": 16911,
+        "output_token_count": 87
+    },
+    "Export value for beverages, machinery, animal oils, and fuels from Bonaire in 2018 combined over all categories": {
+        "query": "SELECT SUM(\"ExportGrowth_1\") AS \"SUM\" FROM \"data/en/odata3/84746ENG.parquet\" WHERE ExportCharacteristics IN ('A018530', 'A018769', 'A018614', 'A018596') AND Periods = '2018JJ00'",
+        "input_token_count": 24165,
+        "output_token_count": 99
+    },
+    "How does the export value for food, chemicals, and manufactured goods in Bonaire compare to Saba's total export value in 2020?": {
+        "query": "SELECT \n    'Bonaire' AS Island, \n    SUM(CASE WHEN CategoriesOfGoodsSITC IN ('A018524', 'A018629', 'A018678') THEN \"ExportValue_2\" ELSE 0 END) AS \"ExportValue\"\nFROM \"data/en/odata3/82659ENG.parquet\"\nWHERE Periods = '2020JJ00'\nUNION ALL BY NAME\nSELECT \n    'Saba' AS Island, \n    \"ExportValue_2\" AS \"ExportValue\"\nFROM \"data/en/odata3/82658ENG.parquet\"\nWHERE Periods = '2020JJ00' AND CaribbeanNetherlands = 'GM9003'",
+        "input_token_count": 15546,
+        "output_token_count": 193
+    },
+    "What was the trade balance in 2013 for machinery, manufactured goods, and miscellaneous items on Bonaire and for goods on St. Eustatius?": {
+        "query": "SELECT CaribbeanNetherlands, CategoriesOfGoodsSITC, \"BalanceOfTrade_3\" FROM \"data/en/odata3/82659ENG.parquet\" WHERE Periods = '2013JJ00' AND CaribbeanNetherlands = 'GM9001' AND CategoriesOfGoodsSITC IN ('A018743', 'A018678', 'A018809') UNION ALL SELECT CaribbeanNetherlands, CategoriesOfGoodsSITC, \"BalanceOfTrade_3\" FROM \"data/en/odata3/82659ENG.parquet\" WHERE Periods = '2013JJ00' AND CaribbeanNetherlands = 'GM9002' AND CategoriesOfGoodsSITC = 'T001082'",
+        "input_token_count": 8582,
+        "output_token_count": 191
+    },
+    "What were Bonaire's import and export totals in 2019?": {
+        "query": "SELECT Periods, \"ImportValue_1\", \"ExportValue_2\" FROM \"data/en/odata3/82658ENG.parquet\" WHERE CaribbeanNetherlands = 'GM9001' AND Periods = '2019JJ00'",
+        "input_token_count": 16747,
+        "output_token_count": 73
+    },
+    "In 2017/2018, how frequently did people with low education in the Caribbean Netherlands encounter animal waste and traffic disturbances in their neighborhoods, and what is the reliability margin for these reports?": {
+        "query": "SELECT \n    CONCAT_WS(', ', Measure, Accuracy, CaribbeanNetherlands) AS Dimension_Measure, \n    \"AnimalPoopOnSidewalkOrInTheStreet_5\" AS \"AnimalPoopOnSidewalkOrInTheStreet_5\",\n    \"OneOrMoreFormsOfTrafficNuisance_15\" AS \"OneOrMoreFormsOfTrafficNuisance_15\"\nFROM \"data/en/odata3/82557ENG.parquet\"\nWHERE \n    PersonalCharacteristics = '2018700' \n    AND Periods = '2017JJ00' \n    AND CaribbeanNetherlands = 'CN01' \n    AND Accuracy IN ('MW00000', 'B000150')",
+        "input_token_count": 18786,
+        "output_token_count": 188
+    },
+    "In which year between 2014 and 2017 was compensation of employees received from abroad (in million euros) the highest?": {
+        "query": "WITH RankedRows AS (\n    SELECT\n        RANK() OVER (ORDER BY \"CompensationOfEmployees_1\" DESC) AS rnk,\n        Periods AS \"MAX[Periods]\",\n        \"CompensationOfEmployees_1\"\n    FROM \"data/en/odata3/85919ENG.parquet\"\n    WHERE SectorBranchesSIC2008 = '440900'\n      AND Periods IN ('2014JJ00', '2015JJ00', '2016JJ00', '2017JJ00')\n)\nSELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 66522,
+        "output_token_count": 166
+    },
+    "Total subsidies received from the EU and rest of world between 2010 and 2012, for years exceeding 1400 million euros": {
+        "query": "SELECT \"OtherSubsidiesOnProduction_21\" AS \"OtherSubsidiesOnProduction_21\" FROM \"data/en/odata3/85867ENG.parquet\" WHERE SectorBranchesSIC2008 = 'T001081' AND Periods IN ('2010JJ00', '2011JJ00', '2012JJ00') AND \"OtherSubsidiesOnProduction_21\" > 1400",
+        "input_token_count": 23690,
+        "output_token_count": 121
+    },
+    "For 1998 and 1999, what was the total gross value added in the Netherlands, and how many government employees worked in municipalities with 40K to under 100K inhabitants?": {
+        "query": "SELECT COALESCE(TableA.Periods, TableB.Periods) AS Periods, TableA.\"GrossValueAdded\", TableB.\"GovernmentEmployees\" FROM (SELECT Periods, \"ValueAddedAtBasicPrices_5\" AS \"GrossValueAdded\" FROM \"data/en/odata3/85924ENG.parquet\" WHERE Periods IN ('1998JJ00', '1999JJ00') AND Regions = 'NL01') AS TableA FULL JOIN (SELECT Periods, \"Employee_11\" AS \"GovernmentEmployees\" FROM \"data/en/odata3/85924ENG.parquet\" WHERE Periods IN ('1998JJ00', '1999JJ00') AND Regions = 'A007399') AS TableB ON TableA.Periods = TableB.Periods",
+        "input_token_count": 12209,
+        "output_token_count": 206
+    },
+    "In 1996, what was the combined total of non-product taxes like property tax paid by manufacturing/utilities and renting/commercial services businesses in South Netherlands?": {
+        "query": "SELECT SUM(\"OtherTaxesOnProduction_29\") AS \"SUM\" FROM \"data/en/odata3/85890ENG.parquet\" WHERE NonFinancialCorporations IN ('A051797') AND Periods = '1996JJ00'",
+        "input_token_count": 19912,
+        "output_token_count": 77
+    },
+    "In Utrecht, what was the full-time equivalent labour input of employees across all sectors in 1999, and what was the net mixed income in million euros in 2005?": {
+        "query": "SELECT \"CompensationOfEmployees_2\", \"NetOperatingSurplus_4\" FROM \"data/en/odata3/85891ENG.parquet\" WHERE Periods IN ('1999JJ00', '2005JJ00') AND EconomicActivitiesBranchesSIC2008 = 'T001081' AND Regions = 'GM0363'",
+        "input_token_count": 19544,
+        "output_token_count": 102
+    },
+    "In 2022, what was the average walking transport performance across provinces with at most 0.5 billion passenger kilometres, among people aged 12 and older?": {
+        "query": "SELECT AVG(\"TransportPerformance_1\") AS \"AVG\" FROM \"data/en/odata3/84687ENG.parquet\" WHERE RegionCharacteristics LIKE 'PV%' AND ModesOfTravel = 'A018985' AND Population = 'A048709' AND Periods = '2022JJ00' AND Margins = 'MW00000' AND \"TransportPerformance_1\" <= 500000000",
+        "input_token_count": 13596,
+        "output_token_count": 123
+    }
+}

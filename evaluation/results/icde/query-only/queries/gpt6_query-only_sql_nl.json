@@ -1,0 +1,1502 @@
+{
+    "In welke wijk in Nederland met vrijstaande woningen is het gemiddelde stroomverbruik minstens 4250 kWh, en waar is dat het hoogst?": {
+        "query": "WITH RankedRows AS (SELECT WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M000221\", RANK() OVER (ORDER BY \"M000221\" DESC) AS rnk FROM \"data/nl/odata3/83023NED.parquet\" WHERE WijkenEnBuurten LIKE 'WK%' AND Woningkenmerken = 'ZW10320' AND \"M000221\" >= 4250) SELECT \"MAX[WijkenEnBuurten]\", \"M000221\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4735,
+        "output_token_count": 128
+    },
+    "In welke industrie tussen voedingsmiddelen-, kleding- en papier- en kartonindustrie was de wegingsfactor voor exportprijzen het hoogst in mei 2024?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M000289\" DESC) AS rnk, AlleBedrijfstakken AS \"MAX[AlleBedrijfstakken]\", \"M000289\" FROM \"data/nl/odata3/85771NED.parquet\" WHERE Perioden = '2024MM05' AND Afzet = 'A044076' AND AlleBedrijfstakken IN ('307600', '314000', '317400')) SELECT \"MAX[AlleBedrijfstakken]\", \"M000289\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 13933,
+        "output_token_count": 131
+    },
+    "Hoeveel mensen tussen de 15 en 75 jaar hadden gemiddeld een lage of middelbare opleiding in Zuid-Spaarndammerpolder volgens de bovengrens van het 95% betrouwbaarheidsinterval?": {
+        "query": "SELECT AVG(\"52052\") AS \"AVG\" FROM \"data/nl/odata3/85051NED.parquet\" WHERE Marges = 'MBG0095' AND Opleidingsniveau IN ('2018700', '2018740') AND WijkenEnBuurten = 'BU04530901'",
+        "input_token_count": 4618,
+        "output_token_count": 73
+    },
+    "Wat was het hoogste aantal jongens dat een deeltijd mbo bol-opleiding afrondde tussen 1977 en 1981?": {
+        "query": "SELECT MAX(\"A025292_1\") AS \"MAX[A025292_1]\" FROM \"data/nl/odata3/80384ned.parquet\" WHERE Geslacht = '3000' AND Perioden >= '1977SJ00' AND Perioden < '1982SJ00'",
+        "input_token_count": 9979,
+        "output_token_count": 69
+    },
+    "In welke wijk, Dronten Midden, Wijk Odiliapeel en 05 Katwijk aan Zee, stonden in 2017 de minste woningen met zonnepanelen?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002462\" ASC) AS rnk, WijkenEnBuurten AS \"MIN[WijkenEnBuurten]\", \"M002462\" FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten IN ('WK030303', 'WK085603', 'WK053705')) SELECT \"MIN[WijkenEnBuurten]\", \"M002462\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4565,
+        "output_token_count": 119
+    },
+    "Hoeveel zonnepaneleninstallaties waren er in de buurt Kloostertuinen in 2018 en 2019?": {
+        "query": "SELECT '2018' AS Jaar, WijkenEnBuurten, \"M002462\" AS \"Aantal installaties bij woningen (%)\" FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten = 'BU01060801' UNION ALL BY NAME SELECT '2019' AS Jaar, WijkenEnBuurten, \"M002462\" AS \"Aantal installaties bij woningen (%)\" FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten = 'BU01060801'",
+        "input_token_count": 4905,
+        "output_token_count": 129
+    },
+    "Welke buurten hebben minstens 43 woningen met zonnepanelen, en waar is dat aantal het hoogste?": {
+        "query": "WITH RankedBuurten AS (SELECT WijkenEnBuurten, \"M002462\" AS \"Aantal installaties bij woningen\", RANK() OVER (ORDER BY \"M002462\" DESC) AS rang FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten LIKE 'BU%' AND \"M002462\" >= 43) SELECT WijkenEnBuurten, \"Aantal installaties bij woningen\", rang, rang = 1 AS \"Hoogste aantal\" FROM RankedBuurten ORDER BY \"Aantal installaties bij woningen\" DESC",
+        "input_token_count": 4438,
+        "output_token_count": 131
+    },
+    "Welke mbo-entreeopleiding op Saba had in 2014/'15 de minste leerlingen: veiligheidsopleidingen, techniek of bouw?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M003171\" ASC) AS rnk, SectorenEnDomeinen AS \"MIN[SectorenEnDomeinen]\", \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE CaribischNederland = 'GM9003' AND Perioden = '2014SJ15' AND Niveau = 'A041751' AND SectorenEnDomeinen IN ('A043935', 'A043927', 'A043925')) SELECT \"MIN[SectorenEnDomeinen]\", \"M003171\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5174,
+        "output_token_count": 148
+    },
+    "Hoeveel stroom werd er in 2011 minstens opgewekt op Saba of Bonaire, als dit niet gelijk is aan 85,1 miljoen?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M007393\" ASC) AS rnk, CaribischNederland AS \"MIN[CaribischNederland]\", \"M007393\" FROM \"data/nl/odata3/81154ned.parquet\" WHERE Perioden = '2011JJ00' AND CaribischNederland IN ('GM9003', 'GM9001') AND \"M007393\" <> 85.1) SELECT \"MIN[CaribischNederland]\", \"M007393\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4882,
+        "output_token_count": 127
+    },
+    "Welke wijk had het hoogste ge\u00efnstalleerde vermogen aan zonnepanelen: Deursen en Dennenburg, Huygenhoek, Wijk 00 Oirschot of Bouwmeester?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002461\" DESC) AS rnk, WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M002461\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('WK082817', 'WK082300', 'WK085522')) SELECT \"MAX[WijkenEnBuurten]\", \"M002461\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4626,
+        "output_token_count": 119
+    },
+    "Gemiddelde van de spreiding van het aantal inwoners tussen 15 en 75 jaar met een hoge opleiding in Montferland als het aantal lager is dan 5850": {
+        "query": "SELECT AVG(\"52052\") AS \"AVG\" FROM \"data/nl/odata3/85372NED.parquet\" WHERE WijkenEnBuurten = 'GM1955' AND Opleidingsniveau = '2018790' AND Marges IN ('MOG0095', 'MBG0095') AND \"52052\" < 5850",
+        "input_token_count": 4607,
+        "output_token_count": 82
+    },
+    "Hoeveel studenten volgen in het schooljaar 2024/2025 een mbo-opleiding op niveau 4 in de bouwwereld of horeca op Bonaire?": {
+        "query": "SELECT SUM(\"M003171\") AS \"Aantal studenten\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE Perioden = '2024SJ25' AND CaribischNederland = 'GM9001' AND Niveau = 'A041763' AND SectorenEnDomeinen IN ('A043925', 'A043937')",
+        "input_token_count": 5151,
+        "output_token_count": 82
+    },
+    "Hoeveel vrouwen van 45 tot 75 jaar hadden in het derde kwartaal van 2020 als hoogste opleiding iets in de richting van wiskunde, exacte wetenschappen, rechten, administratie of economie?": {
+        "query": "SELECT SUM(\"20150\") AS \"Aantal vrouwen\" FROM \"data/nl/odata3/85313NED.parquet\" WHERE Leeftijd = '53825' AND Geslacht = '4000' AND Onderwijsniveau = 'T001143' AND Onderwijsrichting IN ('A010294', 'A010290') AND Perioden = '2020KW03'",
+        "input_token_count": 5974,
+        "output_token_count": 84
+    },
+    "Hoeveel was de totale importwaarde van goederen voor Bonaire, Sint Eustatius en Saba samen in het laatste kwartaal van 2013, waarbij specifiek de invoerwaarde van 4582 niet voorkomt?": {
+        "query": "SELECT SUM(\"D001607_1\") AS \"Totale importwaarde (1000 USD)\" FROM \"data/nl/odata3/82658NED.parquet\" WHERE Perioden = '2013KW04' AND CaribischNederland IN ('GM9001', 'GM9002', 'GM9003') AND \"D001607_1\" <> 4582",
+        "input_token_count": 4738,
+        "output_token_count": 87
+    },
+    "Wat was het producentenvertrouwen van de raffinaderijen en chemie in februari 1995?": {
+        "query": "SELECT \"M002289\" FROM \"data/nl/odata3/81234ned.parquet\" WHERE BedrijfstakkenBranchesSBI2008 = '320005' AND Marges = 'MW00000' AND Seizoencorrectie = 'A042500' AND Perioden = '1995MM02'",
+        "input_token_count": 4844,
+        "output_token_count": 74
+    },
+    "Wat was het laagst aantal mbo-leerlingen op Saba of Sint Eustatius bij een combinatie van vakgebieden in het schooljaar 2016/2017, als het aantal niet hoger was dan 104?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M003171\" ASC) AS rnk, CaribischNederland AS \"MIN[CaribischNederland]\", Perioden, SectorenEnDomeinen, \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE CaribischNederland IN ('GM9003', 'GM9002') AND Perioden = '2016SJ00' AND SectorenEnDomeinen = 'A009924' AND Niveau = 'T001336' AND \"M003171\" <= 104) SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5203,
+        "output_token_count": 144
+    },
+    "Hoeveel duurzame energie werd er opgewekt op Bonaire in 2019?": {
+        "query": "SELECT \"D003265\" FROM \"data/nl/odata3/81154ned.parquet\" WHERE CaribischNederland = 'GM9001' AND Perioden = '2019JJ00'",
+        "input_token_count": 4817,
+        "output_token_count": 49
+    },
+    "Gemiddeld ge\u00efnstalleerd zonnepaneelvermogen bij woningen in Goeree-Overflakkee in 2018 en 2020": {
+        "query": "SELECT 2018 AS Jaar, \"M002461\" AS \"Gemiddeld ge\u00efnstalleerd vermogen (kW)\" FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten = 'GM1924' UNION ALL SELECT 2020 AS Jaar, \"M002461\" AS \"Gemiddeld ge\u00efnstalleerd vermogen (kW)\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten = 'GM1924' ORDER BY Jaar",
+        "input_token_count": 4764,
+        "output_token_count": 124
+    },
+    "Wat was de literprijs voor autogas op zondag 23 en maandag 24 juni 2013?": {
+        "query": "SELECT Perioden, \"A047221\" AS literprijs_autogas FROM \"data/nl/odata3/80416ned.parquet\" WHERE Perioden IN ('2013-06-23', '2013-06-24') ORDER BY Perioden",
+        "input_token_count": 4314,
+        "output_token_count": 60
+    },
+    "In welke wijk staan de meeste huizen met zonnepanelen volgens de gegevens uit 2021, in de buurten bedrijvengebied Zeeburgerkade, Nieuwe Vaart of Verspreide huizen Teuge?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002462\" DESC) AS rnk, WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M002462\" FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten IN ('BU03633310', 'BU17830408', 'BU02850206')) SELECT \"MAX[WijkenEnBuurten]\", \"M002462\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4600,
+        "output_token_count": 122
+    },
+    "Wat is het maximale aantal hoogopgeleide inwoners van 15 tot 75 jaar in Leidschendam-Voorburg?": {
+        "query": "SELECT MAX(\"52052\") AS \"MAX[52052]\" FROM \"data/nl/odata3/85372NED.parquet\" WHERE WijkenEnBuurten = 'GM1916' AND Opleidingsniveau = '2018790' AND Marges = 'MW00000'",
+        "input_token_count": 4578,
+        "output_token_count": 70
+    },
+    "Totaal gasverbruik voor huurhuizen, appartementen en twee-onder-een-kapwoningen in Snelrewaard": {
+        "query": "SELECT SUM(\"M000219\") AS \"Totaal gasverbruik\" FROM \"data/nl/odata3/83187NED.parquet\" WHERE WijkenEnBuurten = 'BU05890200' AND Woningkenmerken IN ('1014850', 'ZW25810', 'ZW10300')",
+        "input_token_count": 4810,
+        "output_token_count": 74
+    },
+    "Wat is het laagste aantal mbo-leerlingen op Sint Eustatius voor techniek en procesindustrie en sport & veiligheid in het entreejaar 2017/2018?": {
+        "query": "SELECT MIN(\"M003171\") AS \"MIN[M003171]\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE CaribischNederland = 'GM9002' AND SectorenEnDomeinen IN ('A043927', 'A043935') AND Niveau = 'A041751' AND Perioden LIKE '2017SJ%'",
+        "input_token_count": 5182,
+        "output_token_count": 84
+    },
+    "Hoeveel prepaid elektriciteitsaansluitingen waren er in Caribisch Nederland en hoeveel kleuters van vijf jaar verhuisden naar Beesel in 2016 en 2017?": {
+        "query": "SELECT COALESCE(E.Perioden, V.Perioden) AS Perioden, E.\"D001164\" AS PrepaidElektriciteitsaansluitingen, V.\"M000080\" AS VijfjarigeGevestigdenBeesel FROM (SELECT Perioden, \"D001164\" FROM \"data/nl/odata3/81154ned.parquet\" WHERE CaribischNederland = 'CN01' AND Perioden IN ('2016JJ00', '2017JJ00')) AS E FULL JOIN (SELECT Perioden, \"M000080\" FROM \"data/nl/odata3/84547NED.parquet\" WHERE RegioS = 'GM0889' AND Leeftijd31December = '10500' AND Geslacht = 'T001038' AND Perioden IN ('2016JJ00', '2017JJ00')) AS V ON E.Perioden = V.Perioden",
+        "input_token_count": 8506,
+        "output_token_count": 197
+    },
+    "Hoeveel daken met zonnepanelen zijn er in Uitwellingerga, Snuiverbuurt en Anderen als we alleen de wijken meetellen waar het aantal installaties niet gelijk is aan 42?": {
+        "query": "SELECT SUM(\"M002462\") AS \"Aantal daken met zonnepanelen\" FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU19001101', 'BU04796130', 'BU16800400') AND \"M002462\" <> 42",
+        "input_token_count": 4578,
+        "output_token_count": 73
+    },
+    "Gemiddelde importwaarde van minstens 5,45 miljoen dollar per eiland in Caribisch Nederland in het tweede kwartaal van 2021": {
+        "query": "SELECT AVG(\"D001607_1\") AS \"GemiddeldeInvoerwaarde_1000USD\" FROM \"data/nl/odata3/82658NED.parquet\" WHERE Perioden = '2021KW02' AND CaribischNederland LIKE 'GM%' AND \"D001607_1\" >= 5450",
+        "input_token_count": 4695,
+        "output_token_count": 76
+    },
+    "Hoeveel mannen en vrouwen samen behaalden in 1955/56 een diploma in voltijd mbo bol, waarbij het aantal groter is dan 713?": {
+        "query": "SELECT \"A025291_1\" FROM \"data/nl/odata3/80384ned.parquet\" WHERE Geslacht = 'T001038' AND Perioden = '1955SJ56' AND \"A025291_1\" > 713",
+        "input_token_count": 10315,
+        "output_token_count": 60
+    },
+    "Hoeveel huishoudens hadden zonnepanelen in Wijk 28 Rodenrijs in 2017 en 2020?": {
+        "query": "SELECT 2017 AS Jaar, \"M002462\" AS \"Aantal installaties bij woningen (%)\" FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten = 'WK162128' UNION ALL BY NAME SELECT 2020 AS Jaar, \"M002462\" AS \"Aantal installaties bij woningen (%)\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten = 'WK162128'",
+        "input_token_count": 4805,
+        "output_token_count": 111
+    },
+    "Elektriciteitsverbruik van vrijstaande huizen vergelijken tussen Petten in 2013 en Kern Zuiddorpe in 2019": {
+        "query": "(SELECT '2013' AS Jaar, WijkenEnBuurten, \"M000221\" FROM \"data/nl/odata3/83022NED.parquet\" WHERE Woningkenmerken = 'ZW10320' AND WijkenEnBuurten = 'BU04410406') UNION ALL BY NAME (SELECT '2019' AS Jaar, WijkenEnBuurten, \"M000221\" FROM \"data/nl/odata3/84837NED.parquet\" WHERE Woningkenmerken = 'ZW10320' AND WijkenEnBuurten = 'BU07158500')",
+        "input_token_count": 5496,
+        "output_token_count": 135
+    },
+    "Laagste omzet uit ammoniumchloride in de industrie in 2018 en 2019": {
+        "query": "SELECT MIN(\"M001571\") AS \"MIN[Verkoopwaarde]\" FROM \"data/nl/odata3/83115NED.parquet\" WHERE Perioden IN ('2018JJ00', '2019JJ00') AND ProductenPRODCOM = 'A012212'",
+        "input_token_count": 21310,
+        "output_token_count": 67
+    },
+    "Hoe was het producentenvertrouwen en de oordeel orderpositie in de hout- en bouwmaterialenindustrie in mei 2020?\"": {
+        "query": "SELECT Perioden, BedrijfstakkenBranchesSBI2008, \"M002289\" AS \"Producentenvertrouwen\", \"M000210\" AS \"Oordeel orderpositie\" FROM \"data/nl/odata3/81234ned.parquet\" WHERE Perioden = '2020MM05' AND BedrijfstakkenBranchesSBI2008 = '315805' AND Marges = 'MW00000' AND Seizoencorrectie = 'A042500'",
+        "input_token_count": 4852,
+        "output_token_count": 107
+    },
+    "Gemiddeld aantal leerlingen uit niet-Europese landen op cluster 1-speciaal onderwijs in Noord-, Oost-, West- en Zuid-Nederland in het schooljaar 2023/2024 met ouders die ook in het buitenland geboren zijn": {
+        "query": "SELECT AVG(\"M005524\") AS \"AVG[Regiokenmerken]\" FROM \"data/nl/odata3/85490NED.parquet\" WHERE Regiokenmerken IN ('LD01', 'LD02', 'LD03', 'LD04') AND Perioden = '2023SJ00' AND Cluster = 'A041800' AND Onderwijssoort = 'A049120' AND Herkomstland = '2820717' AND GeboortelandOuders = 'A051742' AND Geslacht = 'T001038'",
+        "input_token_count": 5921,
+        "output_token_count": 123
+    },
+    "Hoeveel huizen hadden minder dan 352 zonnepaneleninstallaties in buurten als Eerbeek Zuid, Kolderveense Bovenboer, Orvelte en Echteld in 2019?": {
+        "query": "SELECT WijkenEnBuurten, \"M002462\" FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten IN ('BU02130606', 'BU01191207', 'BU17311500', 'BU17400101') AND \"M002462\" < 352",
+        "input_token_count": 4671,
+        "output_token_count": 77
+    },
+    "Gemiddelde capaciteit van zonnepanelen op woningen in Aartswoud, Verspreide huizen Ravenswaaij, Pastoor Lemeerstraat en Hof in Bergeijk": {
+        "query": "SELECT AVG(\"M002461\") AS \"Gemiddelde capaciteit zonnepanelen op woningen (kW)\" FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten IN ('BU04320101', 'BU02140608', 'BU17240007')",
+        "input_token_count": 4610,
+        "output_token_count": 70
+    },
+    "Hoeveel leerlingen volgden tussen 2011 en 2014 een MBO-opleiding niveau 3 in economie en administratie in Caribisch Nederland?": {
+        "query": "SELECT Perioden, \"M003171\" AS \"Mbo studenten\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE Niveau = 'A041759' AND SectorenEnDomeinen = 'A043934' AND CaribischNederland = 'CN01' AND Perioden LIKE '20%SJ%' AND CAST(SUBSTRING(Perioden, 1, 4) AS INTEGER) BETWEEN 2011 AND 2014 ORDER BY Perioden",
+        "input_token_count": 5209,
+        "output_token_count": 108
+    },
+    "Wat was de omzet uit de verkoop van schoenen met een leren bovenkant in de industrie van 2012 tot 2014?": {
+        "query": "SELECT Perioden, \"M001571\" AS Verkoopwaarde FROM \"data/nl/odata3/83115NED.parquet\" WHERE ProductenPRODCOM = 'A013382' AND Perioden IN ('2012JJ00', '2013JJ00', '2014JJ00') ORDER BY Perioden",
+        "input_token_count": 22037,
+        "output_token_count": 74
+    },
+    "Welk aandeel van de mensen tussen 15 en 75 jaar met een hbo- of universitair diploma in Den Dolder-Zuid valt binnen de bovenste 95%-zekerheidsmarge vergeleken met de ondergrens?": {
+        "query": "SELECT SUM(CASE WHEN Marges = 'MBG0095' THEN Value ELSE 0 END) AS \"Bovengrens 95%-interval\", SUM(CASE WHEN Marges = 'MOG0095' THEN Value ELSE 0 END) AS \"Ondergrens 95%-interval\", ROUND(100.0 * SUM(CASE WHEN Marges = 'MBG0095' THEN Value ELSE 0 END) / NULLIF(SUM(CASE WHEN Marges = 'MOG0095' THEN Value ELSE 0 END), 0), 2) AS \"Aandeel boven- ten opzichte van ondergrens (%)\" FROM (SELECT Marges, Value FROM \"data/nl/odata3/84947NED.parquet\" UNPIVOT(Value FOR Measure IN (\"52052\"))) WHERE WijkenEnBuurten = 'BU03550505' AND Opleidingsniveau = '2018790' AND Marges IN ('MBG0095', 'MOG0095')",
+        "input_token_count": 4530,
+        "output_token_count": 217
+    },
+    "Totaal ge\u00efnstalleerd piekvermogen aan zonnepanelen op huizen in Dreischor in 2019 en 2021": {
+        "query": "SELECT '2019' AS Jaar, WijkenEnBuurten, \"M002461\" AS Piekvermogen_kW FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten = 'BU16760300' UNION ALL BY NAME SELECT '2021' AS Jaar, WijkenEnBuurten, \"M002461\" AS Piekvermogen_kW FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten = 'BU16760300' ORDER BY Jaar",
+        "input_token_count": 4910,
+        "output_token_count": 126
+    },
+    "Hoeveel kilowattpiek aan zonnepaneelvermogen was er ge\u00efnstalleerd in Garsthuizen in 2021 en Zoeterwoude in 2019?": {
+        "query": "SELECT 2021 AS Jaar, WijkenEnBuurten, \"M002461\" AS Vermogen_kW FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten = 'BU19791779' UNION ALL BY NAME SELECT 2019 AS Jaar, WijkenEnBuurten, \"M002461\" AS Vermogen_kW FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten = 'GM0638'",
+        "input_token_count": 4979,
+        "output_token_count": 118
+    },
+    "Hoeveel leerlingen volgden in het schooljaar 2020/2021 een opleiding tot beveiliger of sportprofessional op mbo 3-niveau in Caribisch Nederland?": {
+        "query": "SELECT \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE SectorenEnDomeinen = 'A043935' AND Niveau = 'A041759' AND CaribischNederland = 'CN01' AND Perioden LIKE '2020SJ%'",
+        "input_token_count": 5213,
+        "output_token_count": 69
+    },
+    "Hoeveel vrouwelijke MBO-leerlingen volgden de opleiding timmerwerk en onderhoud in Amersfoort tussen 2017 en 2020 maar stonden alleen ingeschreven om examen te doen?": {
+        "query": "SELECT Perioden, \"M003171\" FROM \"data/nl/odata3/85353NED.parquet\" WHERE Geslacht = '4000' AND Niveau = 'T001336' AND Studierichting = 'A043926' AND Regio = 'AM14' AND Leerweg = 'A041773' AND Perioden IN ('2017SJ00', '2018SJ00', '2019SJ00') ORDER BY Perioden",
+        "input_token_count": 6502,
+        "output_token_count": 101
+    },
+    "In welke buurt is het laagste vermogen aan ge\u00efnstalleerde zonnepanelen: Malden-Oost of Stappegoor Zuid?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002461\" ASC) AS rnk, WijkenEnBuurten AS \"MIN[WijkenEnBuurten]\", \"M002461\" FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU02520002', 'BU08553303')) SELECT \"MIN[WijkenEnBuurten]\", \"M002461\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4509,
+        "output_token_count": 116
+    },
+    "Hoeveel procent zijn de exportprijzen van pluimveeslachterijen veranderd in september 2023, uitgedrukt als het samengevoegde cijfer voor de gehele pluimveeslachterijensector?": {
+        "query": "SELECT \"M003316\" FROM \"data/nl/odata3/85771NED.parquet\" WHERE Perioden = '2023MM09' AND AlleBedrijfstakken = '307900' AND Afzet = 'A044076'",
+        "input_token_count": 13947,
+        "output_token_count": 59
+    },
+    "Hoeveel mensen waren er tussen 2017 en 2021 op mbo-entreeopleidingen in de zorgsector via de beroepsbegeleidende leerweg in Flevoland, en in de economische richting op Sint Eustatius?": {
+        "query": "SELECT 'Flevoland, zorgsector, bbl' AS Categorie, Perioden, \"M003171\" AS AantalStudenten FROM \"data/nl/odata3/85353NED.parquet\" WHERE Regio = 'PV24' AND Niveau = 'A041751' AND Studierichting = 'A043939' AND Leerweg = 'A025293' AND Geslacht = 'T001038' AND Perioden IN ('2017SJ00', '2018SJ00', '2019SJ00', '2020SJ00', '2021SJ00') UNION ALL BY NAME SELECT 'Sint Eustatius, sector economie' AS Categorie, Perioden, \"M003171\" AS AantalStudenten FROM \"data/nl/odata3/84312NED.parquet\" WHERE CaribischNederland = 'GM9002' AND Niveau = 'A041751' AND SectorenEnDomeinen = 'A009921' AND Perioden LIKE '2017SJ%' OR CaribischNederland = 'GM9002' AND Niveau = 'A041751' AND SectorenEnDomeinen = 'A009921' AND Perioden LIKE '2018SJ%' OR CaribischNederland = 'GM9002' AND Niveau = 'A041751' AND SectorenEnDomeinen = 'A009921' AND Perioden LIKE '2019SJ%' OR CaribischNederland = 'GM9002' AND Niveau = 'A041751' AND SectorenEnDomeinen = 'A009921' AND Perioden LIKE '2020SJ%' OR CaribischNederland = 'GM9002' AND Niveau = 'A041751' AND SectorenEnDomeinen = 'A009921' AND Perioden LIKE '2021SJ%'",
+        "input_token_count": 7424,
+        "output_token_count": 383
+    },
+    "Laagste aantal mbo-leerlingen op Bonaire in opleiding richting toerisme of een niet-toebedeeld domein in het schooljaar 2023/2024, niveau 3": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M003171\" ASC) AS rnk, SectorenEnDomeinen AS \"MIN[SectorenEnDomeinen]\", \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE CaribischNederland = 'GM9001' AND Niveau = 'A041759' AND Perioden = '2023SJ00' AND SectorenEnDomeinen IN ('A043938', 'A043941')) SELECT \"MIN[SectorenEnDomeinen]\", \"M003171\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5158,
+        "output_token_count": 143
+    },
+    "Wat waren de dagprijzen van autogas en normale benzine tussen 18 en 22 september 2009?": {
+        "query": "SELECT Perioden, \"A047221\" AS autogas_euro_per_liter, \"A047220\" AS normale_benzine_euro_per_liter FROM \"data/nl/odata3/80416ned.parquet\" WHERE Perioden BETWEEN '2009-09-18' AND '2009-09-22' ORDER BY Perioden",
+        "input_token_count": 4316,
+        "output_token_count": 80
+    },
+    "Wat is het hoogste geschatte aantal hoogopgeleide inwoners tussen de 15 en 75 jaar in Rhoon-Zuid wijk volgens het betrouwbaarheidsinterval in 2020?": {
+        "query": "SELECT \"52052\" AS \"Bovengrens 95%-interval\" FROM \"data/nl/odata3/85051NED.parquet\" WHERE WijkenEnBuurten = 'WK061304' AND Opleidingsniveau = '2018790' AND Marges = 'MBG0095'",
+        "input_token_count": 4546,
+        "output_token_count": 73
+    },
+    "Totaal vermogen van zonnepanelen op huizen in Hooge Nespolder en Wierden-Noord samen in 2019 en 2020": {
+        "query": "SELECT 2019 AS Jaar, SUM(\"M002461\") AS \"TotaalVermogen_kW\" FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten IN ('BU06420905', 'BU01890001') UNION ALL SELECT 2020 AS Jaar, SUM(\"M002461\") AS \"TotaalVermogen_kW\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU06420905', 'BU01890001') ORDER BY Jaar",
+        "input_token_count": 4913,
+        "output_token_count": 132
+    },
+    "Hoeveel kuub gas verbruikte een doorsnee huis in Hollandsch Ankeveen in 2013 en 2014?": {
+        "query": "SELECT 2013 AS Jaar, \"M000219\" AS GemiddeldAardgasverbruikM3PerM2 FROM \"data/nl/odata3/83022NED.parquet\" WHERE WijkenEnBuurten = 'BU16960202' AND Woningkenmerken = 'T001100' UNION ALL SELECT 2014 AS Jaar, \"M000219\" AS GemiddeldAardgasverbruikM3PerM2 FROM \"data/nl/odata3/83187NED.parquet\" WHERE WijkenEnBuurten = 'BU16960202' AND Woningkenmerken = 'T001100' ORDER BY Jaar",
+        "input_token_count": 5388,
+        "output_token_count": 146
+    },
+    "Wat is het gemiddelde gasverbruik per jaar van hoekhuizen en twee-onder-een-kapwoningen in het verspreide gebied ten westen en zuiden van Culemborg?": {
+        "query": "SELECT AVG(\"M000219\") AS \"Gemiddeld aardgasverbruik\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE WijkenEnBuurten = 'BU16990310' AND Woningkenmerken IN ('ZW25806', 'ZW10300')",
+        "input_token_count": 4759,
+        "output_token_count": 70
+    },
+    "Hoe is het ge\u00efnstalleerde vermogen aan zonnepaneelenergie bij woningen in Siepelveen en Hengelose Es-Noord veranderd tussen 2018 en 2020?": {
+        "query": "SELECT T2018.WijkenEnBuurten, T2018.\"M002461\" AS \"vermogen_2018_kW\", T2020.\"M002461\" AS \"vermogen_2020_kW\", T2020.\"M002461\" - T2018.\"M002461\" AS \"verandering_kW\" FROM (SELECT * FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU01140106', 'BU01640100')) AS T2018 FULL JOIN (SELECT * FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU01140106', 'BU01640100')) AS T2020 ON T2018.WijkenEnBuurten = T2020.WijkenEnBuurten",
+        "input_token_count": 4820,
+        "output_token_count": 185
+    },
+    "Welke van de eilanden Bonaire of Saba had in 2011 de laagste hoeveelheid opgewekte stroom, waarbij de waarde niet gelijk is aan 8,8 miljoen kilowattuur?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M007393\" ASC) AS rnk, CaribischNederland AS \"MIN[CaribischNederland]\", \"M007393\" FROM \"data/nl/odata3/81154ned.parquet\" WHERE Perioden = '2011JJ00' AND CaribischNederland IN ('GM9001', 'GM9003') AND \"M007393\" <> 8.8) SELECT \"MIN[CaribischNederland]\", \"M007393\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4890,
+        "output_token_count": 127
+    },
+    "Hoeveel mensen van 15 tot 75 jaar met een mbo- of havo/vwo-opleiding wonen er minimaal in de buurten Nijeveen-Oost, Verspreide huizen Zevenbergschen Hoek, Zomerhuisjesterrein De Borkeld en Gietelo?": {
+        "query": "SELECT WijkenEnBuurten, \"52052\" FROM \"data/nl/odata3/84947NED.parquet\" WHERE WijkenEnBuurten IN ('BU01190101', 'BU17090109', 'BU17420801', 'BU02850002') AND Opleidingsniveau = '2018740' AND Marges = 'MOG0095'",
+        "input_token_count": 4724,
+        "output_token_count": 88
+    },
+    "In welke van Kolham Natuurgebied en het Schilderskwartier wonen de meeste mensen tussen 15 en 75 jaar met een universitaire of hbo-opleiding?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"52052\" DESC) AS rnk, WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"52052\" FROM \"data/nl/odata3/85372NED.parquet\" WHERE Marges = 'MW00000' AND Opleidingsniveau = '2018790' AND WijkenEnBuurten IN ('BU19521004', 'BU19040112', 'BU06320106', 'BU04020501', 'BU05340303')) SELECT \"MAX[WijkenEnBuurten]\", \"52052\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4721,
+        "output_token_count": 151
+    },
+    "Brandstofprijzen voor diesel en autogas op 14, 15 en 16 juni 2010": {
+        "query": "SELECT Perioden, \"A047219\" AS Diesel, \"A047221\" AS Autogas FROM \"data/nl/odata3/80416ned.parquet\" WHERE Perioden IN ('2010-06-14', '2010-06-15', '2010-06-16') ORDER BY Perioden",
+        "input_token_count": 4315,
+        "output_token_count": 74
+    },
+    "In welke woonwijk is het hoogste vermogen aan ge\u00efnstalleerde zonnepanelen te vinden; Buurt 3 of Roomburg?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002461\" DESC) AS rnk, WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M002461\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU03637600', 'BU05460408')) SELECT \"MAX[WijkenEnBuurten]\", \"M002461\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4506,
+        "output_token_count": 116
+    },
+    "Totaal opgestelde capaciteit aan zonnepanelen in Wijnjewoude-Gentiaan, Een, Zuiderham en Midden Heerenveen bij elkaar opgeteld voor 2019 en 2020": {
+        "query": "SELECT 2019 AS Jaar, SUM(\"M002461\") AS \"Totaal opgesteld vermogen (kW)\" FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten IN ('BU00861702', 'BU16990310', 'BU04796210', 'BU00740102') UNION ALL SELECT 2020 AS Jaar, SUM(\"M002461\") AS \"Totaal opgesteld vermogen (kW)\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU00861702', 'BU16990310', 'BU04796210', 'BU00740102') ORDER BY Jaar",
+        "input_token_count": 5299,
+        "output_token_count": 158
+    },
+    "Gemiddeld aantal mbo-leerlingen op niveau 3 in Caribisch Nederland met meer dan 236 studenten in schooljaar 2022/23 en 2023/24": {
+        "query": "SELECT AVG(\"M003171\") AS \"AVG[M003171]\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE Niveau = 'A041759' AND SectorenEnDomeinen = 'T001069' AND CaribischNederland = 'CN01' AND Perioden IN ('2022SJ00', '2023SJ00') AND \"M003171\" > 236",
+        "input_token_count": 5216,
+        "output_token_count": 94
+    },
+    "Hoe ziet het handelsoverschot of tekort eruit voor fabricaten uit Egypte in oktober 2024, en in zijn totaliteit voor Sint Eustatius in het eerste kwartaal van 2022?": {
+        "query": "SELECT 'Egypte, fabricaten, oktober 2024' AS Omschrijving, Perioden, 'L008594' AS Gebied, 'A018678' AS Goederen, \"D001601\" AS Handelsbalans FROM \"data/nl/odata3/85427NED.parquet\" WHERE Landen = 'L008594' AND SITC = 'A018678' AND Perioden = '2024MM10' UNION ALL BY NAME SELECT 'Sint Eustatius, totaal, eerste kwartaal 2022' AS Omschrijving, Perioden, 'GM9002' AS Gebied, 'Totaal' AS Goederen, \"D001601\" AS Handelsbalans FROM \"data/nl/odata3/82658NED.parquet\" WHERE CaribischNederland = 'GM9002' AND Perioden = '2022KW01'",
+        "input_token_count": 13715,
+        "output_token_count": 190
+    },
+    "Hoeveel procent van het totale zonnepaneelvermogen in 2020 komt uit de wijk Waalsdorp in vergelijking met de wijken Bosgebied Ugchelen, 't Lange Land en Zoeterhage?": {
+        "query": "SELECT ROUND(SUM(CASE WHEN WijkenEnBuurten = 'BU05180477' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(Value), 0), 2) AS \"Percentage Waalsdorp\" FROM (SELECT WijkenEnBuurten, Value FROM \"data/nl/odata3/85447NED.parquet\" UNPIVOT(Value FOR Measure IN (\"M002461\"))) WHERE WijkenEnBuurten IN ('BU05180477', 'BU02001202', 'BU05300201', 'BU06370802')",
+        "input_token_count": 4631,
+        "output_token_count": 134
+    },
+    "Laagste omzet uit de verkoop van metalen scharnieren tussen 2012 en 2014": {
+        "query": "SELECT Perioden AS \"MIN[Perioden]\", \"M001571\" FROM \"data/nl/odata3/83115NED.parquet\" WHERE Perioden IN ('2012JJ00', '2013JJ00', '2014JJ00') AND ProductenPRODCOM = 'A013052' ORDER BY \"M001571\" ASC LIMIT 1",
+        "input_token_count": 21320,
+        "output_token_count": 84
+    },
+    "Hoeveel procent van de mannen in Caribisch Nederland had te maken met overlast in hun woonomgeving in 2017/2018?": {
+        "query": "SELECT \"A047637\" FROM \"data/nl/odata3/82557NED.parquet\" WHERE Persoonskenmerken = '3000' AND Marges = 'MW00000' AND Perioden = '2017JJ00' AND CaribischNederland = 'CN01'",
+        "input_token_count": 6510,
+        "output_token_count": 68
+    },
+    "Hoeveel leerlingen volgden in het schooljaar 2019/2020 op Bonaire een koksopleiding of opleiding in de horeca op het mbo instapniveau en niveau 2?": {
+        "query": "SELECT SUM(\"M003171\") AS \"Aantal leerlingen\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE Perioden = '2019SJ00' AND CaribischNederland = 'GM9001' AND SectorenEnDomeinen = 'A043937' AND Niveau IN ('A041751', 'A041755')",
+        "input_token_count": 5126,
+        "output_token_count": 82
+    },
+    "Wat is het aandeel van zonnepanelen in wijk 0 van Kerkdriel ten opzichte van wijk 0 van Oegstgeest en Zwammerdam in Alphen aan den Rijn voor de wijken met gemiddeld 353 huizen met zonnepanelen of minder?": {
+        "query": "SELECT SUM(CASE WHEN WijkenEnBuurten = 'WK026300' THEN Value ELSE 0 END) AS \"WK026300\", SUM(Value) AS \"SUM[WijkenEnBuurten]\", ROUND(SUM(CASE WHEN WijkenEnBuurten = 'WK026300' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(Value), 0), 2) AS \"%\" FROM (SELECT WijkenEnBuurten, Value FROM \"data/nl/odata3/84772NED.parquet\" UNPIVOT (Value FOR Measure IN (\"M002462\"))) WHERE WijkenEnBuurten IN ('WK026300', 'WK057900', 'WK048471') AND Value <= 353",
+        "input_token_count": 4664,
+        "output_token_count": 169
+    },
+    "Wat was het gemiddelde stroomverbruik per vrijstaande woning in verspreid gebied Varsseveld, wijk 3 van IJmuiden-West en het poldergebied Overvecht in 2014 en 2019?": {
+        "query": "(SELECT '2014' AS Jaar, WijkenEnBuurten, \"M000221\" AS \"Gemiddeld elektriciteitsverbruik (kWh/m2)\" FROM \"data/nl/odata3/83187NED.parquet\" WHERE Woningkenmerken = 'ZW10320' AND WijkenEnBuurten IN ('WK150903', 'WK045303', 'BU03440343')) UNION ALL BY NAME (SELECT '2019' AS Jaar, WijkenEnBuurten, \"M000221\" AS \"Gemiddeld elektriciteitsverbruik (kWh/m2)\" FROM \"data/nl/odata3/84837NED.parquet\" WHERE Woningkenmerken = 'ZW10320' AND WijkenEnBuurten IN ('WK150903', 'WK045303', 'BU03440343'))",
+        "input_token_count": 5563,
+        "output_token_count": 187
+    },
+    "Wat was het gemiddelde stroomverbruik per appartement in Slagenbuurt en Middelreuvelt over 2012 en 2013?": {
+        "query": "SELECT AVG(\"M000221\") AS \"Gemiddeld elektriciteitsverbruik 2012-2013\" FROM ((SELECT WijkenEnBuurten, \"M000221\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE Woningkenmerken = 'ZW25810' AND WijkenEnBuurten IN ('BU05130504', 'BU15070803')) UNION ALL BY NAME (SELECT WijkenEnBuurten, \"M000221\" FROM \"data/nl/odata3/83022NED.parquet\" WHERE Woningkenmerken = 'ZW25810' AND WijkenEnBuurten IN ('BU05130504', 'BU15070803')))",
+        "input_token_count": 5125,
+        "output_token_count": 157
+    },
+    "Zonne-energiecapaciteit in de wijk Orden in 2018 en 2020": {
+        "query": "SELECT '2018' AS Jaar, WijkenEnBuurten, \"M002461\" AS OpgesteldVermogenKW FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten = 'BU02000206' UNION ALL BY NAME SELECT '2020' AS Jaar, WijkenEnBuurten, \"M002461\" AS OpgesteldVermogenKW FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten = 'BU02000206'",
+        "input_token_count": 4889,
+        "output_token_count": 125
+    },
+    "Hoeveel zijn de exportprijzen van kippenvlees bij Nederlandse slachterijen veranderd in september 2023?": {
+        "query": "SELECT Perioden, \"M003316\" AS \"Maandmutatie exportprijzen kippenvlees (%)\" FROM \"data/nl/odata3/85771NED.parquet\" WHERE Perioden = '2023MM09' AND AlleBedrijfstakken = '307900' AND Afzet = 'A044076'",
+        "input_token_count": 13923,
+        "output_token_count": 76
+    },
+    "Welk type woning in Ruimzicht-West heeft het laagste gemiddelde stroomverbruik, kijkend naar appartementen, huurwoningen en tussenwoningen?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M000221\" ASC) AS rnk, Woningkenmerken AS \"MIN[Woningkenmerken]\", \"M000221\" FROM \"data/nl/odata3/83187NED.parquet\" WHERE WijkenEnBuurten = 'BU03840116' AND Woningkenmerken IN ('ZW25810', '1014850', 'ZW25805') AND \"M000221\" IS NOT NULL) SELECT \"MIN[Woningkenmerken]\", \"M000221\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4755,
+        "output_token_count": 135
+    },
+    "Welk aandeel van de mbo-leerlingen op Saba in 2015/2016 volgde een opleiding in de horeca of bakkerijsector op niveau 2, vergeleken met de bouw en infra en afbouw sectoren als het aantal hoger is dan 0?": {
+        "query": "SELECT SUM(CASE WHEN SectorenEnDomeinen = 'A043937' THEN Value ELSE 0 END) AS \"HorecaEnBakkerij\", SUM(Value) AS \"HorecaEnBakkerijBouwEnInfraAfbouw\", ROUND(100.0 * SUM(CASE WHEN SectorenEnDomeinen = 'A043937' THEN Value ELSE 0 END) / NULLIF(SUM(Value), 0), 2) AS \"%\" FROM (SELECT SectorenEnDomeinen, Perioden, CaribischNederland, Niveau, Value FROM \"data/nl/odata3/84312NED.parquet\" UNPIVOT (Value FOR Measure IN (\"M003171\"))) WHERE CaribischNederland = 'GM9003' AND Perioden = '2015SJ00' AND Niveau = 'A041755' AND SectorenEnDomeinen IN ('A043937', 'A043925', 'A043926') AND Value > 0",
+        "input_token_count": 4976,
+        "output_token_count": 216
+    },
+    "Welke buurt tussen Pesse kern, verspreide huizen Tholen, Vriezenveensewijk en Groessen heeft de meeste zonnepanelen bij woningen, indien het aantal voor een wijk hoger is dan 17?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002462\" DESC) AS rnk, WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M002462\" FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten IN ('BU01186000', 'BU07160009', 'BU17000200', 'BU02260501') AND \"M002462\" > 17) SELECT \"MAX[WijkenEnBuurten]\", \"M002462\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4625,
+        "output_token_count": 138
+    },
+    "Indexering of herindeling van buurten in Laren met betrekking tot koopwoningen": {
+        "query": "SELECT WijkenEnBuurten, \"M000125\" AS Indelingswijziging FROM \"data/nl/odata3/85999NED.parquet\" WHERE WijkenEnBuurten LIKE 'BU0417%' AND Woningkenmerken = '1014800'",
+        "input_token_count": 4720,
+        "output_token_count": 66
+    },
+    "Gemiddeld ge\u00efnstalleerd zonnepanelencapaciteit in Beerendrecht, Hengevelde en Loolaan-Noord, exclusief buurten met een vermogen van precies 523 kW.": {
+        "query": "SELECT AVG(\"M002461\") AS \"AVG[M002461]\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU04840604', 'BU17350800', 'BU02000803') AND \"M002461\" <> 523",
+        "input_token_count": 4657,
+        "output_token_count": 73
+    },
+    "Wat was de verwachte bedrijvigheid rondom bedrijven binnen de papier en houtverwerkingsindustrie rond maart van 2021 t/m 2024, rekening houdend met seizoensinvloeden?": {
+        "query": "SELECT Perioden, BedrijfstakkenBranchesSBI2008, \"M002291\" FROM \"data/nl/odata3/81234ned.parquet\" WHERE Perioden IN ('2021MM03', '2022MM03', '2023MM03', '2024MM03') AND BedrijfstakkenBranchesSBI2008 IN ('315805', '317105') AND Seizoencorrectie = 'A042500' AND Marges = 'MW00000' ORDER BY Perioden, BedrijfstakkenBranchesSBI2008",
+        "input_token_count": 4824,
+        "output_token_count": 123
+    },
+    "Wat is het gemiddelde stroomverbruik per huurhuis in Cycladen, Stadskwartier-Noord en De Kaai?": {
+        "query": "SELECT WijkenEnBuurten, \"M000221\" AS gemiddeld_elektriciteitsverbruik_kWh_per_m2 FROM \"data/nl/odata3/83187NED.parquet\" WHERE Woningkenmerken = '1014850' AND WijkenEnBuurten IN ('BU03072804', 'BU02220707', 'BU03030603')",
+        "input_token_count": 4802,
+        "output_token_count": 86
+    },
+    "Wat kostte een liter Euro95 benzine bij de pomp op 7 en 8 augustus 2021?": {
+        "query": "SELECT Perioden, \"A047220\" FROM \"data/nl/odata3/80416ned.parquet\" WHERE Perioden IN ('2021-08-07', '2021-08-08') ORDER BY Perioden",
+        "input_token_count": 4315,
+        "output_token_count": 55
+    },
+    "Wat waren de dagprijzen voor autogas bij tankstations van 6 tot en met 10 oktober 2024?": {
+        "query": "SELECT Perioden, \"A047221\" AS autogas_euro_per_liter FROM \"data/nl/odata3/80416ned.parquet\" WHERE Perioden BETWEEN '2024-10-06' AND '2024-10-10' ORDER BY Perioden",
+        "input_token_count": 4317,
+        "output_token_count": 64
+    },
+    "Welke industri\u00eble productgroep had in 2009 de hoogste omzet: artikelen zonder schroefdraad of draadnagels en spijkers?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M001571\" DESC) AS rnk, ProductenPRODCOM AS \"MAX[ProductenPRODCOM]\", \"M001571\" FROM \"data/nl/odata3/83115NED.parquet\" WHERE ProductenPRODCOM IN ('A015271', 'A015272') AND Perioden = '2009JJ00') SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 22204,
+        "output_token_count": 106
+    },
+    "Gemiddeld aantal hoogopgeleide volwassenen in de verspreid gelegen huizen rond Wijster in 2013 en 2021 volgens de boven- en ondergrens binnen de onzekerheidsmarges": {
+        "query": "SELECT Marges, AVG(\"52052\") AS \"AVG[2013,2021]\" FROM ((SELECT Marges, \"52052\" FROM \"data/nl/odata3/84947NED.parquet\" WHERE WijkenEnBuurten LIKE 'BU173103%' AND WijkenEnBuurten <> 'BU17310300' AND Opleidingsniveau = '2018790' AND Marges IN ('MBG0095', 'MOG0095')) UNION ALL BY NAME (SELECT Marges, \"52052\" FROM \"data/nl/odata3/85372NED.parquet\" WHERE WijkenEnBuurten LIKE 'BU173103%' AND WijkenEnBuurten <> 'BU17310300' AND Opleidingsniveau = '2018790' AND Marges IN ('MBG0095', 'MOG0095'))) GROUP BY Marges",
+        "input_token_count": 4910,
+        "output_token_count": 194
+    },
+    "Hoeveel meisjes met een Indonesische achtergrond zaten in het schooljaar 2021/22 in cluster 2 van het speciaal onderwijs in de provincie Groningen?": {
+        "query": "SELECT \"M005524\" FROM \"data/nl/odata3/85490NED.parquet\" WHERE Geslacht = '4000' AND GeboortelandOuders = 'T001638' AND Cluster = 'A041801' AND Herkomstland = 'H008632' AND Onderwijssoort = 'A049120' AND Regiokenmerken = 'PV20' AND Perioden = '2021SJ00'",
+        "input_token_count": 5883,
+        "output_token_count": 99
+    },
+    "Hoeveel mensen tussen de 55 en 65 jaar met een havo, vwo, of mbo-diploma hebben een achtergrond in wetenschap, onderwijs of algemene studies, en hoeveel jongeren van 15 tot 25 jaar waren werkloos in het eerste kwartaal van 2024?": {
+        "query": "SELECT (SELECT SUM(\"20150\") FROM \"data/nl/odata3/85313NED.parquet\" WHERE Leeftijd = '53900' AND Onderwijsniveau = '2018740' AND Onderwijsrichting IN ('A010294', 'A010289', 'A010282') AND Perioden = '2024KW01' AND Geslacht = 'T001038') AS \"Aantal_55_tot_65_onderwijsrichtingen\", (SELECT \"3000800_2\" * 1000 FROM \"data/nl/odata3/80590ned.parquet\" WHERE Leeftijd = '53050' AND Perioden = '2024KW01' AND Geslacht = 'T001038') AS \"Aantal_werklozen_15_tot_25\"",
+        "input_token_count": 6619,
+        "output_token_count": 168
+    },
+    "Wat is het gemiddeld aantal mensen tussen de 15 en 75 jaar met een lage opleiding in Buitenpost en Den Burg, waarbij we kijken naar de onderkant van de geschatte waarde?": {
+        "query": "SELECT AVG(\"52052\") AS \"AVG[Bevolking 15 tot 75 jaar]\" FROM \"data/nl/odata3/84947NED.parquet\" WHERE Marges = 'MOG0095' AND Opleidingsniveau = '2018700' AND WijkenEnBuurten IN ('BU00590000', 'BU04480000')",
+        "input_token_count": 4686,
+        "output_token_count": 85
+    },
+    "Hoeveel elektriciteit werd er in de verschillende delen van het Caribisch gebied opgewerkt in 2008?": {
+        "query": "SELECT CaribischNederland, \"M007393\" FROM \"data/nl/odata3/81154ned.parquet\" WHERE Perioden = '2008JJ00' AND CaribischNederland LIKE 'GM%'",
+        "input_token_count": 4853,
+        "output_token_count": 52
+    },
+    "In welke van de buurten Banne Noordwest en Hoogblokland staan de minste huizen met zonnepanelen?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002462\" ASC) AS rnk, WijkenEnBuurten AS \"MIN[WijkenEnBuurten]\", \"M002462\" FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten IN ('BU03637002', 'BU06890500')) SELECT \"MIN[WijkenEnBuurten]\", \"M002462\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4543,
+        "output_token_count": 116
+    },
+    "Wat was de totale exportwaarde vanuit Caribisch Nederland in 2012 voor drank, tabak, gefabriceerde producten en minerale brandstoffen?": {
+        "query": "SELECT SUM(\"D001636_1\") AS \"Totale uitvoerwaarde (1000 USD)\" FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2012JJ00' AND GoederenindelingSITC IN ('A018528', 'A018809', 'A018678', 'A018591')",
+        "input_token_count": 4981,
+        "output_token_count": 84
+    },
+    "Hoe groot is het aandeel twee-onder-een-kapwoningen in De Huet fase 4 met een gemiddeld stroomverbruik van minstens 3900 kWh per jaar in vergelijking met Polder Kamphuizen?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, Woningkenmerken) AS Dimension_Measure, SUM(Value) AS \"SUM[WijkenEnBuurten]\", SUM(CASE WHEN WijkenEnBuurten = 'BU02220604' THEN Value ELSE 0 END) AS \"BU02220604\", ROUND(SUM(CASE WHEN WijkenEnBuurten = 'BU02220604' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(Value), 0), 2) AS \"%\" FROM (SELECT Measure, Value, Woningkenmerken, WijkenEnBuurten FROM \"data/nl/odata3/83022NED.parquet\" UNPIVOT(Value FOR Measure IN (\"M000221\"))) WHERE Woningkenmerken = 'ZW10300' AND WijkenEnBuurten IN ('BU02220604', 'BU05370708') AND Value >= 3900 GROUP BY Dimension_Measure",
+        "input_token_count": 4705,
+        "output_token_count": 210
+    },
+    "Hoeveel huizen in Nobelhorst hebben een zonnepanelensysteem in 2018?": {
+        "query": "SELECT WijkenEnBuurten, \"M002462\" FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten = 'BU00340503'",
+        "input_token_count": 4499,
+        "output_token_count": 50
+    },
+    "Wat was volgens ondernemers in de hout- en bouwmaterialensector het laagst verwachte oordeel over de voorraad in januari 2022, rekening houdend met seizoensinvloeden?": {
+        "query": "SELECT \"M000004\" FROM \"data/nl/odata3/81234ned.parquet\" WHERE BedrijfstakkenBranchesSBI2008 = '315805' AND Seizoencorrectie = 'A042500' AND Perioden = '2022MM01' AND Marges = 'MOG0095'",
+        "input_token_count": 4725,
+        "output_token_count": 75
+    },
+    "Wat was de laagste aantal niveau 4 mbo-leerlingen in Caribisch Nederland in het studiejaar 2014/2015 die een opleiding bouw en infra, economie, zorg en welzijn?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M003171\" ASC) AS rnk, SectorenEnDomeinen AS \"MIN[SectorenEnDomeinen]\", \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE Niveau = 'A041763' AND CaribischNederland = 'CN01' AND Perioden = '2014SJ15' AND SectorenEnDomeinen IN ('A043925', 'A043934', 'A043939')) SELECT \"MIN[SectorenEnDomeinen]\", \"M003171\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5219,
+        "output_token_count": 147
+    },
+    "Hoeveel studenten begonnen gemiddeld aan een entreeopleiding mbo zorg & welzijn in Flevoland en op Sint Eustatius voor economie in 2017 en 2020?": {
+        "query": "SELECT AVG(\"M003171\") AS \"AVG\" FROM ((SELECT Perioden, Studierichting AS StudierichtingOfSector, \"M003171\" FROM \"data/nl/odata3/85353NED.parquet\" WHERE Regio = 'PV24' AND Niveau = 'A041751' AND Studierichting = 'A043939' AND Geslacht = 'T001038' AND Leerweg = 'A025290' AND Perioden IN ('2017SJ00', '2020SJ00')) UNION ALL BY NAME (SELECT Perioden, SectorenEnDomeinen AS StudierichtingOfSector, \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE CaribischNederland = 'GM9002' AND Niveau = 'A041751' AND SectorenEnDomeinen = 'A009921' AND Perioden IN ('2017SJ00', '2020SJ00')))",
+        "input_token_count": 7391,
+        "output_token_count": 206
+    },
+    "Hoe is de relatieve exportwaarde in het eerste kwartaal van 2020 veranderd op de individuele BES-eilanden?": {
+        "query": "SELECT CaribischNederland, Perioden, \"D001636_2\" AS relatieve_verandering_uitvoerwaarde_procent FROM \"data/nl/odata3/82658NED.parquet\" WHERE Perioden = '2020KW01' AND CaribischNederland LIKE 'GM%'",
+        "input_token_count": 4690,
+        "output_token_count": 69
+    },
+    "Hoe groot is het aandeel vrouwelijke mbo-studenten niveau 3 dat in Twente een bbl-opleiding in informatica volgt in 2022/2023?": {
+        "query": "SELECT ROUND(100.0 * SUM(CASE WHEN Geslacht = '4000' THEN Value ELSE 0 END) / NULLIF(SUM(Value), 0), 2) AS \"Aandeel vrouwelijke studenten (%)\" FROM (SELECT Geslacht, Value FROM \"data/nl/odata3/85353NED.parquet\" UNPIVOT(Value FOR Measure IN (\"M003171\"))) WHERE Regio = 'AM05' AND Niveau = 'A041759' AND Leerweg = 'A025293' AND Studierichting = 'A010286' AND Perioden = '2022SJ00' AND Geslacht IN ('3000', '4000')",
+        "input_token_count": 6442,
+        "output_token_count": 148
+    },
+    "In welke van de volgende buurten zijn het minste aantal huizen met zonnepanelen geplaatst: Kleverpark-noord, Polder Garsten, De Klomp of Hoogblokland-Buitengebied-Noord?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002462\" ASC) AS rnk, WijkenEnBuurten AS \"MIN[WijkenEnBuurten]\", \"M002462\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU03921205', 'BU19040302', 'BU04570104', 'BU19780705') AND \"M002462\" IS NOT NULL) SELECT \"MIN[WijkenEnBuurten]\", \"M002462\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4628,
+        "output_token_count": 138
+    },
+    "Hoe zag het handelssaldo van Sint Eustatius eruit in het eerste kwartaal van 2016?": {
+        "query": "SELECT Perioden, CaribischNederland, \"D001601\" AS Handelssaldo FROM \"data/nl/odata3/82658NED.parquet\" WHERE Perioden = '2016KW01' AND CaribischNederland = 'GM9002'",
+        "input_token_count": 4697,
+        "output_token_count": 62
+    },
+    "Wat is het laagste aantal leerlingen op cluster 2 speciaal onderwijs uit Suriname, geboren buiten Nederland, in Drenthe en Zuid-Holland, schooljaar 2023/24?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M005524\" ASC) AS rnk, Regiokenmerken AS \"MIN[Regiokenmerken]\", \"M005524\" FROM \"data/nl/odata3/85490NED.parquet\" WHERE GeboortelandOuders = 'A051736' AND Cluster = 'A041801' AND Geslacht = 'T001038' AND Herkomstland = 'H008751' AND Onderwijssoort = 'A049120' AND Regiokenmerken IN ('PV22', 'PV28') AND Perioden = '2023SJ00') SELECT \"MIN[Regiokenmerken]\", \"M005524\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5928,
+        "output_token_count": 165
+    },
+    "In welke van de buurten Zegge, Zuidoost of Vollenhove stond in 2021 het hoogste zonnepaneelvermogen opgesteld?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002461\" DESC) AS rnk, WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M002461\" FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten IN ('BU08400400', 'BU02260402', 'BU17080700', 'BU03550205')) SELECT \"MAX[WijkenEnBuurten]\", \"M002461\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4726,
+        "output_token_count": 128
+    },
+    "Hoeveel huizen zijn er voorzien van zonnepanelen in BT Achterzeedijk en rondom Olburgen en Rha?": {
+        "query": "SELECT WijkenEnBuurten, \"M002462\" AS \"Percentage woningen met zonnepanelen\" FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU04895080', 'BU18760303', 'BU18760304')",
+        "input_token_count": 4531,
+        "output_token_count": 69
+    },
+    "Hoe verhoudt het stroomverbruik van een tussenhuis zich tot het totaal aan elektriciteitslevering voor tussenhuizen en vrijstaande huizen in Onstwedde Buitengebied Noord?": {
+        "query": "SELECT SUM(CASE WHEN Woningkenmerken = 'ZW25805' THEN Value ELSE 0 END) AS \"Tussenwoning\", SUM(Value) AS \"TussenwoningEnVrijstaandeWoning\", ROUND(SUM(CASE WHEN Woningkenmerken = 'ZW25805' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(Value), 0), 2) AS \"%\" FROM (SELECT WijkenEnBuurten, Woningkenmerken, Value FROM \"data/nl/odata3/85999NED.parquet\" UNPIVOT(Value FOR Measure IN (\"M000221\"))) WHERE WijkenEnBuurten = 'BU00370308' AND Woningkenmerken IN ('ZW25805', 'ZW10320')",
+        "input_token_count": 4865,
+        "output_token_count": 170
+    },
+    "Hoe dachten producenten in de industrie over hun voorraden in oktober 1997 (seizoengecorrigeerd)?": {
+        "query": "SELECT Perioden, \"M000004\" FROM \"data/nl/odata3/81234ned.parquet\" WHERE Perioden = '1997MM10' AND BedrijfstakkenBranchesSBI2008 = '307500' AND Seizoencorrectie = 'A042500' AND Marges = 'MW00000'",
+        "input_token_count": 4840,
+        "output_token_count": 77
+    },
+    "Gemiddeld aantal inwoners tussen 15 en 75 jaar met een lage of hoge opleiding op bedrijventerrein Teylingen (ondergrens betrouwbaarheidsinterval)": {
+        "query": "SELECT AVG(\"52052\") AS \"AVG\" FROM \"data/nl/odata3/85372NED.parquet\" WHERE Marges = 'MOG0095' AND Opleidingsniveau IN ('2018700', '2018790') AND WijkenEnBuurten = 'BU17830409'",
+        "input_token_count": 4610,
+        "output_token_count": 73
+    },
+    "Hoeveel industri\u00eble watersnijmachines zijn er in Nederland verkocht tussen 2017 en 2019?": {
+        "query": "SELECT SUM(\"M001550\") AS \"Aantal verkochte watersnijmachines\" FROM \"data/nl/odata3/83115NED.parquet\" WHERE 1 = 0",
+        "input_token_count": 21579,
+        "output_token_count": 45
+    },
+    "Wijk met het laagste aantal zonnepanelen bij huizen: Pottenberg of Diepenveen?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002462\" ASC) AS rnk, WijkenEnBuurten AS \"MIN[WijkenEnBuurten]\", \"M002462\" FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten IN ('BU09350203', 'WK015011')) SELECT \"MIN[WijkenEnBuurten]\", \"M002462\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4580,
+        "output_token_count": 115
+    },
+    "Vergelijk het ge\u00efnstalleerde vermogen aan zonne-energie in Hooge Nespolder en Wierden-Noord tussen 2019 en 2020": {
+        "query": "SELECT '2019' AS Jaar, WijkenEnBuurten, \"M002461\" AS OpgesteldVermogenKW FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten IN ('BU06420905', 'BU01890001') UNION ALL BY NAME SELECT '2020' AS Jaar, WijkenEnBuurten, \"M002461\" AS OpgesteldVermogenKW FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU06420905', 'BU01890001') ORDER BY WijkenEnBuurten, Jaar",
+        "input_token_count": 4870,
+        "output_token_count": 147
+    },
+    "Welke wegingsfactoren zijn er voor buitenlandse prijzen in de metaalproductenindustrie en voor uitgaven aan schoenen in oktober 2023?": {
+        "query": "SELECT 'Buitenlandse afzetprijzen metaalproductenindustrie' AS Categorie, \"M000289\" AS Wegingsfactor FROM \"data/nl/odata3/85771NED.parquet\" WHERE Perioden = '2023MM10' AND AlleBedrijfstakken = '330300' AND Afzet = 'A044076' UNION ALL SELECT 'Uitgaven aan schoenen' AS Categorie, \"M000289\" AS Wegingsfactor FROM \"data/nl/odata3/83134NED.parquet\" WHERE Perioden = '2023MM10' AND Bestedingscategorieen = 'CPI032000'",
+        "input_token_count": 19006,
+        "output_token_count": 140
+    },
+    "Hoeveel zonne-energie werd er opgesteld op woningen in Dreischor in 2019 en 2021?": {
+        "query": "SELECT 2019 AS Jaar, WijkenEnBuurten, \"M002461\" AS OpgesteldVermogenKW FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten = 'BU16760300' UNION ALL BY NAME SELECT 2021 AS Jaar, WijkenEnBuurten, \"M002461\" AS OpgesteldVermogenKW FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten = 'BU16760300'",
+        "input_token_count": 4819,
+        "output_token_count": 123
+    },
+    "Gemiddeld ge\u00efnstalleerd piekvermogen aan zonnepanelen op woningen in Huizum-Badweg en verspreide huizen Peel in Zeeland": {
+        "query": "SELECT AVG(\"M002461\") AS \"AVG[M002461]\" FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU00801109', 'BU16850909')",
+        "input_token_count": 4544,
+        "output_token_count": 58
+    },
+    "Welke woningsoort of type huis in Scheulder verbruikt het meeste aardgas?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M000219\" DESC) AS rnk, Woningkenmerken AS \"MAX[Woningkenmerken]\", \"M000219\" FROM \"data/nl/odata3/83022NED.parquet\" WHERE WijkenEnBuurten = 'BU19030204' AND Woningkenmerken IN ('ZW10300', 'ZW10320', 'ZW25805', 'ZW25810', 'ZW25806')) SELECT \"MAX[Woningkenmerken]\", \"M000219\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4742,
+        "output_token_count": 135
+    },
+    "Laagste netto stroomlevering in Easterlittens: tussenwoningen of vrijstaande huizen?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M007944\" ASC) AS rnk, Woningkenmerken AS \"MIN[Woningkenmerken]\", \"M007944\" FROM \"data/nl/odata3/85999NED.parquet\" WHERE WijkenEnBuurten = 'BU00808116' AND Woningkenmerken IN ('ZW25805', 'ZW10320')) SELECT \"MIN[Woningkenmerken]\", \"M007944\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4807,
+        "output_token_count": 120
+    },
+    "Wat was het hoogste volume aan waterproductie gemeten op de BES-eilanden in de periode 2020 tot en met 2022?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M001566_2\" DESC) AS rnk, Perioden, CaribischNederland, \"M001566_2\" FROM \"data/nl/odata3/81154ned.parquet\" WHERE Perioden IN ('2020JJ00', '2021JJ00', '2022JJ00') AND CaribischNederland LIKE 'GM%') SELECT Perioden, CaribischNederland, \"M001566_2\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4807,
+        "output_token_count": 120
+    },
+    "Totaal gasverbruik per jaar voor halfvrijstaande huizen in Lonneker, Archem en de verspreide huizen rond Houtdorp in 2012": {
+        "query": "SELECT WijkenEnBuurten, \"M000219\" AS \"Gemiddeld aardgasverbruik\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE Woningkenmerken = 'ZW10300' AND WijkenEnBuurten IN ('BU09620009', 'BU09940109', 'BU19030509')",
+        "input_token_count": 6192,
+        "output_token_count": 83
+    },
+    "Hoe beoordeelden bedrijven in de textiel- en kledingindustrie, chemische sector en de gehele industrie hun orderportefeuille in juli 1985, rekening houdend met seizoensinvloeden?": {
+        "query": "SELECT BedrijfstakkenBranchesSBI2008, \"M000210\" FROM \"data/nl/odata3/81234ned.parquet\" WHERE BedrijfstakkenBranchesSBI2008 IN ('312505', '320005', '307500') AND Seizoencorrectie = 'A042500' AND Marges = 'MW00000' AND Perioden = '1985MM07'",
+        "input_token_count": 4854,
+        "output_token_count": 92
+    },
+    "Welke buurt heeft het hoogste gemiddelde gasverbruik bij hoekhuizen?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M000219\" DESC) AS rnk, WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M000219\" FROM \"data/nl/odata3/83022NED.parquet\" WHERE Woningkenmerken = 'ZW25806' AND WijkenEnBuurten LIKE 'BU%' AND \"M000219\" IS NOT NULL) SELECT \"MAX[WijkenEnBuurten]\", \"M000219\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4712,
+        "output_token_count": 128
+    },
+    "Hoeveel zonnepanelen-installaties zijn er in Snuiverbuurt, Uitwellingerga en Anderen met een ander aantal dan 70?": {
+        "query": "SELECT WijkenEnBuurten, \"M002462\" FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU04796130', 'BU19001101', 'BU16800400') AND \"M002462\" <> 70",
+        "input_token_count": 4578,
+        "output_token_count": 71
+    },
+    "Hoeveel procent van het totale vermogen aan zonnepanelen in Beisterveldse Broek en Vastenavondkamp-Noord komt uit Vastenavondkamp-Noord?": {
+        "query": "SELECT ROUND(SUM(CASE WHEN WijkenEnBuurten = 'BU09832202' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(Value), 0), 2) AS \"percentage_vastenavondkamp_noord\" FROM (SELECT WijkenEnBuurten, Value FROM \"data/nl/odata3/85447NED.parquet\" UNPIVOT(Value FOR Measure IN (\"M002461\"))) WHERE WijkenEnBuurten IN ('BU07941101', 'BU09832202')",
+        "input_token_count": 4507,
+        "output_token_count": 124
+    },
+    "Hoe zijn de exportprijzen van muziekinstrumenten veranderd in de maanden maart tot en met juli 2025, zowel op maand- als jaarbasis?": {
+        "query": "SELECT Perioden, \"M003316\" AS \"Maandmutatie PPI (%)\", \"M003288\" AS \"Jaarmutatie PPI (%)\" FROM \"data/nl/odata3/85771NED.parquet\" WHERE AlleBedrijfstakken = '342900' AND Afzet = 'A044076' AND Perioden BETWEEN '2025MM03' AND '2025MM07' ORDER BY Perioden",
+        "input_token_count": 13957,
+        "output_token_count": 98
+    },
+    "Hoeveel vrouwen tussen 25 en 45 jaar met een diploma havo, vwo of mbo2-4 in de richting zorg en welzijn waren er in het tweede kwartaal van 2016, en hoeveel banen vervulden jonge buitenlandse werknemers uit Indonesi\u00eb in de cultuursector met een uurloon tussen 50 en 55 euro?": {
+        "query": "SELECT (SELECT \"20150\" FROM \"data/nl/odata3/85313NED.parquet\" WHERE Onderwijsniveau = '2018740' AND Leeftijd = '53310' AND Onderwijsrichting = 'A010285' AND Geslacht = '4000' AND Perioden = '2016KW02') AS \"Vrouwen_25_tot_45_zorg_en_welzijn\", (SELECT \"M005214\" FROM \"data/nl/odata3/85477NED.parquet\" WHERE BedrijfstakkenBranchesSBI2008 = '428100' AND WerknemerWelNietIngezeten = 'T001391' AND KenmerkenBaan = 'A044297' AND KenmerkenWerknemer = '70500' AND Herkomstland = 'H008632' AND Perioden = '2016KW02') AS \"Banen_jongeren_Indonesie_cultuur_x_1000\"",
+        "input_token_count": 8974,
+        "output_token_count": 205
+    },
+    "Hoeveel energiecapaciteit hebben de zonnepanelen samen in Aletta Jacobs-erf en Baalder?": {
+        "query": "SELECT SUM(\"M002463\") AS \"Totaal vermogen zonnepanelen (kW)\" FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten = 'BU01602806'",
+        "input_token_count": 4444,
+        "output_token_count": 56
+    },
+    "Welke chemische industri\u00eble producten uit de groep benzeen, methanol of formaldehyde hadden in 2014 de hoogste maximale verkoopwaarde tot 707 miljoen euro?": {
+        "query": "WITH RankedRows AS (SELECT ProductenPRODCOM AS \"MAX[ProductenPRODCOM]\", \"M001571\", RANK() OVER (ORDER BY \"M001571\" DESC) AS rnk FROM \"data/nl/odata3/83115NED.parquet\" WHERE ProductenPRODCOM IN ('A013807', 'A013902') AND Perioden = '2014JJ00' AND \"M001571\" <= 707) SELECT \"MAX[ProductenPRODCOM]\", \"M001571\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 23094,
+        "output_token_count": 129
+    },
+    "Gemiddeld aantal leerlingen in toerisme en recreatie op de mbo-niveaus 2, 3 en 4 in Caribisch Nederland in het studiejaar 2017/2018": {
+        "query": "SELECT AVG(\"M003171\") AS \"Gemiddeld aantal leerlingen\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE SectorenEnDomeinen = 'A043938' AND Niveau IN ('A041755', 'A041759', 'A041763') AND CaribischNederland = 'CN01' AND Perioden LIKE '2017SJ%'",
+        "input_token_count": 5218,
+        "output_token_count": 88
+    },
+    "Welke sector had in mei 2024 het grootste aandeel in de gewogen prijsindex voor exportprijzen: voedingsmiddelen, kleding of papier en kartonindustrie?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M000289\" DESC) AS rnk, AlleBedrijfstakken AS \"MAX[AlleBedrijfstakken]\", \"M000289\" FROM \"data/nl/odata3/85771NED.parquet\" WHERE Perioden = '2024MM05' AND Afzet = 'A044076' AND AlleBedrijfstakken IN ('307600', '314000', '317100')) SELECT \"MAX[AlleBedrijfstakken]\", \"M000289\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 13932,
+        "output_token_count": 131
+    },
+    "Dagelijkse prijs van diesel bij het tankstation in de week van 20 tot en met 24 oktober 2014": {
+        "query": "SELECT Perioden, \"A047219\" FROM \"data/nl/odata3/80416ned.parquet\" WHERE Perioden BETWEEN '2014-10-20' AND '2014-10-24' ORDER BY Perioden",
+        "input_token_count": 4318,
+        "output_token_count": 56
+    },
+    "Hoeveel leerlingen volgden in schooljaar 2017/2018 een mbo-opleiding in de richting veiligheid en sport op Bonaire, Saba of Sint Eustatius?": {
+        "query": "SELECT CaribischNederland, \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE CaribischNederland IN ('GM9001', 'GM9002', 'GM9003') AND Perioden LIKE '2017SJ%' AND SectorenEnDomeinen = 'A043935' AND Niveau = 'T001336'",
+        "input_token_count": 5233,
+        "output_token_count": 85
+    },
+    "Waar wonen de meeste mensen met een diploma op middelbaar niveau tussen 15 en 75 jaar in Bedrijventerrein Vathorst-Noord, Verspreide huizen Zuidrand of Buurt 22 01?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"52052\" DESC) AS rnk, WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"52052\" FROM \"data/nl/odata3/84947NED.parquet\" WHERE WijkenEnBuurten IN ('BU03072507', 'BU04052201') AND Opleidingsniveau = '2018740' AND Marges = 'MW00000') SELECT \"MAX[WijkenEnBuurten]\", \"52052\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5853,
+        "output_token_count": 133
+    },
+    "Wat kostte een liter autogas op 16 januari 2020 bij het tankstation?": {
+        "query": "SELECT \"A047221\" FROM \"data/nl/odata3/80416ned.parquet\" WHERE Perioden = '2020-01-16'",
+        "input_token_count": 4311,
+        "output_token_count": 40
+    },
+    "Hoeveel jongens uit Groningen geboren in Nederland met Surinaamse roots zaten in het speciaal basis- en voortgezet onderwijs in het schooljaar 2011/2012?": {
+        "query": "SELECT \"M005524\" FROM \"data/nl/odata3/85490NED.parquet\" WHERE Geslacht = '3000' AND GeboortelandOuders = 'A051735' AND Cluster = 'T001294' AND Herkomstland = 'H008751' AND Onderwijssoort = 'A025282' AND Regiokenmerken = 'PV20' AND Perioden = '2011SJ00'",
+        "input_token_count": 5836,
+        "output_token_count": 99
+    },
+    "Hoeveel mannelijke afgestudeerden waren er in theologie in 1937-1938?": {
+        "query": "SELECT Perioden, \"M006877\" FROM \"data/nl/odata3/80384ned.parquet\" WHERE Geslacht = '3000' AND Perioden LIKE '1937%'",
+        "input_token_count": 10914,
+        "output_token_count": 47
+    },
+    "Hoeveel was de waarde van de ge\u00efmporteerde goederen op Bonaire en Sint Eustatius in 2013?": {
+        "query": "SELECT CaribischNederland, \"D001607_1\" AS Invoerwaarde_1000_USD FROM \"data/nl/odata3/82658NED.parquet\" WHERE Perioden = '2013JJ00' AND CaribischNederland IN ('GM9001', 'GM9002')",
+        "input_token_count": 4682,
+        "output_token_count": 71
+    },
+    "Totaal gemiddeld stroomgebruik per jaar van hoekhuizen in Lient, Oldenhove en Buurtschap Neerdorp in 2012 en 2019": {
+        "query": "SELECT '2012' AS Jaar, SUM(\"M000221\") AS \"Totaal gemiddeld stroomgebruik\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE Woningkenmerken = 'ZW25806' AND WijkenEnBuurten IN ('BU03072601', 'BU03770101', 'BU17420500') UNION ALL SELECT '2019' AS Jaar, SUM(\"M000221\") AS \"Totaal gemiddeld stroomgebruik\" FROM \"data/nl/odata3/84837NED.parquet\" WHERE Woningkenmerken = 'ZW25806' AND WijkenEnBuurten IN ('BU03072601', 'BU03770101', 'BU17420500') ORDER BY Jaar",
+        "input_token_count": 5439,
+        "output_token_count": 164
+    },
+    "Hoeveel mensen tussen 15 en 75 jaar met een lager of gemiddeld opleidingsniveau wonen er minstens in wijk Biddinghuizen volgens het 95%-interval?": {
+        "query": "SELECT SUM(\"52052\") AS \"Ondergrens_95pct_x_1000\" FROM \"data/nl/odata3/85372NED.parquet\" WHERE Marges = 'MOG0095' AND Opleidingsniveau IN ('2018700', '2018740') AND WijkenEnBuurten = 'WK030306'",
+        "input_token_count": 4633,
+        "output_token_count": 81
+    },
+    "Samengestelde gemiddelde weging van metaalproducten die in het buitenland verkocht worden en schoeisel bij het bepalen van respectievelijk de producenten- en consumentenprijzen in oktober 2023": {
+        "query": "SELECT AVG(\"M000289\") AS \"AVG[Wegingsco\u00ebffici\u00ebnt]\" FROM ((SELECT \"M000289\" FROM \"data/nl/odata3/85771NED.parquet\" WHERE Perioden = '2023MM10' AND AlleBedrijfstakken = '330300' AND Afzet = 'A044076') UNION ALL BY NAME (SELECT \"M000289\" FROM \"data/nl/odata3/83134NED.parquet\" WHERE Perioden = '2023MM10' AND Bestedingscategorieen = 'CPI032000'))",
+        "input_token_count": 19020,
+        "output_token_count": 132
+    },
+    "Hoeveel duurzame elektriciteit werd er opgewekt op Saba in 2018 en 2019?": {
+        "query": "SELECT Perioden, \"D003265\" AS \"Duurzame elektriciteit (mln kWh)\" FROM \"data/nl/odata3/81154ned.parquet\" WHERE CaribischNederland = 'GM9003' AND Perioden IN ('2018JJ00', '2019JJ00') ORDER BY Perioden",
+        "input_token_count": 4887,
+        "output_token_count": 76
+    },
+    "Hoeveel stroom verbruikt een alleenstaande woning gemiddeld in het gebied Hogenkamp en omgeving?": {
+        "query": "SELECT \"M000221\" FROM \"data/nl/odata3/83022NED.parquet\" WHERE Woningkenmerken = 'ZW10320' AND WijkenEnBuurten = 'BU02440003'",
+        "input_token_count": 4769,
+        "output_token_count": 54
+    },
+    "Waar stond in 2021 het laagste ge\u00efnstalleerde zonnepaneelvermogen van Theresia Oost, Nijland, Meeuwen en Ramplaankwartier?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002461\" ASC) AS rnk, WijkenEnBuurten AS \"MIN[WijkenEnBuurten]\", \"M002461\" FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten IN ('BU08552703', 'BU19001001', 'BU19591601', 'BU03920503')) SELECT \"MIN[WijkenEnBuurten]\", \"M002461\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4568,
+        "output_token_count": 128
+    },
+    "Wat was het oordeel over het aantal ontvangen opdrachten door bedrijven in de papierindustrie in juli 2014, volgens de schattingsmarges van de seizoensgecorrigeerde cijfers?": {
+        "query": "SELECT Marges, \"M000210\" FROM \"data/nl/odata3/81234ned.parquet\" WHERE Seizoencorrectie = 'A042500' AND BedrijfstakkenBranchesSBI2008 = '317105' AND Perioden = '2014MM07' AND Marges IN ('MOG0095', 'MW00000', 'MBG0095')",
+        "input_token_count": 4746,
+        "output_token_count": 89
+    },
+    "In welke buurt is het elektriciteitsverbruik van vrijstaande huizen minimaal 4250 kWh per jaar het hoogst?": {
+        "query": "WITH RankedRows AS (SELECT WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M000221\", RANK() OVER (ORDER BY \"M000221\" DESC) AS rnk FROM \"data/nl/odata3/83023NED.parquet\" WHERE Woningkenmerken = 'ZW10320' AND WijkenEnBuurten LIKE 'BU%' AND \"M000221\" >= 4250) SELECT \"MAX[WijkenEnBuurten]\", \"M000221\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4721,
+        "output_token_count": 128
+    },
+    "Hoe is het vertrouwen in de voedingsmiddelenindustrie veranderd van april t/m augustus 2022?": {
+        "query": "SELECT Perioden, \"M002289\" AS Producentenvertrouwen FROM \"data/nl/odata3/81234ned.parquet\" WHERE BedrijfstakkenBranchesSBI2008 = '307610' AND Seizoencorrectie = 'A042500' AND Marges = 'MW00000' AND Perioden BETWEEN '2022MM04' AND '2022MM08' ORDER BY Perioden",
+        "input_token_count": 4876,
+        "output_token_count": 94
+    },
+    "In welk van de buurten (De Krim, Frans Halsbuurt, Klazienaveen-Noord en Nolensbuurt) stonden in 2017 maximaal 187 huizen met zonnepanelen geeinstalleerd, en welk gebied had het hoogste aantal installaties onder deze voorwaarde?": {
+        "query": "WITH RankedRows AS (SELECT WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M002462\", RANK() OVER (ORDER BY \"M002462\" DESC) AS rnk FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten IN ('BU01600801', 'BU03921303', 'BU03920504', 'BU03632402', 'BU03921004', 'BU01140800', 'BU06060607') AND \"M002462\" <= 187) SELECT \"MAX[WijkenEnBuurten]\", \"M002462\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4747,
+        "output_token_count": 155
+    },
+    "Hoeveel huizen hadden zonnepaneleninstallaties in Boshuizen - Rechteren, Neder-Betuwe, Wijk Noorderpark en Blessum in 2019 en 2020?": {
+        "query": "(SELECT '2019' AS Jaar, WijkenEnBuurten, \"M002462\" FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten IN ('BU06420607', 'GM1740', 'WK010602', 'WK194921')) UNION ALL BY NAME (SELECT '2020' AS Jaar, WijkenEnBuurten, \"M002462\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU06420607', 'GM1740', 'WK010602', 'WK194921'))",
+        "input_token_count": 5168,
+        "output_token_count": 143
+    },
+    "Prijs per liter van Euro95-benzine en autogas op 17 t/m 20 januari 2015": {
+        "query": "SELECT Perioden, \"A047220\", \"A047221\" FROM \"data/nl/odata3/80416ned.parquet\" WHERE Perioden BETWEEN '2015-01-17' AND '2015-01-20' ORDER BY Perioden",
+        "input_token_count": 4317,
+        "output_token_count": 61
+    },
+    "Gasconsumptie per jaar in Zwijndrecht voor halfvrijstaande huizen en vrijstaande woningen": {
+        "query": "SELECT Woningkenmerken, \"M000219\" AS GemiddeldAardgasverbruik FROM \"data/nl/odata3/83022NED.parquet\" WHERE WijkenEnBuurten = 'GM0642' AND Woningkenmerken IN ('ZW10300', 'ZW10320')",
+        "input_token_count": 4768,
+        "output_token_count": 72
+    },
+    "Hoeveel jongens met een Europese achtergrond zaten in 2017/'18 in het voortgezet speciaal onderwijs vergeleken met het aantal jongens dat toen stond ingeschreven in het hoger onderwijs?": {
+        "query": "SELECT S.Perioden, S.\"M005524\" AS \"Jongens met Europese achtergrond in voortgezet speciaal onderwijs\", H.\"T001623\" AS \"Jongens ingeschreven in hoger onderwijs\" FROM (SELECT Perioden, \"M005524\" FROM \"data/nl/odata3/85490NED.parquet\" WHERE Perioden = '2017SJ00' AND Geslacht = '3000' AND Herkomstland = 'H007933' AND GeboortelandOuders = 'T001638' AND Onderwijssoort = 'A049121' AND Cluster = 'T001294' AND Regiokenmerken = 'NL01') AS S FULL JOIN (SELECT Perioden, \"T001623\" FROM \"data/nl/odata3/85423NED.parquet\" WHERE Perioden = '2017SJ00' AND Geslacht = '3000' AND Onderwijssoort = 'A028566' AND Opleidingsvorm = 'T001228' AND Opleidingsfase = 'A045745') AS H ON S.Perioden = H.Perioden",
+        "input_token_count": 6211,
+        "output_token_count": 240
+    },
+    "Welk rapportcijfer gaven vrouwen van Saba en Bonaire de veiligheid in hun buurt in 2021 en welk cijfer gaven de inwoners van Vechtdal in hetzelfde jaar?": {
+        "query": "SELECT 'Saba' AS Gebied, 'Vrouwen' AS Persoonsgroep, Perioden, \"M003276\" AS RapportcijferVeiligheidBuurt FROM \"data/nl/odata3/82558NED.parquet\" WHERE CaribischNederland = 'GM9003' AND Persoonskenmerken = '4000' AND Marges = 'MW00000' AND Perioden = '2021JJ00' UNION ALL BY NAME SELECT 'Bonaire' AS Gebied, 'Vrouwen' AS Persoonsgroep, Perioden, \"M003276\" AS RapportcijferVeiligheidBuurt FROM \"data/nl/odata3/82558NED.parquet\" WHERE CaribischNederland = 'GM9001' AND Persoonskenmerken = '4000' AND Marges = 'MW00000' AND Perioden = '2021JJ00' UNION ALL BY NAME SELECT 'Vechtdal' AS Gebied, 'Alle inwoners' AS Persoonsgroep, Perioden, \"M003276\" AS RapportcijferVeiligheidBuurt FROM \"data/nl/odata3/85146NED.parquet\" WHERE RegioS = 'BT0019' AND Marges = 'MW00000' AND Perioden = '2021JJ00'",
+        "input_token_count": 19536,
+        "output_token_count": 283
+    },
+    "Hoe vaak werd er in Caribisch Nederland in 2021 gerapporteerd dat mannen, 25- tot 45-jarigen en middelbaar opgeleiden overlast ervaren door te hard rijden?": {
+        "query": "SELECT Persoonskenmerken, \"A047650_2\" FROM \"data/nl/odata3/82557NED.parquet\" WHERE CaribischNederland = 'CN01' AND Perioden = '2021JJ00' AND Marges = 'MW00000' AND Persoonskenmerken IN ('3000', '53310', '2018740')",
+        "input_token_count": 6444,
+        "output_token_count": 84
+    },
+    "Wat was het gemiddelde gasverbruik per koopwoning, gemiddeld over Crosesteijn, Gorredijk-De Kromten, twaalfde wijk van Nieuw-Lekkerland (in 2019) en Ooltgensplaat (in 2014)?": {
+        "query": "SELECT AVG(\"M000219\") AS \"AVG\" FROM ((SELECT \"M000219\" FROM \"data/nl/odata3/84837NED.parquet\" WHERE Woningkenmerken = '1014800' AND WijkenEnBuurten IN ('BU03550303', 'BU00860502', 'BU19591402')) UNION ALL BY NAME (SELECT \"M000219\" FROM \"data/nl/odata3/83187NED.parquet\" WHERE Woningkenmerken = '1014800' AND WijkenEnBuurten = 'WK192404'))",
+        "input_token_count": 5518,
+        "output_token_count": 130
+    },
+    "Hoeveel hebben Bonaire en Saba samen aan import uitgegeven in 2018 plus de uitgaven van Bonaire aan import voor dierlijke en plantaardige oli\u00ebn en vetten in dollars?": {
+        "query": "SELECT SUM(\"D001607_1\") * 1000 AS \"Totaal_USD\" FROM (SELECT \"D001607_1\" FROM \"data/nl/odata3/82658NED.parquet\" WHERE Perioden = '2018JJ00' AND CaribischNederland IN ('GM9001', 'GM9003') UNION ALL BY NAME SELECT \"D001607_1\" FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2018JJ00' AND GoederenindelingSITC = 'A018612')",
+        "input_token_count": 5521,
+        "output_token_count": 132
+    },
+    "Gemiddelde waarde van de export en de handelsbalans van Bonaire en Sint Eustatius in het eerste kwartaal van 2019": {
+        "query": "SELECT Perioden, AVG(\"D001636_1\") AS \"Gemiddelde uitvoerwaarde (1000 USD)\", AVG(\"D001601\") AS \"Gemiddelde handelsbalans (mln euro)\" FROM \"data/nl/odata3/82658NED.parquet\" WHERE Perioden = '2019KW01' AND CaribischNederland IN ('GM9001', 'GM9002') GROUP BY Perioden",
+        "input_token_count": 4713,
+        "output_token_count": 99
+    },
+    "Hoeveel mensen behaalden tussen 1994 en 1997 een doctoraat in de zorg?": {
+        "query": "SELECT SUM(\"A010153_6\") AS \"Aantal\" FROM \"data/nl/odata3/80384ned.parquet\" WHERE Geslacht = 'T001038' AND (Perioden LIKE '1994SJ%' OR Perioden LIKE '1995SJ%' OR Perioden LIKE '1996SJ%' OR Perioden LIKE '1997SJ%')",
+        "input_token_count": 9618,
+        "output_token_count": 82
+    },
+    "Hoeveel procent zijn de pijzen van producten uit slachthuizen en de metaalindustrie in Nederland op jaarbasis veranderd, en hoe heeft dit de kosten van voedingsmiddelen be\u00efnvloed in mei 2025?": {
+        "query": "SELECT PPI.Perioden, PPI.AlleBedrijfstakken, PPI.\"M003288\" AS \"Jaarmutatie producentenprijzen (%)\", HICP.\"M001500\" AS \"Jaarmutatie consumentenprijzen voedingsmiddelen (%)\" FROM (SELECT * FROM \"data/nl/odata3/85771NED.parquet\" WHERE Perioden = '2025MM05' AND AlleBedrijfstakken IN ('307800', '307900', '328100', '330300') AND Afzet = 'A044075') AS PPI FULL JOIN (SELECT * FROM \"data/nl/odata3/83134NED.parquet\" WHERE Perioden = '2025MM05' AND Bestedingscategorieen = 'CPI011000') AS HICP ON PPI.Perioden = HICP.Perioden",
+        "input_token_count": 19493,
+        "output_token_count": 184
+    },
+    "Hoeveel jongens behaalden hun havo-diploma in schooljaar 1989/1990 en hoeveel babyjongens van 0 jaar werden in 2019 opgenomen in het ziekenhuis met een kneuzing of verbrijzeling van de pols of hand?": {
+        "query": "SELECT Perioden, Geslacht, \"M006882\" AS havo_diplomas_jongens FROM \"data/nl/odata3/80384ned.parquet\" WHERE Perioden LIKE '1989SJ%' AND Geslacht = '3000'",
+        "input_token_count": 27747,
+        "output_token_count": 60
+    },
+    "Wat is het gemiddelde gasverbruik per huurstulp in 2013, gemiddeld over Overdie-West, Hanzekwartier en Zanddonk?": {
+        "query": "SELECT AVG(\"M000219\") AS \"AVG[M000219]\" FROM \"data/nl/odata3/83022NED.parquet\" WHERE Woningkenmerken = '1014850' AND WijkenEnBuurten IN ('BU03610303', 'BU03030212', 'BU08670006')",
+        "input_token_count": 4806,
+        "output_token_count": 75
+    },
+    "Hoeveel stroom wordt er in 2019 gemiddeld per type huis verbruikt in Brukske 1?": {
+        "query": "SELECT Woningkenmerken, \"M000221\" FROM \"data/nl/odata3/84837NED.parquet\" WHERE WijkenEnBuurten = 'BU09841601' AND Woningkenmerken IN ('ZW25810', 'ZW10320', 'ZW10300', 'ZW25805', 'ZW25806')",
+        "input_token_count": 4746,
+        "output_token_count": 79
+    },
+    "In welk jaar tussen 2012 en 2013 was het leerlingenaantal het hoogste voor opleidingen binnen alle sectoren op mbo 3 niveau in Caribisch Nederland?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M003171\" DESC) AS rnk, Perioden AS \"MAX[Perioden]\", \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE Niveau = 'A041759' AND SectorenEnDomeinen = 'T001069' AND CaribischNederland = 'CN01' AND Perioden LIKE '2012SJ%' OR Niveau = 'A041759' AND SectorenEnDomeinen = 'T001069' AND CaribischNederland = 'CN01' AND Perioden LIKE '2013SJ%') SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5213,
+        "output_token_count": 154
+    },
+    "Wat was het handelstekort op Bonaire voor drank, tabak, fabricaten en overige goederen in het laatste kwartaal van 2020, als het saldo niet lager was dan -11,1 mil. dollar?": {
+        "query": "SELECT SUM(\"D001601\") AS \"Handelstekort\" FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2020KW04' AND GoederenindelingSITC IN ('A018528', 'A018678', 'A018809', 'A018851') AND \"D001601\" >= -11.1",
+        "input_token_count": 5000,
+        "output_token_count": 87
+    },
+    "Hoeveel was de totale exportwaarde van dranken, oli\u00ebn en fabricaten vanuit Bonaire in het vierde kwartaal van 2019?": {
+        "query": "SELECT SUM(\"D001636_1\") AS \"Totale exportwaarde (1000 USD)\" FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2019KW04' AND GoederenindelingSITC IN ('A018528', 'A018612', 'A018678', 'A018809')",
+        "input_token_count": 4994,
+        "output_token_count": 83
+    },
+    "Hoe groot is in 2014 het aandeel van het stroomverbruik van hoekhuizen in wijk Lepelstraat ten opzichte van het totale elektriciteitsgebruik van alle woningtypes daar?": {
+        "query": "SELECT ROUND(SUM(CASE WHEN Woningkenmerken = 'ZW25806' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(CASE WHEN Woningkenmerken = 'T001100' THEN Value ELSE 0 END), 0), 2) AS \"%\" FROM (SELECT Woningkenmerken, Value FROM \"data/nl/odata3/83187NED.parquet\" UNPIVOT (Value FOR Measure IN (\"M000221\")) WHERE WijkenEnBuurten = 'WK074805') WHERE Woningkenmerken IN ('ZW25806', 'T001100')",
+        "input_token_count": 4795,
+        "output_token_count": 140
+    },
+    "Wat was de prijsindex voor export in januari 2025 voor chipsfabrieken, steenbewerkers, snackproducenten en metaalmachinebedrijven, en wat was toen de gecorrigeerde productie in de overige transportmiddelenindustrie?": {
+        "query": "SELECT Prices.Perioden, Prices.AlleBedrijfstakken, Prices.\"M003367\" AS Exportprijsindex, Production.\"A052581_1\" AS KalendergecorrigeerdeProductieOverigeTransportmiddelenindustrie FROM (SELECT Perioden, AlleBedrijfstakken, \"M003367\" FROM \"data/nl/odata3/85771NED.parquet\" WHERE Perioden = '2025MM01' AND Afzet = 'A044076' AND AlleBedrijfstakken IN ('333100', '327600', '310700', '338500')) AS Prices LEFT JOIN (SELECT Perioden, \"A052581_1\" FROM \"data/nl/odata3/85806NED.parquet\" WHERE Perioden = '2025MM01' AND BedrijfstakkenBranchesSBI2008 = '340200') AS Production ON Prices.Perioden = Production.Perioden",
+        "input_token_count": 16531,
+        "output_token_count": 197
+    },
+    "Stroomverbruik van een hoekhuis, gemiddeld over Jislum en Wandelbos Zuid en over 2019 en 2023": {
+        "query": "SELECT AVG(\"M000221\") AS \"AVG\" FROM ((SELECT \"M000221\" FROM \"data/nl/odata3/84837NED.parquet\" WHERE Woningkenmerken = 'ZW25806' AND WijkenEnBuurten IN ('BU19701002', 'WK085540')) UNION ALL BY NAME (SELECT \"M000221\" FROM \"data/nl/odata3/85999NED.parquet\" WHERE Woningkenmerken = 'ZW25806' AND WijkenEnBuurten IN ('BU19701002', 'WK085540')))",
+        "input_token_count": 5465,
+        "output_token_count": 129
+    },
+    "Hoe waarderen vrouwen in Bonaire en Saba en inwoners van het Vechtdal hun gevoel van veiligheid in de buurt in 2021?": {
+        "query": "SELECT CaribischNederland AS Regio, \"M003276\" AS RapportcijferVeiligheidInBuurt FROM \"data/nl/odata3/82558NED.parquet\" WHERE CaribischNederland IN ('GM9001', 'GM9003') AND Persoonskenmerken = '4000' AND Marges = 'MW00000' AND Perioden = '2021JJ00' UNION ALL BY NAME SELECT RegioS AS Regio, \"M003276\" AS RapportcijferVeiligheidInBuurt FROM \"data/nl/odata3/85146NED.parquet\" WHERE RegioS = 'BT0019' AND Marges = 'MW00000' AND Perioden = '2021JJ00'",
+        "input_token_count": 18913,
+        "output_token_count": 166
+    },
+    "Seizoengecorrigeerde productiegroei t.o.v. de vorige maand in november 2012 voor raffinaderijen, chemische fabrieken en producenten van bouwmaterialen": {
+        "query": "SELECT BedrijfstakkenBranchesSBI2008, Perioden, \"A050903_3\" FROM \"data/nl/odata3/85806NED.parquet\" WHERE BedrijfstakkenBranchesSBI2008 IN ('320000', '320700', '324600') AND Perioden = '2012MM11'",
+        "input_token_count": 6824,
+        "output_token_count": 77
+    },
+    "Waterproductie in Caribisch Nederland in 2013 en 2014, en wat was de totale productiewaarde van buitenlandse multinationals voor de groep overige bedrijven in 2018?": {
+        "query": "SELECT Perioden, \"M001566_2\" AS Waterproductie, NULL AS ProductiewaardeBuitenlandseMultinationals FROM \"data/nl/odata3/81154ned.parquet\" WHERE CaribischNederland = 'CN01' AND Perioden IN ('2013JJ00', '2014JJ00') UNION ALL BY NAME SELECT Perioden, NULL AS Waterproductie, \"M001566_2\" AS ProductiewaardeBuitenlandseMultinationals FROM \"data/nl/odata3/85943NED.parquet\" WHERE TypeBedrijfAfnemend = 'A052706' AND Perioden = '2018JJ00'",
+        "input_token_count": 5775,
+        "output_token_count": 148
+    },
+    "Gemiddeld vermogen aan zonnestroom per buurt in 2018, waar het totaal aan installaties meer dan 47 kilowatt bedragen in Lijnse Hoek Oost, Camperduin, het centrum van Nijmegen en Nieuwveen": {
+        "query": "SELECT WijkenEnBuurten, AVG(\"M002461\") AS \"Gemiddeld vermogen (kWp)\" FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU08554308', 'BU03730705', 'BU05690100') AND \"M002461\" > 47 GROUP BY WijkenEnBuurten UNION ALL SELECT WijkenEnBuurten, AVG(\"M002461\") AS \"Gemiddeld vermogen (kWp)\" FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten LIKE 'BU0268%' AND \"GM000C\" = 'Nijmegen' AND \"M002461\" > 47 GROUP BY WijkenEnBuurten",
+        "input_token_count": 6841,
+        "output_token_count": 176
+    },
+    "Hoeveel echtparen zijn er in 2021 in Nederland met een relatie van 25 en 58 jaar, en hoeveel elektra-aansluitingen van huishoudens en bedrijven zijn er op Bonaire?": {
+        "query": "SELECT '25 jaar' AS Relatieduur, \"M001612\" AS Echtparen, NULL AS ElektraAansluitingen FROM \"data/nl/odata3/37492.parquet\" WHERE Perioden = '2021JJ00' AND Relatieduur = 'A008216' UNION ALL SELECT '58 jaar' AS Relatieduur, \"M001612\" AS Echtparen, NULL AS ElektraAansluitingen FROM \"data/nl/odata3/37492.parquet\" WHERE Perioden = '2021JJ00' AND Relatieduur = 'A008249' UNION ALL SELECT NULL AS Relatieduur, NULL AS Echtparen, \"D001160_1\" AS ElektraAansluitingen FROM \"data/nl/odata3/81154ned.parquet\" WHERE CaribischNederland = 'GM9001' AND Perioden = '2021JJ00'",
+        "input_token_count": 6771,
+        "output_token_count": 203
+    },
+    "Welke proportie van mannelijke afgestudeerden in 1991/'92 heeft een voltijd hbo-bachelordiploma behaald in de zorg- en welzijnssector, wanneer dit aantal niet boven de 1264 ligt, vergeleken met 1990 t/m 1993/94?": {
+        "query": "SELECT ROUND(SUM(CASE WHEN Perioden = '1991SJ92' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(Value), 0), 2) AS \"%\" FROM (SELECT Perioden, Geslacht, Value FROM \"data/nl/odata3/80384ned.parquet\" UNPIVOT (Value FOR Measure IN (\"A010153_1\"))) WHERE Geslacht = '3000' AND Perioden IN ('1990SJ91', '1991SJ92', '1992SJ93', '1993SJ94') AND Value <= 1264",
+        "input_token_count": 10083,
+        "output_token_count": 136
+    },
+    "Gemiddeld aantal zonne-installaties per huis in Centrum West 2 en Vossener-West in 2020, als er niet meer dan 53 systemen zijn ge\u00efnstalleerd?": {
+        "query": "SELECT AVG(\"M002462\") AS \"AVG\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU07770004', 'BU09832403') AND \"M002462\" <= 53",
+        "input_token_count": 4511,
+        "output_token_count": 63
+    },
+    "Zonnepaneelvermogen in Heide in Venray, Oost-Vossenberg en Grote Waal in 2017": {
+        "query": "SELECT WijkenEnBuurten, \"M002463\" FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten IN ('BU09840101', 'BU08091031', 'WK040513')",
+        "input_token_count": 5189,
+        "output_token_count": 61
+    },
+    "Hoeveel 15- tot 25-jarigen in Caribisch Nederland vonden dat er veel misdaad was in 2017 en hoe groot was toen de kans voor 34-jarigen om de leeftijd van 48 jaar te bereiken?": {
+        "query": "SELECT COALESCE(Veiligheid.Perioden, Overleving.Perioden) AS Perioden, Veiligheid.\"D006855\" AS \"Percentage 15- tot 25-jarigen dat veel criminaliteit ervaart\", Overleving.\"D004240\" AS \"Kans voor 34-jarigen om 48 jaar te bereiken\" FROM (SELECT * FROM \"data/nl/odata3/82558NED.parquet\" WHERE Perioden = '2017JJ00' AND CaribischNederland = 'CN01' AND Persoonskenmerken = '53050' AND Marges = 'MW00000') AS Veiligheid FULL JOIN (SELECT * FROM \"data/nl/odata3/70701ned.parquet\" WHERE Perioden = '2017JJ00' AND LeeftijdOp31December = '13400' AND Geslacht = 'T001038') AS Overleving ON Veiligheid.Perioden = Overleving.Perioden",
+        "input_token_count": 9521,
+        "output_token_count": 205
+    },
+    "Welk aandeel van de mensen met een mbo-, havo- of vwo-achtergrond in de buurten van Zwolle woont er in 2020 in Wipstrik-Zuid, als je kijkt naar de bovengrens?": {
+        "query": "SELECT ROUND(SUM(CASE WHEN WijkenEnBuurten = 'BU01931210' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(Value), 0), 2) AS \"%\" FROM (SELECT WijkenEnBuurten, Opleidingsniveau, Marges, Value FROM \"data/nl/odata3/85051NED.parquet\" UNPIVOT(Value FOR Measure IN (\"52052\"))) WHERE WijkenEnBuurten LIKE 'BU0193%' AND Opleidingsniveau = '2018740' AND Marges = 'MBG0095'",
+        "input_token_count": 4581,
+        "output_token_count": 138
+    },
+    "Hoeveel was de totale waarde van ge\u00efmporteerde goederen in Caribisch Nederland (Bonaire, Sint Eustatius en Saba) in het laatste kwartaal van 2013, exclusief goederen met invoerwaarde van 10.147 duizend dollar?": {
+        "query": "SELECT SUM(\"D001607_1\") AS \"Totale invoerwaarde (1000 USD)\" FROM \"data/nl/odata3/82658NED.parquet\" WHERE Perioden = '2013KW04' AND CaribischNederland IN ('GM9001', 'GM9002', 'GM9003') AND \"D001607_1\" <> 10147",
+        "input_token_count": 4748,
+        "output_token_count": 88
+    },
+    "Hoeveel studenten volgen in 2023-2024 een mbo-opleiding in zorg of techniek op de eilanden van Caribisch Nederland, en zijn er in dat jaar BBL-leerlingen met ouders uit het buitenland waarvan het geboorteland niet duidelijk is?": {
+        "query": "SELECT 'Zorg' AS Onderwerp, SUM(\"M003171\") AS AantalStudenten FROM \"data/nl/odata3/84312NED.parquet\" WHERE Perioden = '2023SJ00' AND CaribischNederland = 'CN01' AND Niveau = 'T001336' AND SectorenEnDomeinen = 'A009923' UNION ALL SELECT 'Techniek' AS Onderwerp, SUM(\"M003171\") AS AantalStudenten FROM \"data/nl/odata3/84312NED.parquet\" WHERE Perioden = '2023SJ00' AND CaribischNederland = 'CN01' AND Niveau = 'T001336' AND SectorenEnDomeinen = 'A009922' UNION ALL SELECT 'BBL, ouders buiten Nederland, herkomstland onbekend' AS Onderwerp, SUM(\"M003171\") AS AantalStudenten FROM \"data/nl/odata3/85354NED.parquet\" WHERE Perioden = '2023SJ00' AND Leerweg = 'A025293' AND Herkomstland = '2012659' AND GeboortelandOuders = 'A051742' AND Niveau = 'T001336' AND Geslacht = 'T001038'",
+        "input_token_count": 6093,
+        "output_token_count": 270
+    },
+    "Hoeveel procent van de zonnepaneelinstallaties bij woningen in Heerevelden West, Bloemenbuurt-west en Hoevenseweg samen bevindt zich in Heerevelden West in 2019?": {
+        "query": "SELECT ROUND(SUM(CASE WHEN WijkenEnBuurten = 'BU08555101' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(Value), 0), 2) AS \"%\" FROM (SELECT WijkenEnBuurten, Measure, Value FROM \"data/nl/odata3/85010NED.parquet\" UNPIVOT(Value FOR Measure IN (\"M002462\"))) WHERE WijkenEnBuurten IN ('BU08555101', 'BU05020663', 'BU08551405')",
+        "input_token_count": 4624,
+        "output_token_count": 125
+    },
+    "In welke branche of sector (economie en administratie, horeca en bakkerij, bouw en infra of zorg en welzijn) binnen het MBO niveau 4 op de BES-eilanden waren in studiejaar 2014/2015 de minste studenten ingeschreven, als je alleen kijkt naar sectoren waar het aantal studenten niet gelijk is aan 28?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M003171\" ASC) AS rnk, SectorenEnDomeinen AS \"MIN[SectorenEnDomeinen]\", \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE Niveau = 'A041763' AND CaribischNederland = 'CN01' AND Perioden = '2014SJ00' AND SectorenEnDomeinen IN ('A043934', 'A043937', 'A043925', 'A043939') AND \"M003171\" <> 28) SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5180,
+        "output_token_count": 147
+    },
+    "Welke soort woning in de buurt Achter de Dijk gebruikt in 2023 het meeste stroom, als het meer dan 3130 kWh is?": {
+        "query": "WITH RankedRows AS (SELECT Woningkenmerken AS \"MAX[Woningkenmerken]\", \"M007944\", RANK() OVER (ORDER BY \"M007944\" DESC) AS rnk FROM \"data/nl/odata3/85999NED.parquet\" WHERE WijkenEnBuurten = 'BU17830253' AND Woningkenmerken IN ('ZW10300', 'ZW25810', 'ZW25805', 'ZW25806', 'ZW10320') AND \"M007944\" > 3130) SELECT \"MAX[Woningkenmerken]\", \"M007944\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4764,
+        "output_token_count": 145
+    },
+    "Wat is het gemiddelde gasverbruik per huis in Frankendael, wijk Gulpen en Oud-Biddinghuizen Buiten in 2014 en in Wijk bij Duurstede in 2023?": {
+        "query": "(SELECT '2014' AS Jaar, WijkenEnBuurten, \"M000219\" AS GemiddeldAardgasverbruikM3 FROM \"data/nl/odata3/83187NED.parquet\" WHERE Woningkenmerken = 'T001100' AND WijkenEnBuurten IN ('BU03630555', 'WK172900', 'BU03030601')) UNION ALL BY NAME (SELECT '2023' AS Jaar, WijkenEnBuurten, \"M000219\" AS GemiddeldAardgasverbruikM3 FROM \"data/nl/odata3/85999NED.parquet\" WHERE Woningkenmerken = 'T001100' AND WijkenEnBuurten = 'GM0352')",
+        "input_token_count": 5759,
+        "output_token_count": 167
+    },
+    "Wat is het aandeel in stroomverbruik van twee onder een kap woningen in Egmond-binnen in 2019 voor woningen waarvan het stroomverbruik onder de 3630 kwh ligt?": {
+        "query": "SELECT WijkenEnBuurten, Woningkenmerken, \"M000221\" FROM \"data/nl/odata3/84837NED.parquet\" WHERE WijkenEnBuurten = 'BU03730500' AND Woningkenmerken = 'ZW10300' AND \"M000221\" < 3630",
+        "input_token_count": 4684,
+        "output_token_count": 76
+    },
+    "Waar is het gasverbruik in 2012 het hoogst bij huurwoningen: in De Hoven in Zutphen of de Starnmeerpolder?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M000219\" DESC) AS rnk, WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M000219\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE Woningkenmerken = '1014850' AND WijkenEnBuurten IN ('BU03010004')) SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5009,
+        "output_token_count": 106
+    },
+    "Hoeveel jongeren volgden in 2020/2021 in Drenthe een entreeopleiding of mbo niveau 2 via de beroepsopleidende leerweg, en hoeveel van zulke jongeren in heel Nederland zijn geboren in Nederland met ouders die hier ook geboren zijn?": {
+        "query": "SELECT 'Drenthe' AS Gebied, SUM(\"M003171\") AS Aantal FROM \"data/nl/odata3/85353NED.parquet\" WHERE Perioden = '2020SJ00' AND Regio = 'PV22' AND Niveau IN ('A041751', 'A041755') AND Leerweg = 'A041868' AND Geslacht = 'T001038' AND Studierichting = 'T001072' UNION ALL SELECT 'Nederland, geboren in NL met ouders geboren in NL' AS Gebied, SUM(\"M003171\") AS Aantal FROM \"data/nl/odata3/85354NED.parquet\" WHERE Perioden = '2020SJ00' AND Niveau IN ('A041751', 'A041755') AND Leerweg = 'A041868' AND GeboortelandOuders = 'A051760' AND Herkomstland = 'T001040' AND Geslacht = 'T001038'",
+        "input_token_count": 7354,
+        "output_token_count": 208
+    },
+    "gemiddelde gasconsumptie in Bosch en Duin, Heemradenbuurt en het bedrijventerrein Technopolis voor villa\u2019s in 2014": {
+        "query": "SELECT WijkenEnBuurten, \"M000219\" AS \"Gemiddeld aardgasverbruik\" FROM \"data/nl/odata3/83187NED.parquet\" WHERE WijkenEnBuurten IN ('BU03550503', 'BU03980702', 'BU05032901') AND Woningkenmerken = 'ZW10320'",
+        "input_token_count": 4813,
+        "output_token_count": 83
+    },
+    "Welke buurt met minimaal 190 laagopgeleide inwoners heeft het kleinste aantal inwoners tussen de 15 en 75 jaar met een lage opleiding in 2020?": {
+        "query": "WITH RankedRows AS (SELECT WijkenEnBuurten AS \"MIN[WijkenEnBuurten]\", \"52052\", RANK() OVER (ORDER BY \"52052\" ASC) AS rnk FROM \"data/nl/odata3/85051NED.parquet\" WHERE WijkenEnBuurten LIKE 'BU%' AND Opleidingsniveau = '2018700' AND Marges = 'MW00000' AND \"52052\" >= 0.19) SELECT \"MIN[WijkenEnBuurten]\", \"52052\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4582,
+        "output_token_count": 134
+    },
+    "Hoeveel bedroeg in 2014 de totale exportwaarde van Sint Eustatius en van machines en transportmiddelen uit Bonaire samen?": {
+        "query": "SELECT '2014JJ00' AS Perioden, SUM(\"D001636_1\") AS \"TotaleUitvoerwaarde_1000USD\" FROM ((SELECT \"D001636_1\" FROM \"data/nl/odata3/82658NED.parquet\" WHERE Perioden = '2014JJ00' AND CaribischNederland = 'GM9002') UNION ALL BY NAME (SELECT \"D001636_1\" FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2014JJ00' AND GoederenindelingSITC = 'A018743'))",
+        "input_token_count": 5468,
+        "output_token_count": 138
+    },
+    "Hoeveel mbo-leerlingen volgden in schooljaar 2019/2020 een entreeopleiding op Bonaire in de richtingen horeca, zorg en overige sectoren?": {
+        "query": "SELECT SectorenEnDomeinen, \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE Perioden LIKE '2019SJ%' AND CaribischNederland = 'GM9001' AND Niveau = 'A041751' AND SectorenEnDomeinen IN ('A043937', 'A043939', 'A043941')",
+        "input_token_count": 5213,
+        "output_token_count": 87
+    },
+    "Hoeveel meisjes die samen met hun ouders in Nederland geboren zijn, volgden in schooljaar 2023/2024 cluster 2 onderwijs in het speciaal voortgezet onderwijs in Rotterdam?": {
+        "query": "SELECT \"M005524\" FROM \"data/nl/odata3/85490NED.parquet\" WHERE GeboortelandOuders = 'A051760' AND Cluster = 'A041801' AND Geslacht = '4000' AND Herkomstland = 'T001040' AND Onderwijssoort = 'A049121' AND Regiokenmerken = 'GM0599' AND Perioden = '2023SJ00'",
+        "input_token_count": 5866,
+        "output_token_count": 100
+    },
+    "Hoeveel aardgas wordt er gemiddeld verbruikt door hoekwoningen en door huurwoningen in Heechterp & Schieringen in 2019, samen opgeteld?": {
+        "query": "SELECT SUM(\"M000219\") AS \"SUM\" FROM \"data/nl/odata3/84837NED.parquet\" WHERE WijkenEnBuurten = 'WK008050' AND Woningkenmerken IN ('ZW25806', '1014850')",
+        "input_token_count": 4633,
+        "output_token_count": 63
+    },
+    "In welke sector van mbo-4 opleidingen, tussen economie, bouw, horeca en zorg, zijn in Caribisch Nederland in schooljaar 2014-15 de minste studenten, als dit er niet precies 4 zijn?": {
+        "query": "WITH RankedRows AS (SELECT SectorenEnDomeinen AS \"MIN[SectorenEnDomeinen]\", \"M003171\", RANK() OVER (ORDER BY \"M003171\" ASC) AS rnk FROM \"data/nl/odata3/84312NED.parquet\" WHERE SectorenEnDomeinen IN ('A009921', 'A043925', 'A043937', 'A009923') AND Niveau = 'A041763' AND CaribischNederland = 'CN01' AND Perioden = '2014SJ00' AND \"M003171\" <> 4) SELECT \"MIN[SectorenEnDomeinen]\", \"M003171\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5223,
+        "output_token_count": 161
+    },
+    "Welke technische mbo-richting op niveau 2, ICT of de bouw, met minimaal 0 studenten, had de minste studenten op Bonaire in 2019/20?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M003171\" ASC) AS rnk, SectorenEnDomeinen AS \"MIN[SectorenEnDomeinen]\", \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE SectorenEnDomeinen IN ('A043930', 'A043925') AND Niveau = 'A041755' AND CaribischNederland = 'GM9001' AND Perioden LIKE '2019SJ%' AND \"M003171\" >= 0) SELECT \"MIN[SectorenEnDomeinen]\", \"M003171\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5173,
+        "output_token_count": 152
+    },
+    "Hoeveel elektriciteitsaansluitingen van huishoudens waren er in totaal op Bonaire, Sint-Eustatius en Saba in 2008 als dat er minstens 6071 waren?": {
+        "query": "SELECT SUM(\"D001159_2\") AS \"TotaalElektriciteitsaansluitingenHuishoudens\" FROM \"data/nl/odata3/81154ned.parquet\" WHERE CaribischNederland IN ('GM9001', 'GM9002', 'GM9003') AND Perioden = '2008JJ00' HAVING SUM(\"D001159_2\") >= 6071",
+        "input_token_count": 4880,
+        "output_token_count": 93
+    },
+    "Gemiddeld aantal zonnepaneelinstallaties bij huizen in Wilderszijde, Harlingervaart Noord, Vriezenveenseweg e.o. Haghoek Oost en Meerdervoort in 2017": {
+        "query": "SELECT AVG(\"M002462\") AS \"AVG\" FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten IN ('BU16211411', 'BU00806103', 'BU01411200', 'BU06420505')",
+        "input_token_count": 4649,
+        "output_token_count": 66
+    },
+    "Hoe hebben in de zomer en herfst van 2019 de fabrieksprijzen in de metallurgiemachine-industrie en de consumentenprijzen van zuivelproducten zich ontwikkeld?": {
+        "query": "SELECT COALESCE(PPI.Perioden, HICP.Perioden) AS Perioden, PPI.\"M003367\" AS \"Producentenprijsindex metallurgiemachines (2021=100)\", PPI.\"M003316\" AS \"Maandmutatie producentenprijzen (%)\", HICP.\"M001500\" AS \"Jaarmutatie consumentenprijzen melk, kaas en eieren (%)\" FROM (SELECT * FROM \"data/nl/odata3/85771NED.parquet\" WHERE AlleBedrijfstakken = '338500' AND Afzet = 'A044074' AND Perioden IN ('2019MM06', '2019MM07', '2019MM08', '2019MM09', '2019MM10', '2019MM11')) AS PPI FULL JOIN (SELECT * FROM \"data/nl/odata3/83134NED.parquet\" WHERE Bestedingscategorieen = 'CPI011400' AND Perioden IN ('2019MM06', '2019MM07', '2019MM08', '2019MM09', '2019MM10', '2019MM11')) AS HICP ON PPI.Perioden = HICP.Perioden ORDER BY Perioden",
+        "input_token_count": 19592,
+        "output_token_count": 269
+    },
+    "In welk vakgebied binnen mbo niveau 4 in Caribisch Nederland, tussen economieopleidingen, infrastructuur, horeca en zorg, waren in 2014 en 2015 het minste studenten, afgezien van cases met precies 42 leerlingen?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (PARTITION BY Perioden ORDER BY \"M003171\" ASC) AS rnk, Perioden, SectorenEnDomeinen AS \"MIN[SectorenEnDomeinen]\", \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE Niveau = 'A041763' AND CaribischNederland = 'CN01' AND SectorenEnDomeinen IN ('A043934', 'A043925', 'A043937', 'A043939') AND Perioden LIKE '2014SJ%' AND \"M003171\" <> 42) SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5228,
+        "output_token_count": 154
+    },
+    "Hoeveel zonnepaneleninstallaties bij huizen zijn er samen in Klinkenvlier en Zandweerd-Zuid (wijk Zandweerd) in 2019?": {
+        "query": "SELECT SUM(\"M002462\") AS \"Aantal installaties bij woningen\" FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten IN ('BU01091014', 'BU01500304')",
+        "input_token_count": 4642,
+        "output_token_count": 58
+    },
+    "Wat was het opgetelde gemiddelde stroomverbruik van vrijstaande huizen in de Wibautbuurt, Voorburg Oud en Hurwenen in 2012, waar het stroomverbruik lager was dan 4650 kWh per jaar?": {
+        "query": "SELECT SUM(\"M000221\") AS \"SUM\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE Woningkenmerken = 'ZW10320' AND WijkenEnBuurten IN ('BU06060608', 'BU19160401', 'BU02630401') AND \"M000221\" < 4650",
+        "input_token_count": 4723,
+        "output_token_count": 81
+    },
+    "Welke huizen in Bremerpark hadden in 2012 het hoogste gasverbruik, en om welk soort woning gaat het?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M000219\" DESC) AS rnk, Woningkenmerken, \"M000219\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE WijkenEnBuurten = 'BU03030606' AND Woningkenmerken IN ('ZW10300', 'ZW10320', 'ZW25810', 'ZW25805', 'ZW25806')) SELECT Woningkenmerken AS \"MAX[Woningkenmerken]\", \"M000219\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4741,
+        "output_token_count": 131
+    },
+    "Hoeveel leerlingen volgden in schooljaar 2016/'17 een mbo-opleiding in de sector economie op Bonaire op de niveaus 3, 4 en entree?": {
+        "query": "SELECT SUM(\"M003171\") AS \"Leerlingen\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE Perioden = '2016SJ17' AND CaribischNederland = 'GM9001' AND SectorenEnDomeinen = 'A009921' AND Niveau IN ('A041759', 'A041763', 'A041751')",
+        "input_token_count": 5214,
+        "output_token_count": 87
+    },
+    "Aantal vrouwelijke niveau 2 multimedia mbo-studenten die in Nederland zijn geboren met minstens een ouder uit het buitenland, en hoeveel vrouwelijke studenten volgen deze opleiding in de regio Zwolle in 2018/2019? ": {
+        "query": "SELECT a.\"M003171\" AS \"Vrouwen_niveau_2_media_vormgeving_geboren_in_NL_met_ouder_buiten_NL\", b.\"M003171\" AS \"Vrouwen_niveau_2_media_vormgeving_regio_Zwolle\" FROM (SELECT \"M003171\" FROM \"data/nl/odata3/85352NED.parquet\" WHERE Perioden = '2018SJ00' AND Leerweg = 'A041867' AND Niveau = 'A041755' AND Studierichting = 'A043929' AND Geslacht = '4000' AND GeboortelandOuders = 'A051742' AND Herkomstland = 'T001040') AS a CROSS JOIN (SELECT \"M003171\" FROM \"data/nl/odata3/85353NED.parquet\" WHERE Perioden = '2018SJ00' AND Leerweg = 'A041867' AND Niveau = 'A041755' AND Studierichting = 'A043929' AND Geslacht = '4000' AND Regio = 'AM36') AS b",
+        "input_token_count": 8775,
+        "output_token_count": 238
+    },
+    "Hoeveel vrouwen van middelbare leeftijd die actief zijn op de arbeidsmarkt namen in 2015 niet deel aan een leven lang leren programma, vergeleken met het aantal middelbaar opgeleide inwoners in Waarden en Weerdslag in 2013 volgens de ondergrens?": {
+        "query": "SELECT (SELECT \"52052\" FROM \"data/nl/odata3/85315NED.parquet\" WHERE Perioden = '2015JJ00' AND Arbeidspositie = '3000790' AND Persoonskenmerken = '4000' AND LevenLangOntwikkelen = 'A045487' AND Geslacht = 'T001038') AS \"Vrouwen beroepsbevolking zonder deelname 2015\", (SELECT \"52052\" FROM \"data/nl/odata3/84947NED.parquet\" WHERE WijkenEnBuurten = 'BU03010304' AND Opleidingsniveau = '2018740' AND Marges = 'MOG0095') AS \"Middelbaar opgeleide inwoners ondergrens 2013 (x 1 000)\"",
+        "input_token_count": 5822,
+        "output_token_count": 176
+    },
+    "Wat was de laagste productie van water op Bonaire in 2019 of 2020, als de hoeveelheid niet hoger was dan 1953 duizend kubieke meter?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M001566_2\" ASC) AS rnk, Perioden AS \"MIN[Perioden]\", \"M001566_2\" FROM \"data/nl/odata3/81154ned.parquet\" WHERE CaribischNederland = 'GM9001' AND Perioden IN ('2019JJ00', '2020JJ00') AND \"M001566_2\" <= 1953) SELECT \"MIN[Perioden]\", \"M001566_2\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4872,
+        "output_token_count": 129
+    },
+    "In welke wijk of buurt was in 2013 het aantal mensen tussen de 15 en 75 jaar met een lage opleiding het hoogst, als dat maximaal 300 was volgens de ondergrens van het betrouwbaarheidsinterval, in de buurten Westeind in Menterwolde, Binnenstad-Noord en Binnenstad-Zuid in Zwolle?": {
+        "query": "WITH RankedRows AS (SELECT WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"52052\", RANK() OVER (ORDER BY \"52052\" DESC) AS rnk FROM \"data/nl/odata3/84947NED.parquet\" WHERE Marges = 'MOG0095' AND Opleidingsniveau = '2018700' AND WijkenEnBuurten IN ('BU19870003', 'BU01931010', 'BU01931000') AND \"52052\" <= 300) SELECT \"MAX[WijkenEnBuurten]\", \"52052\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5065,
+        "output_token_count": 148
+    },
+    "Importwaarde van overige niet-gespecificeerde goederen en de totale invoer op Bonaire in de laatste drie kwartalen van 2021 vergelijken": {
+        "query": "SELECT Perioden, MAX(CASE WHEN GoederenindelingSITC = 'A018851' THEN \"D001607_1\" END) AS \"Invoerwaarde overige niet-gespecificeerde goederen\", MAX(CASE WHEN GoederenindelingSITC = 'T001082' THEN \"D001607_1\" END) AS \"Totale invoerwaarde\" FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden IN ('2021KW02', '2021KW03', '2021KW04') AND GoederenindelingSITC IN ('A018851', 'T001082') GROUP BY Perioden ORDER BY Perioden",
+        "input_token_count": 5519,
+        "output_token_count": 152
+    },
+    "Wat was in 2020 het minimum van de onder- en bovengrens voor het aantal inwoners van 15 tot 75 jaar met een hoge opleiding in het buitengebied van Bakkeveen, waarbij alleen aantallen boven de 90 worden meegerekend?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY Value ASC) AS rnk, Measure AS \"MIN[Measure]\", Marges AS \"MIN[Marges]\", WijkenEnBuurten, Value AS \"MIN\" FROM (SELECT WijkenEnBuurten, Marges, Measure, Value FROM \"data/nl/odata3/85051NED.parquet\" UNPIVOT(Value FOR Measure IN (\"52052\"))) WHERE WijkenEnBuurten LIKE 'BU008601%' AND Opleidingsniveau = '2018790' AND Marges IN ('MOG0095', 'MBG0095') AND Value > 90) SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4676,
+        "output_token_count": 160
+    },
+    "Hoeveel stroom verbruikten koopwoningen gemiddeld in Leidschendam-Voorburg in 2012?": {
+        "query": "SELECT \"M000221\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE Woningkenmerken = '1014800' AND WijkenEnBuurten = 'GM1916'",
+        "input_token_count": 4720,
+        "output_token_count": 53
+    },
+    "Hoeveel elektriciteitsaansluitingen van huishoudens werden er in 2018 geteld op Sint-Eustatius en Saba, exclusief de waarde 11203?": {
+        "query": "SELECT CaribischNederland, Perioden, \"D001159_2\" FROM \"data/nl/odata3/81154ned.parquet\" WHERE CaribischNederland IN ('GM9002', 'GM9003') AND Perioden = '2018JJ00' AND \"D001159_2\" <> 11203",
+        "input_token_count": 4867,
+        "output_token_count": 76
+    },
+    "Hoe groot was het aandeel van 2021 in de totale productie van schone energie in Saba in de jaren 2019 tot en met 2023?": {
+        "query": "SELECT ROUND(SUM(CASE WHEN Perioden = '2021JJ00' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(Value), 0), 2) AS \"%\" FROM (SELECT Perioden, Value FROM \"data/nl/odata3/81154ned.parquet\" UNPIVOT (Value FOR Measure IN (\"D003265\"))) WHERE CaribischNederland = 'GM9003' AND Perioden IN ('2019JJ00', '2020JJ00', '2021JJ00', '2022JJ00', '2023JJ00')",
+        "input_token_count": 4934,
+        "output_token_count": 134
+    },
+    "Wat was de verwachte bedrijvigheid in de papier- en grafische industrie in mei, juni en juli 2016?\"": {
+        "query": "SELECT Perioden, \"M002291\" FROM \"data/nl/odata3/81234ned.parquet\" WHERE BedrijfstakkenBranchesSBI2008 = '317105' AND Perioden IN ('2016MM05', '2016MM06', '2016MM07') AND Marges = 'MW00000' AND Seizoencorrectie = 'A042500' ORDER BY Perioden",
+        "input_token_count": 4764,
+        "output_token_count": 93
+    },
+    "In welke buurt zijn in 2018 de meeste huizen met zonnepanelen ge\u00efnstalleerd: de Groningse binnenstad-zuid, Gastel of Leidsche Rijn-Centrum?": {
+        "query": "WITH RankedRows AS (SELECT WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M002462\", RANK() OVER (ORDER BY \"M002462\" DESC) AS rnk FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU00140001', 'BU17060500', 'BU03440931')) SELECT \"MAX[WijkenEnBuurten]\", \"M002462\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4688,
+        "output_token_count": 121
+    },
+    "Hoe groot was het handelstekort op Bonaire voor gefabriceerde spullen in de eerste helft van 2021?": {
+        "query": "SELECT SUM(\"D001601\") AS handelstekort FROM \"data/nl/odata3/82659NED.parquet\" WHERE GoederenindelingSITC = 'A018809' AND Perioden IN ('2021KW01', '2021KW02')",
+        "input_token_count": 4952,
+        "output_token_count": 64
+    },
+    "Hoeveel meisjes met onbekende herkomst in Zeeland zaten er minimaal op scholen voor speciaal voortgezet onderwijs cluster 1 tussen de schooljaren 2014/'15 en 2018/'19?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M005524\" ASC) AS rnk, Perioden AS \"MIN[Perioden]\", \"M005524\" FROM \"data/nl/odata3/85490NED.parquet\" WHERE Geslacht = '4000' AND GeboortelandOuders = 'T001638' AND Cluster = 'A041800' AND Herkomstland = '2012659' AND Onderwijssoort = 'A049121' AND Regiokenmerken = 'PV29' AND Perioden BETWEEN '2014SJ00' AND '2018SJ00') SELECT \"MIN[Perioden]\", \"M005524\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5891,
+        "output_token_count": 161
+    },
+    "Hoe verhoudt de omzet van de textiel- en farmaceutische industrie zich tot de ontwikkeling van de ruilvoet in april 2022?": {
+        "query": "SELECT Omzet.BedrijfstakkenBranchesSBI2008, Omzet.\"M001557_6\" AS OmzetontwikkelingProcent, Ruilvoet.\"M001627_2\" AS RuilvoetontwikkelingProcent FROM (SELECT * FROM \"data/nl/odata3/85806NED.parquet\" WHERE Perioden = '2022MM04' AND BedrijfstakkenBranchesSBI2008 IN ('312500', '323200')) AS Omzet FULL JOIN (SELECT * FROM \"data/nl/odata3/85962NED.parquet\" WHERE Perioden = '2022MM04') AS Ruilvoet ON Omzet.Perioden = Ruilvoet.Perioden",
+        "input_token_count": 7261,
+        "output_token_count": 154
+    },
+    "Hoeveel mannelijke mbo2-studenten werden in 2021/'22 opgeleid in de horeca en bakkerij, zowel in Nederland als van Surinaamse afkomst, wanneer ze de bbl-route volgden?": {
+        "query": "SELECT Herkomstland, \"M003171\" AS AantalMboStudenten FROM \"data/nl/odata3/85352NED.parquet\" WHERE Perioden = '2021SJ00' AND Niveau = 'A041755' AND Geslacht = '3000' AND Studierichting = 'A043937' AND Leerweg = 'A025293' AND Herkomstland IN ('1012600', 'H008751') AND GeboortelandOuders = 'T001638'",
+        "input_token_count": 8324,
+        "output_token_count": 113
+    },
+    "Waar staat in 2021 het hoogste totale zonnepaneelvermogen opgesteld: in Slagveld en Omgeving of in de kern Witharen?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002461\" DESC) AS rnk, WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M002461\" FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten IN ('BU06420101', 'BU01751101')) SELECT \"MAX[WijkenEnBuurten]\", \"M002461\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4512,
+        "output_token_count": 116
+    },
+    "Hoeveel vrouwen hebben in totaal een diploma behaald in bbo/bbl in de zorgsector tussen 94 en 99?": {
+        "query": "SELECT SUM(\"A009923_4\") AS \"Totaal_vrouwen_zorg_en_welzijn_bbo_bbl\" FROM \"data/nl/odata3/80384ned.parquet\" WHERE Geslacht = '4000' AND Perioden LIKE '19%SJ%' AND CAST(SUBSTR(Perioden, 1, 4) AS INTEGER) BETWEEN 1994 AND 1999",
+        "input_token_count": 9632,
+        "output_token_count": 92
+    },
+    "Welke sector had in 2013 een omzetgroei die verschilde van -0,7 procent, zoals in de productie van niet-duurzame consumentenartikelen en de elektrische apparatenbranche?": {
+        "query": "SELECT BedrijfstakkenBranchesSBI2008, \"M001557_6\" AS omzetgroei_procent FROM \"data/nl/odata3/85806NED.parquet\" WHERE Perioden = '2013JJ00' AND BedrijfstakkenBranchesSBI2008 IN ('800031', '800032', '800033', '800034', '800035') AND \"M001557_6\" IS NOT NULL AND \"M001557_6\" <> -0.7",
+        "input_token_count": 6838,
+        "output_token_count": 112
+    },
+    "Hoeveel procent van de hoger opgeleiden op Saba gaf in 2013 aan dat drugsproblemen of drugshandel weleens voorkomen in hun buurt?": {
+        "query": "SELECT \"A047645_1\" AS percentage FROM \"data/nl/odata3/82557NED.parquet\" WHERE CaribischNederland = 'GM9003' AND Perioden = '2013JJ00' AND Persoonskenmerken = '2018790' AND Marges = 'MW00000'",
+        "input_token_count": 6014,
+        "output_token_count": 74
+    },
+    "Hoe groot is in 2013 het aandeel van Kamerlingswijk in het gemiddelde gasverbruik, voor buurten met een gemiddeld gasverbruik van maximaal 2650 kubieke meter per jaar, ten opzichte van Lieren, verspreide huizen in Almere-Hout en Kiel-Windeweer?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, Perioden) AS Dimension_Measure, SUM(Value) AS \"SUM[WijkenEnBuurten]\", SUM(CASE WHEN WijkenEnBuurten = 'BU01140901' THEN Value ELSE 0 END) AS \"BU01140901\", ROUND(SUM(CASE WHEN WijkenEnBuurten = 'BU01140901' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(Value), 0), 2) AS \"%\" FROM (SELECT Measure, Value, WijkenEnBuurten, Perioden FROM \"data/nl/odata3/83022NED.parquet\" UNPIVOT(Value FOR Measure IN (\"M000219\"))) WHERE Perioden = '2013JJ00' AND Woningkenmerken = 'T001100' AND (WijkenEnBuurten IN ('BU01140901', 'BU02001501', 'BU00180501') OR WijkenEnBuurten LIKE 'BU003405%') AND Value <= 2650 GROUP BY Dimension_Measure",
+        "input_token_count": 6192,
+        "output_token_count": 237
+    },
+    "Wat was de totale importwaarde op Saba in de eerste helft van 2020 voor bedragen onder de 4,9 miljoen dollar?": {
+        "query": "SELECT SUM(\"D001607_1\") AS \"TotaleInvoerwaarde_1000USD\" FROM \"data/nl/odata3/82658NED.parquet\" WHERE CaribischNederland = 'GM9003' AND Perioden IN ('2020KW01', '2020KW02') AND \"D001607_1\" < 4900",
+        "input_token_count": 4672,
+        "output_token_count": 83
+    },
+    "Welke productgroep kende de hoogste exportwaarde vanuit Bonaire in het eerste kwartaal van 2022?": {
+        "query": "WITH RankedRows AS (SELECT GoederenindelingSITC AS \"MAX[GoederenindelingSITC]\", \"D001636_1\" AS \"Uitvoerwaarde\", RANK() OVER (ORDER BY \"D001636_1\" DESC) AS rnk FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2022KW01' AND GoederenindelingSITC IN ('A018851', 'A018678', 'A018528', 'A018809', 'A018743', 'A018612', 'A018524', 'A018629', 'A018540', 'A018591')) SELECT \"MAX[GoederenindelingSITC]\", \"Uitvoerwaarde\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4966,
+        "output_token_count": 177
+    },
+    "Wat was in 2012 het totale stroomverbruik van eigen woningen in de wijken en buurten Randduin, Nieuwerkerk en Meerwijk in Uithoorn als dit onder de 4250 lag in de wijk?": {
+        "query": "SELECT SUM(\"M000221\") AS \"Totaal stroomverbruik (kWh)\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE Woningkenmerken = '1014800' AND WijkenEnBuurten IN ('WK167606', 'WK045185', 'WK045165', 'BU07170501', 'BU16760600', 'BU04518500', 'BU04516500') AND \"M000221\" < 4250",
+        "input_token_count": 5025,
+        "output_token_count": 111
+    },
+    "In welke buurt of wijk is in 2012 het laagste gasverbruik gemeten bij twee-onder-een-kapwoningen in Boekel, Berkendonk of verspreide huizen Riethoven?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M000219\" ASC) AS rnk, WijkenEnBuurten AS \"MIN[WijkenEnBuurten]\", \"M000219\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE Woningkenmerken = 'ZW10300' AND WijkenEnBuurten IN ('BU07550000', 'BU07941809', 'BU17240309') AND \"M000219\" IS NOT NULL) SELECT \"MIN[WijkenEnBuurten]\", \"M000219\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4864,
+        "output_token_count": 143
+    },
+    "Welke buurt uit Horst, Zuid-Esmarke of De volkstuinen heeft in 2013 het kleinste aantal middelbaar opgeleiden van 15 tot 75 jaar waar meer dan 40 mensen in die leeftijdsgroep wonen?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"52052\" ASC) AS rnk, WijkenEnBuurten AS \"MIN[WijkenEnBuurten]\", \"52052\" FROM \"data/nl/odata3/84947NED.parquet\" WHERE WijkenEnBuurten IN ('BU02410101', 'BU02330005', 'BU03990801') AND Opleidingsniveau = '2018740' AND Marges = 'MW00000' AND \"52052\" > 0.04) SELECT \"MIN[WijkenEnBuurten]\", \"52052\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 5218,
+        "output_token_count": 150
+    },
+    "Hoe is het elektriciteitsverbruik in huurhuizen in de Edelstenenbuurt veranderd tussen 2014 en 2019?": {
+        "query": "SELECT '2014' AS Jaar, \"M000221\" AS \"Gemiddeld elektriciteitsverbruik (kWh)\" FROM \"data/nl/odata3/83187NED.parquet\" WHERE WijkenEnBuurten = 'BU07960912' AND Woningkenmerken = '1014850' UNION ALL SELECT '2019' AS Jaar, \"M000221\" AS \"Gemiddeld elektriciteitsverbruik (kWh/m2)\" FROM \"data/nl/odata3/84837NED.parquet\" WHERE WijkenEnBuurten = 'BU07960912' AND Woningkenmerken = '1014850'",
+        "input_token_count": 5330,
+        "output_token_count": 147
+    },
+    "Hoeveel elektriciteits- en wateraansluitingen waren er op Bonaire tussen 2002 en 2005?": {
+        "query": "SELECT Perioden, \"D001160_1\" AS Elektriciteitsaansluitingen, \"D001160_2\" AS Wateraansluitingen FROM \"data/nl/odata3/81154ned.parquet\" WHERE CaribischNederland = 'GM9001' AND Perioden IN ('2002JJ00', '2003JJ00', '2004JJ00', '2005JJ00') ORDER BY Perioden",
+        "input_token_count": 4940,
+        "output_token_count": 98
+    },
+    "Hoe positief waren ondernemers in de machine- en transportmiddelenindustrie en welk percentage jongeren van 15 tot 25 jaar had een baan in maart 2015?": {
+        "query": "SELECT COALESCE(Industrie.Perioden, Jongeren.Perioden) AS Perioden, Industrie.BedrijfstakkenBranchesSBI2008, Industrie.\"M002289\" AS Producentenvertrouwen, Jongeren.\"M001796_2\" AS NettoArbeidsparticipatieJongeren FROM (SELECT * FROM \"data/nl/odata3/81234ned.parquet\" WHERE Perioden = '2015MM03' AND BedrijfstakkenBranchesSBI2008 IN ('332905', '339205') AND Marges = 'MW00000' AND Seizoencorrectie = 'A042500') AS Industrie FULL JOIN (SELECT * FROM \"data/nl/odata3/80590ned.parquet\" WHERE Perioden = '2015MM03' AND Leeftijd = '53050' AND Geslacht = 'T001038') AS Jongeren ON Industrie.Perioden = Jongeren.Perioden",
+        "input_token_count": 5486,
+        "output_token_count": 203
+    },
+    "Hoeveel mensen behaalden hun diploma in economische wetenschappen in de jaren 1922 tot en met 1926, en hoeveel 54-jarigen met Nederlandse ouders uit Eswatini woonden er in april 2024 in Nederland?": {
+        "query": "SELECT (SELECT SUM(\"M006873_1\") FROM \"data/nl/odata3/80384ned.parquet\" WHERE Perioden IN ('1922SJ00', '1923SJ00', '1924SJ00', '1925SJ00', '1926SJ00') AND Geslacht = 'T001038') AS \"Diplomas economische wetenschappen 1922-1926\", (SELECT \"M000098\" FROM \"data/nl/odata3/85721NED.parquet\" WHERE Perioden = '2024MM04' AND Leeftijd = '15400' AND Herkomstland = 'H008830' AND GeboortelandOuders = 'A051737' AND Geslacht = 'T001038' AND Geboorteland = 'T001638') AS \"54-jarigen met Nederlandse ouders uit Eswatini april 2024\"",
+        "input_token_count": 20761,
+        "output_token_count": 191
+    },
+    "Welk opleidingsniveau, kijkend naar laag, middel en hoog, heeft in 2020 de meeste inwoners van 15 tot 75 jaar in Frieschepalen-Kom?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"52052\" DESC) AS rnk, Opleidingsniveau AS \"MAX[Opleidingsniveau]\", \"52052\" FROM \"data/nl/odata3/85051NED.parquet\" WHERE WijkenEnBuurten = 'BU00860401' AND Marges = 'MW00000' AND Opleidingsniveau IN ('2018700', '2018740', '2018790')) SELECT \"MAX[Opleidingsniveau]\", \"52052\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4665,
+        "output_token_count": 131
+    },
+    "Hoeveel postpaid aansluitingen waren er in 2001 in de verschillende delen van Caribisch Nederland?": {
+        "query": "SELECT CaribischNederland, \"D001163\" AS PostpaidAansluitingen FROM \"data/nl/odata3/81154ned.parquet\" WHERE Perioden = '2001JJ00' AND CaribischNederland LIKE 'GM%' ORDER BY CaribischNederland",
+        "input_token_count": 4793,
+        "output_token_count": 65
+    },
+    "Hoe groot was het vermogen aan geplaatste zonnepanelen in Appelscha-Vaart, Wilhelminadorp in Best, Oude-Tonge buitengebied en Nieuweschans in zowel 2018 als 2021?": {
+        "query": "SELECT '2018' AS Jaar, WijkenEnBuurten, \"M002461\" AS Vermogen_kWp FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU00850109', 'BU07530008', 'BU19240606', 'WK189505') UNION ALL BY NAME SELECT '2021' AS Jaar, WijkenEnBuurten, \"M002461\" AS Vermogen_kWp FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten IN ('BU00850109', 'BU07530008', 'BU19240606', 'WK189505') ORDER BY WijkenEnBuurten, Jaar",
+        "input_token_count": 5114,
+        "output_token_count": 165
+    },
+    "Wat is het gemiddelde cijfer dat mensen van 30 jaar of een mbo-diploma geven voor de veiligheid in hun buurt op Saba en in Zoetermeer in 2021?": {
+        "query": "SELECT CaribischNederland, Persoonskenmerken, AVG(\"M003276\") AS \"AVG\" FROM \"data/nl/odata3/82558NED.parquet\" WHERE CaribischNederland = 'GM9003' AND Perioden = '2021JJ00' AND Persoonskenmerken = '2018740' AND Marges = 'MW00000' GROUP BY CaribischNederland, Persoonskenmerken",
+        "input_token_count": 17885,
+        "output_token_count": 96
+    },
+    "Hoeveel zonnepaneleninstallaties zijn er in 2017 in het zuidelijke deel van het centrum van Nissewaard en Woonkern Maasdijk samen?": {
+        "query": "SELECT SUM(\"M002462\") AS \"Aantal zonnepaneleninstallaties\" FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten IN ('BU19300102', 'BU17830301')",
+        "input_token_count": 6715,
+        "output_token_count": 57
+    },
+    "Hoe ontwikkelde de invoerwaarde van plantaardige en dierlijke vetten en oli\u00ebn zich in 2020 voor Bonaire, en de totale invoerwaarde specifiek voor Sint Eustatius, per kwartaal?": {
+        "query": "SELECT COALESCE(Bonaire.Perioden, SintEustatius.Perioden) AS Perioden, Bonaire.\"D001607_1\" AS \"Invoerwaarde plantaardige en dierlijke vetten en oli\u00ebn Bonaire (1000 USD)\", SintEustatius.\"D001607_1\" AS \"Totale invoerwaarde Sint Eustatius (1000 USD)\" FROM (SELECT * FROM \"data/nl/odata3/82659NED.parquet\" WHERE GoederenindelingSITC = 'A018612' AND Perioden LIKE '2020KW%') AS Bonaire FULL JOIN (SELECT * FROM \"data/nl/odata3/82658NED.parquet\" WHERE CaribischNederland = 'GM9002' AND Perioden LIKE '2020KW%') AS SintEustatius ON Bonaire.Perioden = SintEustatius.Perioden ORDER BY Perioden",
+        "input_token_count": 5494,
+        "output_token_count": 202
+    },
+    "Hoeveel leerlingen volgden in het schooljaar 2017-2018 een mbo-opleiding op het tweede niveau in de sector zorg en welzijn in Caribisch Nederland?": {
+        "query": "SELECT \"M003171\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE SectorenEnDomeinen = 'A009923' AND Niveau = 'A041755' AND CaribischNederland = 'CN01' AND Perioden = '2017SJ00'",
+        "input_token_count": 5143,
+        "output_token_count": 70
+    },
+    "Wat is het hoogste geschatte aantal hoogopgeleide inwoners tussen 15 en 75 jaar in Leidschendam-Voorburg in 2021 volgens het 95%-interval?": {
+        "query": "SELECT \"52052\" AS \"Bovengrens 95%-interval (x 1 000)\" FROM \"data/nl/odata3/85372NED.parquet\" WHERE WijkenEnBuurten = 'GM1916' AND Opleidingsniveau = '2018790' AND Marges = 'MBG0095'",
+        "input_token_count": 4497,
+        "output_token_count": 80
+    },
+    "Totaal opgesteld vermogen aan zonnepanelen in 2019 in Voorstonden, Stad binnen de Linie-West en Zoutkamp dat verschilt van 906 kWp": {
+        "query": "SELECT SUM(\"M002461\") AS \"Totaal opgesteld vermogen (kWp)\" FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten IN ('BU02130316', 'WK040002', 'BU19660901') HAVING SUM(\"M002461\") <> 906",
+        "input_token_count": 4608,
+        "output_token_count": 78
+    },
+    "Totaal aantal mensen tussen 15 en 75 jaar met een laag opleidingsniveau in Smidsbrink, Kraayenburg en de verspreide huizen van Moerdijk in 2020": {
+        "query": "SELECT SUM(\"52052\") AS \"Totaal bevolking 15 tot 75 jaar, laag opgeleid (x 1 000)\" FROM \"data/nl/odata3/85051NED.parquet\" WHERE Marges = 'MW00000' AND Opleidingsniveau = '2018700' AND WijkenEnBuurten IN ('BU18590413', 'BU06031193', 'BU17090400')",
+        "input_token_count": 5811,
+        "output_token_count": 99
+    },
+    "Wat was in januari 2015 de ondergrens van de verwachte bedrijvigheid van bedrijven in de industrie, en hoe viel dat samen met de inflatie op jaarbasis?": {
+        "query": "SELECT COALESCE(Industrie.Perioden, Inflatie.Perioden) AS Perioden, Industrie.\"M002291\" AS \"Ondergrens verwachte bedrijvigheid industrie\", Inflatie.\"M000238\" AS \"Inflatie op jaarbasis\" FROM (SELECT * FROM \"data/nl/odata3/81234ned.parquet\" WHERE Perioden = '2015MM01' AND Marges = 'MOG0095' AND Seizoencorrectie = 'A042500' AND BedrijfstakkenBranchesSBI2008 = '307500') AS Industrie FULL JOIN (SELECT * FROM \"data/nl/odata3/70936ned.parquet\" WHERE Perioden = '2015MM01') AS Inflatie ON Industrie.Perioden = Inflatie.Perioden",
+        "input_token_count": 5045,
+        "output_token_count": 173
+    },
+    "Welke exportproducten van Bonaire leverden opbrengst op in het eerste kwartaal van 2015?": {
+        "query": "SELECT GoederenindelingSITC, \"D001636_1\" AS Uitvoerwaarde_1000_USD FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2015KW01' AND GoederenindelingSITC IN ('A018851', 'A018528', 'A018678', 'A018809', 'A018743', 'A018612', 'A018524', 'A018629', 'A018540', 'A018591') AND \"D001636_1\" > 0 ORDER BY \"D001636_1\" DESC",
+        "input_token_count": 4976,
+        "output_token_count": 138
+    },
+    "Hoe ontwikkelden de exportprijzen van pleziervaartuigen zich in oktober 2019 en wat was het algemene consumentenvertrouwen toen?": {
+        "query": "SELECT COALESCE(PPI.Perioden, Vertrouwen.Perioden) AS Perioden, PPI.\"M003367\" AS exportprijsindex_pleziervaartuigen, PPI.\"M003316\" AS maandmutatie_exportprijzen_pct, PPI.\"M003288\" AS jaarmutatie_exportprijzen_pct, Vertrouwen.\"M001093\" AS consumentenvertrouwen FROM (SELECT * FROM \"data/nl/odata3/85771NED.parquet\" WHERE Perioden = '2019MM10' AND AlleBedrijfstakken = '340500' AND Afzet = 'A044076') AS PPI FULL JOIN (SELECT * FROM \"data/nl/odata3/83694NED.parquet\" WHERE Perioden = '2019MM10') AS Vertrouwen ON PPI.Perioden = Vertrouwen.Perioden",
+        "input_token_count": 18272,
+        "output_token_count": 185
+    },
+    "Hoeveel stroom wordt er in 2013 gemiddeld verbruikt in huurhuizen, hoekhuizen, tussenwoningen en twee-onder-een-kapwoningen in Midsland?": {
+        "query": "SELECT Woningkenmerken, \"M000221\" AS \"Gemiddeld elektriciteitsverbruik (kWh)\" FROM \"data/nl/odata3/83022NED.parquet\" WHERE WijkenEnBuurten = 'BU00930110' AND Woningkenmerken IN ('1014850', 'ZW25806', 'ZW25805', 'ZW10300')",
+        "input_token_count": 4809,
+        "output_token_count": 88
+    },
+    "Leeraanbod voor mannen met enkel basisschool in de beroepsbevolking in 2016 en 2017 vergeleken met het aantal mensen met een middelbare opleiding in Surhuizum in 2013": {
+        "query": "SELECT Perioden, \"52052\" AS \"Mannen_basisonderwijs_beroepsbevolking_deelname_leven_lang_ontwikkelen\" FROM \"data/nl/odata3/85315NED.parquet\" WHERE Perioden IN ('2016JJ00', '2017JJ00') AND Persoonskenmerken IN ('3000', '2018710') AND Arbeidspositie = '3000790' AND LevenLangOntwikkelen = 'A045485' UNION ALL BY NAME SELECT '2013JJ00' AS Perioden, \"52052\" AS \"Middelbaar_opgeleiden_Surhuizum\" FROM \"data/nl/odata3/84947NED.parquet\" WHERE WijkenEnBuurten = 'BU00590202' AND Opleidingsniveau = '2018740' AND Marges = 'MW00000'",
+        "input_token_count": 5917,
+        "output_token_count": 193
+    },
+    "Hoeveel elektriciteitsaansluitingen met een zakelijk tarief waren er op Bonaire van 2010 tot en met 2013 bij elkaar opgeteld?": {
+        "query": "SELECT SUM(\"D001155\") AS \"Totaal zakelijke elektriciteitsaansluitingen\" FROM \"data/nl/odata3/81154ned.parquet\" WHERE CaribischNederland = 'GM9001' AND Perioden IN ('2010JJ00', '2011JJ00', '2012JJ00', '2013JJ00')",
+        "input_token_count": 4931,
+        "output_token_count": 81
+    },
+    "jaarmutatie van de omzet van de houtindustrie en de maandelijkse verandering van buitenlandse verkoopprijzen van baksteenproducenten in maart 2024": {
+        "query": "SELECT TableA.\"M001557_6\" AS \"Jaarmutatie omzet houtindustrie (%)\", TableB.\"M003316\" AS \"Maandmutatie buitenlandse afzetprijzen baksteen- en dakpanindustrie (%)\" FROM (SELECT * FROM \"data/nl/odata3/85806NED.parquet\" WHERE Perioden = '2024MM03' AND BedrijfstakkenBranchesSBI2008 = '315800') AS TableA FULL JOIN (SELECT * FROM \"data/nl/odata3/85771NED.parquet\" WHERE Perioden = '2024MM03' AND AlleBedrijfstakken = '325700' AND Afzet = 'A044076') AS TableB ON TableA.Perioden = TableB.Perioden",
+        "input_token_count": 16563,
+        "output_token_count": 168
+    },
+    "Hoeveel gas wordt er gemiddeld per jaar verbruikt in een losstaande woning in het buitengebied van Ter Aar in 2013?": {
+        "query": "SELECT \"M000219\" AS \"Gemiddeld aardgasverbruik (m3 per jaar)\" FROM \"data/nl/odata3/83022NED.parquet\" WHERE Woningkenmerken = 'ZW10320' AND WijkenEnBuurten = 'BU05690300'",
+        "input_token_count": 4828,
+        "output_token_count": 70
+    },
+    "Wat was in 2015 de gemiddelde opbrengst van de verkoop van stansgereedschappen voor de metaalindustrie en voor andere toepassingen?": {
+        "query": "SELECT AVG(\"M001571\") AS \"AVG[ProductenPRODCOM]\" FROM \"data/nl/odata3/83115NED.parquet\" WHERE Perioden = '2015JJ00' AND ProductenPRODCOM IN ('A014969', 'A014956', 'A014963', 'A014939')",
+        "input_token_count": 21544,
+        "output_token_count": 78
+    },
+    "Hoeveel mannen met alleen basisschooldiploma uit de beroepsbevolking namen deel aan het programma leven lang ontwikkelen in 2016 en 2017, en wat was het minimale aantal mensen met een middelbare opleiding in Surhuizum in 2013 volgens de ondergrensschatting?": {
+        "query": "SELECT Perioden, \"52052\" AS AantalMannenBasisonderwijs FROM \"data/nl/odata3/85315NED.parquet\" WHERE Perioden IN ('2016JJ00', '2017JJ00') AND LevenLangOntwikkelen = 'A045485' AND Arbeidspositie = '3000790' AND Persoonskenmerken = '2018710' AND Geslacht = 'T001038'",
+        "input_token_count": 5975,
+        "output_token_count": 99
+    },
+    "Hoeveel huishoudens hadden zonnepanelen in Verspreide huizen Garyp, de buurt Ravenstein, Het Oudland en Verspreide huizen polder Hattemerbroek in zowel 2017 als 2018?": {
+        "query": "SELECT '2017' AS Jaar, WijkenEnBuurten, \"M002462\" AS AantalInstallatiesBijWoningen FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten IN ('BU07370509', 'BU08281400', 'BU08510009', 'BU02690108') UNION ALL BY NAME SELECT '2018' AS Jaar, WijkenEnBuurten, \"M002462\" AS AantalInstallatiesBijWoningen FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU07370509', 'BU08281400', 'BU08510009', 'BU02690108')",
+        "input_token_count": 5084,
+        "output_token_count": 163
+    },
+    "Wat was het gezamenlijke stroomgebruik in huurhuizen in de Edelstenenbuurt in Den Bosch in 2014 en 2019?": {
+        "query": "SELECT '2014' AS Jaar, \"M000221\" AS GemiddeldElektriciteitsverbruik FROM \"data/nl/odata3/83187NED.parquet\" WHERE WijkenEnBuurten = 'BU07960912' AND Woningkenmerken = '1014850' UNION ALL BY NAME SELECT '2019' AS Jaar, \"M000221\" AS GemiddeldElektriciteitsverbruik FROM \"data/nl/odata3/84837NED.parquet\" WHERE WijkenEnBuurten = 'BU07960912' AND Woningkenmerken = '1014850'",
+        "input_token_count": 5332,
+        "output_token_count": 137
+    },
+    "Welk percentage senioren in Caribisch Nederland voelde zich in 2013 soms onveilig en welk cijfer gaven zij aan veiligheid?": {
+        "query": "SELECT \"D005147\" AS \"Percentage soms onveilig\", \"M003276\" AS \"Rapportcijfer veiligheid\" FROM \"data/nl/odata3/82558NED.parquet\" WHERE Persoonskenmerken = '80200' AND CaribischNederland = 'CN01' AND Perioden = '2013JJ00' AND Marges = 'MW00000'",
+        "input_token_count": 5276,
+        "output_token_count": 89
+    },
+    "Wat was het hoogste aantal vrouwelijke afgestudeerden aan een handelsdagschool onder de 167 in het schooljaar 1930/1931 of 1929/1930?": {
+        "query": "SELECT MAX(\"M006881\") AS \"MAX[M006881]\" FROM \"data/nl/odata3/80384ned.parquet\" WHERE Geslacht = '4000' AND Perioden IN ('1930SJ00', '1929SJ00') AND \"M006881\" < 167",
+        "input_token_count": 9616,
+        "output_token_count": 70
+    },
+    "Wat was de laagste wegingsfactor voor de prijzen van elektrische medische apparaten in Nederland en het buitenland in augustus 2024?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M000289\" ASC) AS rnk, Afzet AS \"MIN[Afzet]\", \"M000289\" FROM \"data/nl/odata3/85771NED.parquet\" WHERE AlleBedrijfstakken = '334200' AND Perioden = '2024MM08' AND Afzet IN ('A044075', 'A044076') AND \"M000289\" IS NOT NULL) SELECT \"MIN[Afzet]\", \"M000289\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 13987,
+        "output_token_count": 129
+    },
+    "Welke verhouding middelbaar opgeleiden op de BES-eilanden voelde zich in 2013 nooit onveilig, en welk percentage sprak Nederlands?": {
+        "query": "SELECT A.CaribischNederland, A.Perioden, A.\"D005142\" AS \"Voelt zich nooit onveilig (%)\", B.\"D004657_1\" AS \"Spreekt Nederlands (%)\" FROM (SELECT * FROM \"data/nl/odata3/82558NED.parquet\" WHERE Persoonskenmerken = '2018740' AND Marges = 'MW00000' AND Perioden = '2013JJ00' AND CaribischNederland = 'CN01') AS A FULL JOIN (SELECT * FROM \"data/nl/odata3/82867NED.parquet\" WHERE Persoonskenmerken = '2018740' AND Marges = 'MW00000' AND Perioden = '2013JJ00' AND CaribischNederland = 'CN01') AS B ON A.CaribischNederland = B.CaribischNederland AND A.Perioden = B.Perioden AND A.Persoonskenmerken = B.Persoonskenmerken AND A.Marges = B.Marges",
+        "input_token_count": 6427,
+        "output_token_count": 220
+    },
+    "Hoe was het oordeel van producenten over hun orderportefeuille in de basismetaalindustrie vergeleken met de omzetgroei bij winkels in overige non-food artikelen in augustus 2017?": {
+        "query": "SELECT COALESCE(Producenten.Perioden, Winkels.Perioden) AS Perioden, Producenten.\"M000210\" AS \"Oordeel orderpositie basismetaalindustrie\", Winkels.\"M004926\" AS \"Omzetgroei winkels overige non-food artikelen\" FROM (SELECT * FROM \"data/nl/odata3/81234ned.parquet\" WHERE Perioden = '2017MM08' AND BedrijfstakkenBranchesSBI2008 = '328105' AND Seizoencorrectie = 'A042500' AND Marges = 'MW00000') AS Producenten FULL JOIN (SELECT * FROM \"data/nl/odata3/83867NED.parquet\" WHERE Perioden = '2017MM08' AND BedrijfstakkenBranchesSBI2008 = 'B000628') AS Winkels ON Producenten.Perioden = Winkels.Perioden",
+        "input_token_count": 5399,
+        "output_token_count": 200
+    },
+    "Hoe zag het saldo van de handel en de waarde van export eruit voor Bonaire in het eerste kwartaal van 2019 voor voedingsmiddelen, oli\u00ebn en chemische producten?": {
+        "query": "SELECT GoederenindelingSITC, \"D001601\" AS Handelsbalans, \"D001636_1\" AS Uitvoerwaarde FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2019KW01' AND GoederenindelingSITC IN ('A018524', 'A018612', 'A018629')",
+        "input_token_count": 4991,
+        "output_token_count": 87
+    },
+    "Welk percentage verbuik van elektriciteit in Zoetermeer in 2014 is toe te wijzen aan appartementen met een verbruik van minstens 2350 kWh?": {
+        "query": "SELECT ROUND(SUM(CASE WHEN Woningkenmerken = 'ZW25810' AND Value >= 2350 THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(CASE WHEN Woningkenmerken = 'T001100' THEN Value ELSE 0 END), 0), 2) AS \"%\" FROM (SELECT Woningkenmerken, Value FROM \"data/nl/odata3/83187NED.parquet\" UNPIVOT(Value FOR Measure IN (\"M000221\"))) WHERE WijkenEnBuurten = 'GM0637' AND Woningkenmerken IN ('ZW25810', 'T001100')",
+        "input_token_count": 4648,
+        "output_token_count": 145
+    },
+    "Hoe hoog was het gemiddelde gasverbruik in koopwoningen in Gorredijk-De Kromten, Crosesteijn en Nieuw-Lekkerland in 2019 en in Ooltgensplaat in 2014?": {
+        "query": "SELECT '2019' AS Jaar, WijkenEnBuurten, \"M000219\" AS GemiddeldGasverbruik FROM \"data/nl/odata3/84837NED.parquet\" WHERE Woningkenmerken = '1014800' AND WijkenEnBuurten IN ('BU00860502', 'BU03550303') UNION ALL BY NAME SELECT '2014' AS Jaar, WijkenEnBuurten, \"M000219\" AS GemiddeldGasverbruik FROM \"data/nl/odata3/83187NED.parquet\" WHERE Woningkenmerken = '1014800' AND WijkenEnBuurten = 'BU19240400'",
+        "input_token_count": 5487,
+        "output_token_count": 153
+    },
+    "Hoeveel mbo-leerlingen volgden in het schooljaar 2018/19 een BBL-opleiding in logistiek, mobiliteit of transport in Gelderland, en hoeveel van zulke leerlingen in heel Nederland waren in Nederland geboren en hadden ouders die niet uit Nederland komen maar uit Europa?": {
+        "query": "SELECT (SELECT \"M003171\" FROM \"data/nl/odata3/85353NED.parquet\" WHERE Regio = 'PV25' AND Niveau = 'T001336' AND Geslacht = 'T001038' AND Studierichting = 'A051782' AND Leerweg = 'A025293' AND Perioden = '2018SJ00') AS \"BBL_leerlingen_Gelderland\", (SELECT \"M003171\" FROM \"data/nl/odata3/85352NED.parquet\" WHERE Herkomstland = 'H007933' AND GeboortelandOuders = 'A051742' AND Niveau = 'T001336' AND Geslacht = 'T001038' AND Studierichting = 'A051782' AND Leerweg = 'A025293' AND Perioden = '2018SJ00') AS \"BBL_leerlingen_Nederland_geboren_ouders_uit_Europa\"",
+        "input_token_count": 8350,
+        "output_token_count": 207
+    },
+    "Welk type woning in Kapelle heeft in 2012 het hoogste gemiddelde gasverbruik, kijkend naar huizen met de kenmerken eigen woning en vrijstaande woning?": {
+        "query": "WITH RankedRows AS (SELECT Woningkenmerken AS \"MAX[Woningkenmerken]\", \"M000219\", RANK() OVER (ORDER BY \"M000219\" DESC) AS rnk FROM \"data/nl/odata3/83023NED.parquet\" WHERE WijkenEnBuurten = 'GM0678' AND Woningkenmerken IN ('1014800', 'ZW10320')) SELECT \"MAX[Woningkenmerken]\", \"M000219\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4799,
+        "output_token_count": 118
+    },
+    "Gemiddeld aantal mbo-leerlingen op Bonaire in de zorgsector, niveau 3 en 4, in schooljaar 2020-2021": {
+        "query": "SELECT AVG(\"M003171\") AS \"AVG\" FROM \"data/nl/odata3/84312NED.parquet\" WHERE SectorenEnDomeinen = 'A009923' AND Niveau IN ('A041759', 'A041763') AND CaribischNederland = 'GM9001' AND Perioden = '2020SJ21'",
+        "input_token_count": 5171,
+        "output_token_count": 81
+    },
+    "Hoeveel 45- tot 65-jarigen op de BES-eilanden ervaren in 2021 dat ze op straat worden lastiggevallen of dat hun buurt wordt geteisterd door verval?": {
+        "query": "SELECT \"A047647_2\", \"A047643_4\" FROM \"data/nl/odata3/82557NED.parquet\" WHERE Persoonskenmerken = '53715' AND Marges = 'MW00000' AND Perioden = '2021JJ00' AND CaribischNederland = 'CN01'",
+        "input_token_count": 6432,
+        "output_token_count": 77
+    },
+    "Hoeveel procent van de inwoners van Bonaire voelde zich in 2021 nooit onveilig en wat was het gemiddelde veiligheidsgevoel cijfer?": {
+        "query": "SELECT \"D005142\" AS \"Percentage nooit onveilig\", \"M003276\" AS \"Gemiddeld rapportcijfer veiligheid\" FROM \"data/nl/odata3/82558NED.parquet\" WHERE CaribischNederland = 'GM9001' AND Perioden = '2021JJ00' AND Persoonskenmerken = 'T009002' AND Marges = 'MW00000'",
+        "input_token_count": 5275,
+        "output_token_count": 93
+    },
+    "In welke buurt zijn er in 2020 de meeste huizen met zonnepanelen, maar niet meer dan 146, gekeken naar de buurten Bosgebied Dorst, Schreurserve en Tussenbeeksbuurt?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M002462\" DESC) AS rnk, WijkenEnBuurten AS \"MAX[WijkenEnBuurten]\", \"M002462\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU08261308', 'BU01530500', 'BU04530200') AND \"M002462\" <= 146) SELECT \"MAX[WijkenEnBuurten]\", \"M002462\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4565,
+        "output_token_count": 132
+    },
+    "Hoe is het aantal huizen met zonnepanelen veranderd tussen 2017 en 2019 in Buiten de Veste en Damespolder?": {
+        "query": "SELECT COALESCE(y2017.WijkenEnBuurten, y2019.WijkenEnBuurten) AS WijkenEnBuurten, y2017.\"M002462\" AS installaties_2017, y2019.\"M002462\" AS installaties_2019, y2019.\"M002462\" - y2017.\"M002462\" AS verandering FROM (SELECT * FROM \"data/nl/odata3/84517NED.parquet\" WHERE WijkenEnBuurten IN ('BU07170002', 'BU03072902')) AS y2017 FULL JOIN (SELECT * FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten IN ('BU07170002', 'BU03072902')) AS y2019 ON y2017.WijkenEnBuurten = y2019.WijkenEnBuurten",
+        "input_token_count": 4907,
+        "output_token_count": 197
+    },
+    "Hoeveel vrouwelijke mbo-studenten volgen in schooljaar 2024/2025 een opleiding op niveau 4 in Gelderland, en wat is het aandeel van deze groep vergeleken met mbo-3?": {
+        "query": "SELECT SUM(CASE WHEN Niveau = 'A041763' THEN Value ELSE 0 END) AS \"mbo_4_vrouwen\", SUM(CASE WHEN Niveau = 'A041759' THEN Value ELSE 0 END) AS \"mbo_3_vrouwen\", ROUND(100.0 * SUM(CASE WHEN Niveau = 'A041763' THEN Value ELSE 0 END) / NULLIF(SUM(CASE WHEN Niveau = 'A041759' THEN Value ELSE 0 END), 0), 2) AS \"aandeel_mbo_4_tov_mbo_3_pct\" FROM (SELECT Niveau, Value FROM \"data/nl/odata3/85353NED.parquet\" UNPIVOT(Value FOR Measure IN (\"M003171\"))) WHERE Perioden = '2024SJ00' AND Regio = 'PV25' AND Geslacht = '4000' AND Studierichting = 'T001072' AND Leerweg = 'A025290' AND Niveau IN ('A041763', 'A041759')",
+        "input_token_count": 6428,
+        "output_token_count": 225
+    },
+    "Hoeveel procent van de mannen op Saba gaf in 2017/2018 aan regelmatig sociale problemen in hun buurt te ervaren?": {
+        "query": "SELECT \"A047649_4\" FROM \"data/nl/odata3/82557NED.parquet\" WHERE Marges = 'MW00000' AND CaribischNederland = 'GM9003' AND Perioden = '2017JJ00' AND Persoonskenmerken = '3000'",
+        "input_token_count": 6008,
+        "output_token_count": 71
+    },
+    "Hoeveel totaal zonnepaneelvermogen stond er opgesteld in Wilhelminadorp in Best, Oude-Tonge buitengebied, Appelscha-Vaart en wijk 5 van Nieuweschans in 2018 en 2021 samen?": {
+        "query": "SELECT SUM(\"M002461\") AS \"Totaal opgesteld zonnepaneelvermogen (kWp)\" FROM ((SELECT \"M002461\" FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU07530008', 'BU19240606', 'BU00850109', 'WK189505')) UNION ALL BY NAME (SELECT \"M002461\" FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten IN ('BU07530008', 'BU19240606', 'BU00850109', 'WK189505')))",
+        "input_token_count": 5241,
+        "output_token_count": 142
+    },
+    "Hoe groot is het aandeel bewoners tussen 15 en 75 jaar met een gemiddeld opleidingsniveau in Bitgum in 2020, als het aantal mensen onder de 370 ligt binnen de ondergrens van het 95%-betrouwbaarheidsinterval?": {
+        "query": "SELECT WijkenEnBuurten, \"52052\" AS \"Aandeel bewoners (ondergrens 95%-interval)\" FROM \"data/nl/odata3/85051NED.parquet\" WHERE WijkenEnBuurten = 'BU19491901' AND Opleidingsniveau = '2018740' AND Marges = 'MOG0095' AND \"52052\" < 370",
+        "input_token_count": 4647,
+        "output_token_count": 93
+    },
+    "Hoeveel jongens behaalden hun diploma in de zorgsector binnen het vmbo tussen 2006 en 2009?": {
+        "query": "SELECT SUM(\"A009923_1\") AS \"aantal_jongens\" FROM \"data/nl/odata3/80384ned.parquet\" WHERE Geslacht = '3000' AND Perioden IN ('2006SJ00', '2007SJ00', '2008SJ00', '2009SJ00')",
+        "input_token_count": 9634,
+        "output_token_count": 75
+    },
+    "Hoeveel stroom verbruiken huishoudens gemiddeld in het buitengebied Noord en De Mortelen in 2012 voor verschillende woningtypen?": {
+        "query": "SELECT WijkenEnBuurten, Woningkenmerken, \"M000221\" AS \"Gemiddeld elektriciteitsverbruik (kWh)\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE WijkenEnBuurten IN ('BU00370308', 'BU03620009', 'WK082808', 'WK039830', 'WK048930') AND Woningkenmerken IN ('ZW10300', 'ZW10320', 'ZW25810', 'ZW25805', 'ZW25806')",
+        "input_token_count": 4988,
+        "output_token_count": 121
+    },
+    "Laagste gemiddelde gasconsumptie voor huur- of hoekwoningen in Bretelerveld in 2023": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"M000219\" ASC) AS rnk, Woningkenmerken AS \"MIN[Woningkenmerken]\", WijkenEnBuurten, \"M000219\" FROM \"data/nl/odata3/85999NED.parquet\" WHERE Woningkenmerken IN ('1014850', 'ZW25806') AND \"GM000C\" = 'Bretelerveld' AND \"M000219\" IS NOT NULL) SELECT * FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4763,
+        "output_token_count": 124
+    },
+    "Wat is het laagste aantal hoogopgeleiden tussen 15 en 75 jaar in de wijken De Wetbuurt, Huyekamp en Putten-Centrum in 2021?": {
+        "query": "SELECT MIN(\"52052\") AS \"MIN[52052]\" FROM \"data/nl/odata3/85372NED.parquet\" WHERE Opleidingsniveau = '2018790' AND Marges = 'MW00000' AND WijkenEnBuurten IN ('BU03635506', 'BU17340206', 'BU02730000')",
+        "input_token_count": 4653,
+        "output_token_count": 83
+    },
+    "Zonnepaneelinstallaties per woonhuis in de buurten Ministersbuurt-West, Nieuwe Molen, Buitengebied Heteren, Wijk 01 Zelhem en Kotten in 2018 en 2020": {
+        "query": "SELECT '2018' AS Jaar, WijkenEnBuurten, \"M002462\" AS AantalInstallatiesBijWoningen FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU05031302', 'BU07480402', 'WK187601', 'BU02940101') UNION ALL BY NAME SELECT '2020' AS Jaar, WijkenEnBuurten, \"M002462\" AS AantalInstallatiesBijWoningen FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU05031302', 'BU07480402', 'WK173416', 'WK187601', 'BU02940101') ORDER BY Jaar, WijkenEnBuurten",
+        "input_token_count": 5075,
+        "output_token_count": 176
+    },
+    "Hoe groot is het aandeel van mensen met een beperkte scholing in Postwegflat, vergeleken met de wijk en buurt Vlieland en Ommerveld in 2021?": {
+        "query": "SELECT WijkenEnBuurten, SUM(CASE WHEN Opleidingsniveau = '2018700' THEN \"52052\" ELSE 0 END) AS \"BeperktGeschoold_X1000\", SUM(\"52052\") AS \"Totaal_X1000\", ROUND(100.0 * SUM(CASE WHEN Opleidingsniveau = '2018700' THEN \"52052\" ELSE 0 END) / NULLIF(SUM(\"52052\"), 0), 2) AS \"AandeelLaagOpgeleidPercentage\" FROM \"data/nl/odata3/85372NED.parquet\" WHERE WijkenEnBuurten IN ('BU09831507', 'GM0096') AND Opleidingsniveau IN ('2018700', '2018740', '2018790') AND Marges = 'MW00000' GROUP BY WijkenEnBuurten",
+        "input_token_count": 4598,
+        "output_token_count": 194
+    },
+    "Hoeveel jonge vrouwen tussen 15 en 25 jaar met een algemene opleiding waren er in het tweede kwartaal van 2022, en hoeveel binnen die leeftijdscategorie hadden toen een baan, gecorrigieerd naar seizoen?": {
+        "query": "SELECT '2022KW02' AS Perioden, Bevolking.\"20150\" AS \"Jonge vrouwen met algemene opleiding (x 1000)\", Werk.\"D006409\" AS \"Werkzame vrouwen van 15 tot 25 jaar, seizoengecorrigeerd (x 1000)\" FROM (SELECT * FROM \"data/nl/odata3/85313NED.parquet\" WHERE Perioden = '2022KW02' AND Leeftijd = '53050' AND Geslacht = '4000' AND Onderwijsrichting = 'A010282' AND Onderwijsniveau = 'T001143') AS Bevolking FULL JOIN (SELECT * FROM \"data/nl/odata3/80590ned.parquet\" WHERE Perioden = '2022KW02' AND Leeftijd = '53050' AND Geslacht = '4000') AS Werk ON Bevolking.Perioden = Werk.Perioden AND Bevolking.Leeftijd = Werk.Leeftijd AND Bevolking.Geslacht = Werk.Geslacht",
+        "input_token_count": 6713,
+        "output_token_count": 226
+    },
+    "Hoeveel huishoudelijke stroomaansluitingen waren er in Saba en Sint-Eustatius in 2018, zonder het totaal van 1000?": {
+        "query": "SELECT CaribischNederland, \"D001159_2\" AS huishoudelijke_stroomaansluitingen FROM \"data/nl/odata3/81154ned.parquet\" WHERE CaribischNederland IN ('GM9003', 'GM9002') AND Perioden = '2018JJ00'",
+        "input_token_count": 4862,
+        "output_token_count": 70
+    },
+    "Gemiddeld aantal mannen tussen 45 en 75 jaar met een masteropleiding in kunst of handel in het tweede kwartaal van 2016": {
+        "query": "SELECT AVG(\"20150\") AS \"AVG\" FROM \"data/nl/odata3/85313NED.parquet\" WHERE Geslacht = '3000' AND Leeftijd = '53825' AND Onderwijsniveau = '2820709' AND Onderwijsrichting IN ('A010293', 'A010290') AND Perioden = '2016KW02'",
+        "input_token_count": 5905,
+        "output_token_count": 83
+    },
+    "In welke arbeidsmarktregio met minder dan 2460 leerlingen studeerden in studiejaar 2018/'19 het minste aantal vrouwelijke mbo-studenten in zorg en welzijn?": {
+        "query": "WITH RankedRows AS (SELECT Regio AS \"MIN[Regio]\", \"M003171\", RANK() OVER (ORDER BY \"M003171\" ASC) AS rnk FROM \"data/nl/odata3/85353NED.parquet\" WHERE Regio LIKE 'AM%' AND Perioden = '2018SJ00' AND Niveau = 'T001336' AND Geslacht = '4000' AND Studierichting = 'A043939' AND Leerweg = 'A025290' AND \"M003171\" < 2460) SELECT \"MIN[Regio]\", \"M003171\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 6401,
+        "output_token_count": 146
+    },
+    "Hoeveel leerlingen uit Rotterdam, geboren in Nederland, met Surinaamse roots zaten in het schooljaar 2021/22 op educatieve instellingen voor cluster 1 speciaal onderwijs?": {
+        "query": "SELECT \"M005524\" AS leerlingen FROM \"data/nl/odata3/85490NED.parquet\" WHERE GeboortelandOuders = 'A051742' AND Geslacht = 'T001038' AND Cluster = 'A041800' AND Herkomstland = 'H008751' AND Onderwijssoort = 'A049120' AND Regiokenmerken = 'GM0599' AND Perioden = '2021SJ00'",
+        "input_token_count": 5887,
+        "output_token_count": 103
+    },
+    "Hoe zag het saldo van de in- en uitvoer en de exportwaarde eruit voor machines, fabricaten en bewerkte goederen uit Bonaire in 2016?": {
+        "query": "SELECT Perioden, GoederenindelingSITC, \"D001601\" AS \"Handelsbalans\", \"D001636_1\" AS \"Uitvoerwaarde\" FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2016JJ00' AND GoederenindelingSITC IN ('A018743', 'A018678', 'A018809')",
+        "input_token_count": 4961,
+        "output_token_count": 94
+    },
+    "Hoeveel aansluitingen voor stroom en water waren er in 2016 op Bonaire en heel Caribisch Nederland?": {
+        "query": "SELECT CaribischNederland, \"D001160_1\" AS stroom_aansluitingen, \"D001160_2\" AS water_aansluitingen FROM \"data/nl/odata3/81154ned.parquet\" WHERE Perioden = '2016JJ00' AND CaribischNederland IN ('GM9001', 'CN01')",
+        "input_token_count": 4874,
+        "output_token_count": 80
+    },
+    "Wat kostte een liter Euro95 benzine van 13 tot en met 16 september 2009 (rond Prinsjesdag)?": {
+        "query": "SELECT Perioden, \"A047220\" FROM \"data/nl/odata3/80416ned.parquet\" WHERE Perioden BETWEEN '2009-09-13' AND '2009-09-16' ORDER BY Perioden",
+        "input_token_count": 4322,
+        "output_token_count": 56
+    },
+    "Hoe groot is het aandeel huizen met zonnepanelen in de Nolensbuurt vergeleken met Binnenstad-Noord in Harderwijk, Buitengebied Axel en Vessem in 2020?": {
+        "query": "SELECT WijkenEnBuurten, \"M002462\" AS aantal_installaties_bij_woningen FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU06060607', 'BU02430101', 'BU07152200', 'WK077003')",
+        "input_token_count": 4829,
+        "output_token_count": 75
+    },
+    "Hoeveel mensen tussen 25 en 45 jaar op Sint-Eustatius gaven in 2017/2018 aan overlast te ervaren van buurtbewoners en rondhangende jongeren?": {
+        "query": "SELECT \"A047646_2\", \"A047648_2\" FROM \"data/nl/odata3/82557NED.parquet\" WHERE Persoonskenmerken = '53310' AND Marges = 'MW00000' AND CaribischNederland = 'GM9002' AND Perioden = '2017JJ00'",
+        "input_token_count": 6440,
+        "output_token_count": 78
+    },
+    "Hoeveel zonnepaneelvermogen was er ge\u00efnstalleerd op huizen in Midden-Heerenveen, Wijnjewoude-Gentiaan, Zuiderham en Een in 2019 en 2020?": {
+        "query": "SELECT 2019 AS Jaar, WijkenEnBuurten, \"M002461\" FROM \"data/nl/odata3/85010NED.parquet\" WHERE WijkenEnBuurten IN ('BU00740102', 'BU00861702', 'BU04796210', 'BU16990310') UNION ALL BY NAME SELECT 2020 AS Jaar, WijkenEnBuurten, \"M002461\" FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU00740102', 'BU00861702', 'BU04796210', 'BU16990310')",
+        "input_token_count": 5322,
+        "output_token_count": 145
+    },
+    "Hoe groot was het totale handelstekort van Saba en het handelstekort in grondstoffen die niet bedoeld zijn voor consumptie in Bonaire over 2016 bij elkaar?": {
+        "query": "SELECT SUM(\"D001601\") AS \"Totaal handelstekort\" FROM ((SELECT \"D001601\" FROM \"data/nl/odata3/82658NED.parquet\" WHERE Perioden = '2016JJ00' AND CaribischNederland = 'GM9003') UNION ALL BY NAME (SELECT \"D001601\" FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2016JJ00' AND GoederenindelingSITC = 'A018540'))",
+        "input_token_count": 5478,
+        "output_token_count": 119
+    },
+    "Hoeveel mensen studeerden er in de jaren 1922 tot en met 1925 af in de economische wetenschappen?": {
+        "query": "SELECT Perioden, \"M006873_1\" AS afgestudeerden_economische_wetenschappen FROM \"data/nl/odata3/80384ned.parquet\" WHERE Geslacht = 'T001038' AND Perioden IN ('1922SJ00', '1923SJ00', '1924SJ00', '1925SJ00') ORDER BY Perioden",
+        "input_token_count": 10595,
+        "output_token_count": 84
+    },
+    "Wat was het ge\u00efnstalleerd vermogen aan zonnepanelen op huizen in de buurten De Mare, Schore, Waverveen en Schweiberg-Dal in 2020 en 2021?": {
+        "query": "SELECT 2020 AS Jaar, WijkenEnBuurten, \"M002461\" AS OpgesteldVermogenKWp FROM \"data/nl/odata3/85447NED.parquet\" WHERE WijkenEnBuurten IN ('BU03610604', 'BU06780200', 'BU07360501', 'BU17290402') UNION ALL BY NAME SELECT 2021 AS Jaar, WijkenEnBuurten, \"M002461\" AS OpgesteldVermogenKWp FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten IN ('BU03610604', 'BU06780200', 'BU07360501', 'BU17290402') ORDER BY Jaar, WijkenEnBuurten",
+        "input_token_count": 5113,
+        "output_token_count": 171
+    },
+    "Hoeveel mannelijke mbo-studenten niveau 2, bbl-richting horeca en bakkerij met Surinaamse wortels en in Nederland geboren waren er in het studiejaar 2021/22 in Nederland?": {
+        "query": "SELECT \"M003171\" FROM \"data/nl/odata3/85352NED.parquet\" WHERE Herkomstland = 'H008751' AND GeboortelandOuders = 'A051742' AND Niveau = 'A041755' AND Geslacht = '3000' AND Studierichting = 'A043937' AND Leerweg = 'A025293' AND Perioden = '2021SJ00'",
+        "input_token_count": 6094,
+        "output_token_count": 97
+    },
+    "Gemiddelde hoeveelheid gas die vrijstaande huizen verbruiken in Hichtum en Middelweg in 2014.": {
+        "query": "SELECT AVG(\"M000219\") AS \"AVG[M000219]\" FROM \"data/nl/odata3/83187NED.parquet\" WHERE Woningkenmerken = 'ZW10320' AND WijkenEnBuurten IN ('BU19001403', 'BU19270002')",
+        "input_token_count": 4792,
+        "output_token_count": 69
+    },
+    "Hoe ontwikkelde het handelsoverschot van Saba en de balans voor niet-eetbare grondstoffen van Bonaire zich per kwartaal in 2016?": {
+        "query": "SELECT COALESCE(Saba.Perioden, Bonaire.Perioden) AS Perioden, Saba.\"D001601\" AS Handelsbalans_Saba, Bonaire.\"D001601\" AS Handelsbalans_Grondstoffen_Bonaire FROM (SELECT * FROM \"data/nl/odata3/82658NED.parquet\" WHERE CaribischNederland = 'GM9003' AND Perioden LIKE '2016KW%') AS Saba FULL JOIN (SELECT * FROM \"data/nl/odata3/82659NED.parquet\" WHERE GoederenindelingSITC = 'A018540' AND Perioden LIKE '2016KW%') AS Bonaire ON Saba.Perioden = Bonaire.Perioden ORDER BY Perioden",
+        "input_token_count": 5513,
+        "output_token_count": 167
+    },
+    "Wat was de omzet in 2019 uit de verkoop van grasmaaiers, kraftkarton, optische apparatuur en polshorloges door de industrie?": {
+        "query": "SELECT ProductenPRODCOM, \"M001571\" AS Verkoopwaarde_Mln_Euro FROM \"data/nl/odata3/83115NED.parquet\" WHERE Perioden = '2019JJ00' AND ProductenPRODCOM IN ('A013489', 'A013495', 'A013496', 'A013497')",
+        "input_token_count": 21295,
+        "output_token_count": 80
+    },
+    "Welke soort goederen kende in 2017 de hoogste invoerwaarde op Bonaire, zolang het bedrag niet boven de 57.282 duizend dollar uitkwam, gekeken naar minerale brandstoffen, machines en onbekende goederen?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"D001607_1\" DESC) AS rnk, GoederenindelingSITC AS \"MAX[GoederenindelingSITC]\", \"D001607_1\" FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2017JJ00' AND GoederenindelingSITC IN ('A018591', 'A018743', 'A018851') AND \"D001607_1\" <= 57282) SELECT \"MAX[GoederenindelingSITC]\", \"D001607_1\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 4974,
+        "output_token_count": 152
+    },
+    "Hoe beoordelen hoogopgeleiden en mensen van 25 tot 45 jaar het veiligheidsgevoel in hun wijk op Saba in vergelijking met inwoners van Zoetermeer in 2021?": {
+        "query": "SELECT Saba.Perioden, Saba.Persoonskenmerken, Saba.\"M003276\" AS \"Rapportcijfer veiligheid Saba\", Zoetermeer.\"M003276\" AS \"Rapportcijfer veiligheid Zoetermeer\" FROM (SELECT * FROM \"data/nl/odata3/82558NED.parquet\" WHERE CaribischNederland = 'GM9003' AND Perioden = '2021JJ00' AND Persoonskenmerken IN ('2018790', '53310') AND Marges = 'MW00000') AS Saba FULL JOIN (SELECT * FROM \"data/nl/odata3/85146NED.parquet\" WHERE RegioS = 'GM0637' AND Perioden = '2021JJ00' AND Marges = 'MW00000') AS Zoetermeer ON Saba.Perioden = Zoetermeer.Perioden",
+        "input_token_count": 19597,
+        "output_token_count": 195
+    },
+    "Hoeveel jongens doen in 2024/2025 mbo niveau 4 via de bol-route in de regio Zaanstreek/Waterland in studierichtingen zoals transport, voedsel, groen en gastvrijheid en entree, als het aantal niet hoger is dan 60 per richting?": {
+        "query": "SELECT Studierichting, \"M003171\" AS aantal_jongens FROM \"data/nl/odata3/85353NED.parquet\" WHERE Perioden = '2024SJ00' AND Niveau = 'A041763' AND Leerweg = 'A041868' AND Regio = 'AM17' AND Geslacht = '3000' AND Studierichting IN ('A051782', 'A051786', 'A051789') AND \"M003171\" <= 60",
+        "input_token_count": 6514,
+        "output_token_count": 110
+    },
+    "Hoeveel procent van de mannen op Saba had in 2017/2018 veel overlast van sociale problemen in hun buurt?": {
+        "query": "SELECT \"A047649_4\" AS percentage FROM \"data/nl/odata3/82557NED.parquet\" WHERE CaribischNederland = 'GM9003' AND Perioden = '2017JJ00' AND Persoonskenmerken = '3000' AND Marges = 'MW00000'",
+        "input_token_count": 6008,
+        "output_token_count": 73
+    },
+    "Hoeveel zonnepaneleninstallaties waren er in De Blesse (wijk Steggerda), Elsbeek, Westerhaghe en het Buitengebied B-E Zuid-West in 2018 en 2021?": {
+        "query": "SELECT 2018 AS Jaar, WijkenEnBuurten, \"M002462\" AS AantalInstallaties FROM \"data/nl/odata3/84772NED.parquet\" WHERE WijkenEnBuurten IN ('BU00980701', 'BU01640201', 'BU05370707', 'BU08556618') UNION ALL BY NAME SELECT 2021 AS Jaar, WijkenEnBuurten, \"M002462\" AS AantalInstallaties FROM \"data/nl/odata3/85775NED.parquet\" WHERE WijkenEnBuurten IN ('BU00980701', 'BU01640201', 'BU05370707', 'BU08556618')",
+        "input_token_count": 5265,
+        "output_token_count": 155
+    },
+    "Wat was het gemiddelde stroomverbruik per type woning, zoals appartementen, tussenwoningen en huurhuizen, in Winterswijk in 2012?": {
+        "query": "SELECT Woningkenmerken, \"M000221\" AS \"Gemiddeld elektriciteitsverbruik (kWh)\" FROM \"data/nl/odata3/83023NED.parquet\" WHERE WijkenEnBuurten = 'GM0294' AND Woningkenmerken IN ('ZW25810', 'ZW25805', '1014850')",
+        "input_token_count": 4721,
+        "output_token_count": 82
+    },
+    "Wat was in 2014 de exportwaarde van machines en vervoersmiddelen voor Bonaire, en de totale exportwaarde voor Sint Eustatius?": {
+        "query": "SELECT Bonaire.\"D001636_1\" AS \"Bonaire_machines_en_vervoersmiddelen_1000_USD\", SintEustatius.\"D001636_1\" AS \"Sint_Eustatius_totale_exportwaarde_1000_USD\" FROM (SELECT * FROM \"data/nl/odata3/82659NED.parquet\" WHERE Perioden = '2014JJ00' AND GoederenindelingSITC = 'A018743') AS Bonaire FULL JOIN (SELECT * FROM \"data/nl/odata3/82658NED.parquet\" WHERE Perioden = '2014JJ00' AND CaribischNederland = 'GM9002') AS SintEustatius ON Bonaire.Perioden = SintEustatius.Perioden",
+        "input_token_count": 5470,
+        "output_token_count": 170
+    },
+    "Hoe vaak ervaren mensen tussen 25 en 45 jaar op Sint-Eustatius veel hinder van hangjongeren of van hun buren in 2017?": {
+        "query": "SELECT \"A047648_2\" AS \"Veel overlast door rondhangende jongeren (%)\", \"A047646_2\" AS \"Veel overlast door buurtbewoners (%)\" FROM \"data/nl/odata3/82557NED.parquet\" WHERE CaribischNederland = 'GM9002' AND Perioden = '2017JJ00' AND Persoonskenmerken = '53310' AND Marges = 'MW00000'",
+        "input_token_count": 5999,
+        "output_token_count": 101
+    },
+    "Hoe groot is het aandeel van het zonnepaneelvermogen van woningen in het Vondelkwartier van Beverwijk in 2017 voor wijken met  maximaal 284 kW aan ge\u00efnstalleerde zonnestroom, vergeleken met het totaal van wijken in Nederland?": {
+        "query": "SELECT CONCAT_WS(', ', Measure, WijkenEnBuurten) AS Dimension_Measure, SUM(Value) AS \"SUM[WijkenEnBuurten]\", SUM(CASE WHEN WijkenEnBuurten = 'WK037501' THEN Value ELSE 0 END) AS \"WK037501\", ROUND(SUM(CASE WHEN WijkenEnBuurten = 'WK037501' THEN Value ELSE 0 END) * 100.0 / NULLIF(SUM(Value), 0), 2) AS \"%\" FROM (SELECT Measure, Value, WijkenEnBuurten FROM \"data/nl/odata3/84517NED.parquet\" UNPIVOT(Value FOR Measure IN (\"M002463\"))) WHERE WijkenEnBuurten LIKE 'WK%' AND Value <= 284 GROUP BY Measure",
+        "input_token_count": 4626,
+        "output_token_count": 180
+    },
+    "Wat was in 2021 gemiddeld het percentage inwoners van Bonaire, Sint-Eustatius en Saba dat aangaf dat drugsgebruik of drugshandel wel eens voorkomt in de buurt, bij gemeenten waar dit percentage hoogstens 6% was?": {
+        "query": "SELECT AVG(\"A047645_1\") AS \"gemiddeld_percentage\" FROM \"data/nl/odata3/82557NED.parquet\" WHERE CaribischNederland LIKE 'GM%' AND Perioden = '2021JJ00' AND Persoonskenmerken = 'T009002' AND Marges = 'MW00000' AND \"A047645_1\" <= 6",
+        "input_token_count": 6037,
+        "output_token_count": 89
+    },
+    "Op welk eiland, Bonaire of Sint-Eustatius, kwam sociale overlast in 2021 het minst vaak voor?": {
+        "query": "WITH RankedRows AS (SELECT RANK() OVER (ORDER BY \"A047649_2\" ASC) AS rnk, CaribischNederland AS \"MIN[CaribischNederland]\", \"A047649_2\" FROM \"data/nl/odata3/82557NED.parquet\" WHERE Perioden = '2021JJ00' AND CaribischNederland IN ('GM9001', 'GM9002') AND Persoonskenmerken = 'T009002' AND Marges = 'MW00000') SELECT \"MIN[CaribischNederland]\", \"A047649_2\" FROM RankedRows WHERE rnk = 1",
+        "input_token_count": 6516,
+        "output_token_count": 142
+    },
+    "Hoeveel procent van de bewoners van Saba ervoer in 2013 veel overlast door drugsgebruik of drugshandel in de buurt, en hoeveel procent veranderde de totale uitvoerwaarde van Bonaire dat jaar ten opzichte van 2012?": {
+        "query": "SELECT (SELECT \"A047645_2\" FROM \"data/nl/odata3/82557NED.parquet\" WHERE CaribischNederland = 'GM9003' AND Perioden = '2013JJ00' AND Persoonskenmerken = 'T009002' AND Marges = 'MW00000') AS \"Saba_veel_overlast_drugsgebruik_of_drugshandel_pct\", (SELECT 100.0 * (MAX(CASE WHEN Perioden = '2013JJ00' THEN \"D001636_1\" END) - MAX(CASE WHEN Perioden = '2012JJ00' THEN \"D001636_1\" END)) / NULLIF(MAX(CASE WHEN Perioden = '2012JJ00' THEN \"D001636_1\" END), 0) FROM \"data/nl/odata3/82659NED.parquet\" WHERE GoederenindelingSITC = 'T001082' AND Perioden IN ('2012JJ00', '2013JJ00')) AS \"Bonaire_verandering_totale_uitvoerwaarde_pct\"",
+        "input_token_count": 6825,
+        "output_token_count": 237
+    },
+    "Wat was in 2023 het gemiddelde jaarbedrag voor gastransport, gemiddeld over de bedragen met en zonder btw?": {
+        "query": "SELECT AVG(\"M001013_1\") AS \"Gemiddeld jaarbedrag gastransport (Euro/jaar)\" FROM \"data/nl/odata3/85592NED.parquet\" WHERE Perioden = '2023JJ00' AND Btw IN ('A048944', 'A048945')",
+        "input_token_count": 4840,
+        "output_token_count": 72
+    },
+    "Wat was de gemiddelde variabele elektriciteitsprijs inclusief btw en welk percentage studenten recht, administratie, handel en zakelijke dienstverlening gaf aan een buitenlandstudie niet te kunnen combineren met een opleiding in Nederland, in 2022, 2023 en 2024?": {
+        "query": "SELECT COALESCE(E.Perioden, S.Perioden) AS Perioden, E.\"M007924_2\" AS \"Variabele elektriciteitsprijs inclusief btw (euro/kWh)\", S.\"M008103\" AS \"Niet te combineren met opleiding in NL (%)\" FROM (SELECT * FROM \"data/nl/odata3/85592NED.parquet\" WHERE Btw = 'A048944' AND Perioden IN ('2022JJ00', '2023JJ00', '2024JJ00')) AS E FULL JOIN (SELECT * FROM \"data/nl/odata3/85907NED.parquet\" WHERE Onderwijs = 'A010290' AND Perioden IN ('2022JJ00', '2023JJ00', '2024JJ00')) AS S ON E.Perioden = S.Perioden ORDER BY Perioden",
+        "input_token_count": 7080,
+        "output_token_count": 187
+    }
+}
