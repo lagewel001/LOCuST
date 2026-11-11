@@ -1,18 +1,18 @@
 {
   "Query generation": [
-    { "method": "Claude Sonnet 5", "date": "Baseline", "EX_S": 0.12, "EX_L": 0.16, "obsF1": 0.84 },
-    { "method": "GPT 6 Sol", "date": "Baseline", "EX_S": 0.10, "EX_L": 0.10, "obsF1": 0.87 },
-    { "method": "LLama 4 Maverick", "date": "Baseline", "EX_S": 0.03, "EX_L": 0.06, "obsF1": 0.73 },
-    { "method": "Qwen3.8-27B", "date": "Baseline", "EX_S": 0.09, "EX_L": 0.11, "obsF1": 0.75 }
+    { "method": "Claude Sonnet 5", "date": "Baseline", "EX_S": 0.12, "EX_L": 0.16, "NF1": 0.64, "obsF1": 0.84 },
+    { "method": "GPT 6 Sol", "date": "Baseline", "EX_S": 0.10, "EX_L": 0.10, "NF1": 0.74, "obsF1": 0.87 },
+    { "method": "LLama 4 Maverick", "date": "Baseline", "EX_S": 0.03, "EX_L": 0.06, "NF1": 0.50, "obsF1": 0.73 },
+    { "method": "Qwen3.8-27B", "date": "Baseline", "EX_S": 0.09, "EX_L": 0.11, "NF1": 0.56, "obsF1": 0.75 }
   ],
   "End-to-end QA": [
-    { "method": "Claude Sonnet 5", "date": "Baseline", "EX_S": 0.07, "EX_L": 0.11, "obsF1": 0.57 },
-    { "method": "GPT 6 Sol", "date": "Baseline", "EX_S": 0.10, "EX_L": 0.11, "obsF1": 0.62 },
-    { "method": "LLama 4 Maverick", "date": "Baseline", "EX_S": 0.05, "EX_L": 0.07, "obsF1": 0.47 },
-    { "method": "Qwen3.8-27B", "date": "Baseline", "EX_S": 0.07, "EX_L": 0.09, "obsF1": 0.50 }
+    { "method": "Claude Sonnet 5", "date": "Baseline", "EX_S": 0.07, "EX_L": 0.11, "NF1": 0.42, "obsF1": 0.57 },
+    { "method": "GPT 6 Sol", "date": "Baseline", "EX_S": 0.10, "EX_L": 0.11, "NF1": 0.52, "obsF1": 0.62 },
+    { "method": "LLama 4 Maverick", "date": "Baseline", "EX_S": 0.05, "EX_L": 0.07, "NF1": 0.30, "obsF1": 0.47 },
+    { "method": "Qwen3.8-27B", "date": "Baseline", "EX_S": 0.07, "EX_L": 0.09, "NF1": 0.38, "obsF1": 0.50 }
   ],
   "Table Retrieval": [
-    { "method": "BM25+", "date": "Baseline", "acc@2": 0.27, "acc@5": 0.37, "acc@10": 0.45 },
-    { "method": "ColBERT2", "date": "Baseline", "acc@2": 0.69, "acc@5": 0.81, "acc@10": 0.85 }
+    { "method": "BM25+", "date": "Baseline", "R@2": 0.25, "R@5": 0.36, "R@10": 0.44, "PR@2": 0.22, "PR@5": 0.33, "PR@10": 0.40 },
+    { "method": "ColBERTv2", "date": "Baseline", "R@2": 0.62, "R@5": 0.71, "R@10": 0.77, "PR@2": 0.56, "PR@5": 0.65, "PR@10": 0.71 }
   ]
 }

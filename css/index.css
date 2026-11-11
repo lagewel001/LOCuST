@@ -109,6 +109,11 @@ body {
     margin-bottom: 2rem;
 }
 
+/* Let the wider tables (e.g. table retrieval) scroll on small screens instead of overflowing the card */
+.leaderboard-card .tab-content {
+    overflow-x: auto;
+}
+
 .rank-cell {
     font-weight: bold;
     text-align: center;

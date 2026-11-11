@@ -101,13 +101,16 @@ async function loadAllLeaderboards() {
         const enData = await enResponse.json();
         const nlData = await nlResponse.json();
 
-        buildLeaderboard('en', 'qg', 'Query generation', enData['Query generation'], ['Rank', 'Method', 'EX_S', 'EX_L', 'obsF1']);
-        buildLeaderboard('en', 'e2e', 'End-to-end QA', enData['End-to-end QA'], ['Rank', 'Method', 'EX_S', 'EX_L', 'obsF1']);
-        buildLeaderboard('en', 'tr', 'Table retrieval', enData['Table Retrieval'], ['Rank', 'Method', 'acc@2', 'acc@5', 'acc@10']);
+        const qaHeaders = ['Rank', 'Method', 'EX_S', 'EX_L', 'NF1', 'obsF1'];
+        const retrievalHeaders = ['Rank', 'Method', 'R@2', 'PR@2', 'R@5', 'PR@5', 'R@10', 'PR@10'];
 
-        buildLeaderboard('nl', 'qg', 'Query generation', nlData['Query generation'], ['Rank', 'Method', 'EX_S', 'EX_L', 'obsF1']);
-        buildLeaderboard('nl', 'e2e', 'End-to-end QA', nlData['End-to-end QA'], ['Rank', 'Method', 'EX_S', 'EX_L', 'obsF1']);
-        buildLeaderboard('nl', 'tr', 'Table retrieval', nlData['Table Retrieval'], ['Rank', 'Method', 'acc@2', 'acc@5', 'acc@10']);
+        buildLeaderboard('en', 'qg', 'Query generation', enData['Query generation'], qaHeaders);
+        buildLeaderboard('en', 'e2e', 'End-to-end QA', enData['End-to-end QA'], qaHeaders);
+        buildLeaderboard('en', 'tr', 'Table retrieval', enData['Table Retrieval'], retrievalHeaders);
+
+        buildLeaderboard('nl', 'qg', 'Query generation', nlData['Query generation'], qaHeaders);
+        buildLeaderboard('nl', 'e2e', 'End-to-end QA', nlData['End-to-end QA'], qaHeaders);
+        buildLeaderboard('nl', 'tr', 'Table retrieval', nlData['Table Retrieval'], retrievalHeaders);
 
     } catch (error) {
         console.error('Error loading leaderboard data:', error);
@@ -123,20 +126,32 @@ function buildLeaderboard(lang, type, leaderboardKey, data, headers) {
     head.innerHTML = '';
     body.innerHTML = '';
     
-    // Create headers
+    // Create headers. Metrics at a cut-off (e.g. 'R@2', 'PR@2') are grouped under one '@2' header spanning
+    // a sub-header per metric, so the other headers span both header rows.
+    const grouped = headers.some(h => h.includes('@'));
     let headerRow = '<tr>';
-    headers.forEach(h => {
-        const display = h === 'EX_S' ? 'EX<sub>S</sub>' : h === 'EX_L' ? 'EX<sub>L</sub>' : h;
-        headerRow += `<th>${display}</th>`;
+    let subHeaderRow = '<tr>';
+    headers.forEach((h, i) => {
+        if (!h.includes('@')) {
+            const display = h === 'EX_S' ? 'EX<sub>S</sub>' : h === 'EX_L' ? 'EX<sub>L</sub>' : h;
+            headerRow += `<th${grouped ? ' rowspan="2"' : ''}>${display}</th>`;
+            return;
+        }
+        const [metric, k] = h.split('@');
+        if (i === 0 || !headers[i - 1].endsWith(`@${k}`)) {
+            let span = 0;
+            while (i + span < headers.length && headers[i + span].endsWith(`@${k}`)) span++;
+            headerRow += `<th colspan="${span}">@${k}</th>`;
+        }
+        subHeaderRow += `<th>${metric}</th>`;
     });
-    headerRow += '</tr>';
-    head.innerHTML = headerRow;
+    head.innerHTML = headerRow + '</tr>' + (grouped ? subHeaderRow + '</tr>' : '');
 
     // Calculate scores and sort
     const sortedData = data.map(entry => {
         let score = 0;
         if (leaderboardKey === 'Table retrieval') {
-            score = (entry['acc@2'] + entry['acc@5'] + entry['acc@10']) / 3;
+            score = (entry['R@2'] + entry['R@5'] + entry['R@10']) / 3;
         } else {
             score = (entry.EX_L + entry.obsF1) / 2;
         }
