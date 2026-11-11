@@ -9,14 +9,15 @@ import warnings
 from functools import lru_cache
 from time import time
 from tqdm import tqdm
-from typing import get_args, Tuple, Dict, Union, Literal, Optional
+from typing import get_args, Tuple, Dict, Union, Literal, Optional, FrozenSet
 
 import config
 from evaluation.metrics import (calculate_component_matching, lenient_execution_accuracy,
-                                numeric_recall, record_accuracy, get_selection_metrics)
+                                numeric_f1, record_accuracy, get_selection_metrics)
 from models.generators.base_generator import BaseGenerator
+from odata_graph import engine
 from pipeline.db_executor import DBExecutor
-from s_expression import Table, Expression
+from s_expression import Table, Expression, uri_to_code
 from s_expression.parser import parse, eval
 from utils.answer_comparator import is_equal_frame
 from utils.custom_types import (QueryType, UnitCompatibilityError, PartitionCoherenceError, FormatWarning, LLMResponse,
@@ -195,6 +196,59 @@ def execute_ground_truth(query: str, query_type: QueryType) -> pd.DataFrame:
     return _execute_ground_truth_cached(query, query_type).copy()
 
 
+@lru_cache(maxsize=None)
+def non_observation_columns(table_id: str) -> FrozenSet[str]:
+    """
+        The columns of a table that hold no observations: its Id and dimension columns. Dimension codes can be numeric
+        (e.g. SBI codes or ages are stored as integers), which the numeric metrics must not count as answer values.
+
+        A dimension column is a dimension group of the table: a qb:dimension without a parent (skos:broader) or scheme
+        (skos:inScheme), as opposed to the dimension codes, some of which are column names in pre-pivoted tables. Codes
+        that are a measure of the table as well are no dimension column.
+    """
+    uri = Table(table_id).uri
+    dimension_groups = {uri_to_code(binding['dim']['value']) for binding in engine.select(f"""
+        PREFIX qb: <http://purl.org/linked-data/cube#>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        SELECT DISTINCT ?dim WHERE {{
+            <{uri}> qb:dimension ?dim .
+            FILTER NOT EXISTS {{ ?dim skos:broader ?parent }}
+            FILTER NOT EXISTS {{ ?dim skos:inScheme ?scheme }}
+        }}
+    """)}
+    measures = {uri_to_code(binding['measure']['value']) for binding in engine.select(f"""
+        PREFIX qb: <http://purl.org/linked-data/cube#>
+        SELECT ?measure WHERE {{ <{uri}> qb:measure ?measure }}
+    """)}
+    columns = {'Id'} | (dimension_groups - measures)
+    # A JOIN suffixes a column that both tables provide with _B for the second table (s_expression/operators/join.py),
+    # and MIN/MAX return the code of their selector as "MIN[<dimension>]" (s_expression/simple_aggregator.py)
+    return frozenset(columns | {f'{column}_B' for column in columns} |
+                     {f'{operator}[{column}]' for operator in ('MIN', 'MAX') for column in columns})
+
+
+def column_aliases(query: str, columns: FrozenSet[str]) -> FrozenSet[str]:
+    """
+        The names a SQL query gives to the given columns, followed through CTEs and subqueries: a plain alias
+        (SectorBranchesSIC2008 AS Sector) or the code an ARG_MIN/ARG_MAX returns (ARG_MIN(Regions, Value) AS "MIN[Region]").
+    """
+    try:
+        expression = sqlglot.parse_one(query, read='duckdb')
+    except sqlglot.errors.SqlglotError:
+        return frozenset()
+
+    names = set(columns)
+    changed = True
+    while changed:  # an alias can be aliased again, in any order of the traversal
+        changed = False
+        for alias in expression.find_all(sqlglot.exp.Alias):
+            source = alias.this.this if isinstance(alias.this, (sqlglot.exp.ArgMin, sqlglot.exp.ArgMax)) else alias.this
+            if isinstance(source, sqlglot.exp.Column) and source.name in names and alias.alias not in names:
+                names.add(alias.alias)
+                changed = True
+    return frozenset(names - columns)
+
+
 def theme_of(table_ids) -> Optional[str]:
     """The benchmark theme of the first table that belongs to one."""
     for table_id in table_ids:
@@ -262,7 +316,7 @@ def evaluate_query_generation(
     output_token_count = 0
     exact_match = 0
     rec_accuracy = 0
-    num_recall = 0
+    num_f1 = 0
     execution_accuracy = {"strict": 0, "lenient": 0}
     component_scores = {'select_f1': 0.0, 'where_f1': 0.0, 'groupby_f1': 0.0, 'orderby_f1': 0.0, 'pivot_f1': 0.0}
     selection_scores = {
@@ -297,7 +351,7 @@ def evaluate_query_generation(
             "empty_queries": 0,
             "exact_match": 0,
             "record_accuracy": 0,
-            "numeric_recall": 0,
+            "numeric_f1": 0,
             "execution_accuracy": {"strict": 0, "lenient": 0},
             "selection_scores": {
                 "lenient": {'measure_f1': 0.0, 'dimension_f1': 0.0, 'observation_f1': 0.0},
@@ -371,7 +425,7 @@ def evaluate_query_generation(
         format_error = False
         coherence_error = False
         rec_acc_reward = 0
-        num_recall_reward = 0
+        num_f1_reward = 0
         exec_acc_reward = 0
         lenient_exec_reward = 0
         try:
@@ -400,8 +454,13 @@ def evaluate_query_generation(
             # Record Accuracy
             rec_acc_reward = record_accuracy(ground_truth_result, predicted_result)
 
-            # Numeric Recall
-            num_recall_reward = numeric_recall(ground_truth_result, predicted_result)
+            # Numeric F1, over the observations only
+            ignore_columns = frozenset().union(*(non_observation_columns(t) for t in
+                                                 set(golden_tables) | set(parse_for_table_id(predicted_query, query_type))))
+            if query_type in ['sql', 'pivot_sql']:
+                ignore_columns |= (column_aliases(ground_truth_query, ignore_columns) |
+                                   column_aliases(predicted_query, ignore_columns))
+            num_f1_reward = numeric_f1(ground_truth_result, predicted_result, ignore_columns=ignore_columns)
 
             # Execution Accuracy
             # Checking frame equality clogs the system memory for enormous tables. Trust me, the EX is 0 if you return more than 1 000 rows
@@ -439,8 +498,8 @@ def evaluate_query_generation(
         rec_accuracy += rec_acc_reward
         metrics_by_type[q_type]['record_accuracy'] += rec_acc_reward
 
-        num_recall += num_recall_reward
-        metrics_by_type[q_type]['numeric_recall'] += num_recall_reward
+        num_f1 += num_f1_reward
+        metrics_by_type[q_type]['numeric_f1'] += num_f1_reward
 
         execution_accuracy['strict'] += exec_acc_reward
         metrics_by_type[q_type]['execution_accuracy']['strict'] += exec_acc_reward
@@ -492,7 +551,7 @@ def evaluate_query_generation(
             'predicted_tables': predicted_tables, 'syntax_error': syntax_error, 'format_error': format_error,
             'coherence_error': coherence_error,
             'table_mismatch': table_mismatch, 'exact_match': em_reward, 'record_accuracy': rec_acc_reward,
-            'numeric_recall': num_recall_reward, 'ex_strict': exec_acc_reward, 'ex_lenient': lenient_exec_reward,
+            'numeric_f1': num_f1_reward, 'ex_strict': exec_acc_reward, 'ex_lenient': lenient_exec_reward,
             **{key: value for key, value in sel_scores.items()}, **sel_errors,
         })
 
@@ -500,7 +559,7 @@ def evaluate_query_generation(
     avg_output_token_count = output_token_count / total if total > 0 else 0
     em_accuracy = exact_match / total if total > 0 else 0
     rec_accuracy = (rec_accuracy / total) if total > 0 else 0
-    num_recall_accuracy = (num_recall / total) if total > 0 else 0
+    num_f1_accuracy = (num_f1 / total) if total > 0 else 0
     ex_accuracy = {
         "strict": (execution_accuracy['strict'] / total) if total > 0 else 0,
         "lenient": (execution_accuracy['lenient'] / total) if total > 0 else 0,
@@ -518,7 +577,7 @@ def evaluate_query_generation(
             avg_metrics_by_type[q_type] = {
                 "exact_match_accuracy": metrics["exact_match"] / count,
                 "record_accuracy": metrics["record_accuracy"] / count,
-                "numeric_recall": metrics["numeric_recall"] / count,
+                "numeric_f1": metrics["numeric_f1"] / count,
                 "execution_accuracy": {
                     "strict": metrics['execution_accuracy']['strict'] / count,
                     "lenient": metrics['execution_accuracy']['lenient'] / count
@@ -541,7 +600,7 @@ def evaluate_query_generation(
         "metrics": {
             "exact_match_accuracy": em_accuracy,
             "record_accuracy": rec_accuracy,
-            "numeric_recall": num_recall_accuracy,
+            "numeric_f1": num_f1_accuracy,
             "execution_accuracy": ex_accuracy,
             "selection_metrics": avg_selection_scores,
         },

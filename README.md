@@ -88,16 +88,16 @@ There are some known issues with the source OData metadata, and consequently the
 Where possible, we tried to mitigate or accommodate in the test/training data for these issues as much as possible, but inconsistencies can still occur.
 * There are known cases of reuse of unique identifiers for measure/dimension codes over different tables.
 * There is inconsistent use of identifiers in identical measure/dimension codes over different tables.
-* Measure that have the same code can have different units.
+* Measures that have the same code can have different units.
 * Unit and unit multipliers are non-standardised in the source metadata. We tried to map where possible all text occurrences of units to QUDT counterparts.
-* Level consistency is not enforced over measure codes. A measure code for one table can be a parent for a list of codes in a different table.
-* Some measure/dimension codes have 'missing_x' as their unique identifier, where x is an integer.
-* Totals are not modelled in a standardised way. It can occur that a total measure is not properly annotated as such.
+* Cross-table level consistency is not enforced over measure codes. A measure code for one table can be a parent for a list of codes in a different table.
+* Some measure/dimension codes have non-unique 'missing_x' as their unique identifier, where x is an integer.
+* Aggregates and total measures are not modelled in a standardised way. It can occur that a measure that is a total is not properly annotated as such.
 * Partitions and levels are not modelled properly for every table.
 
 ## Contact
 All questions and feedback is appreciated. Feel free to contact us by mailing to [l.lageweg@cbs.nl](mailto:l.lageweg@cbs.nl)
-or by opening a Github issue here.
+or by opening a GitHub issue here.
 
 ## FAQ
 > Is the original data open source?
@@ -128,4 +128,4 @@ The entire dataset, benchmark code and instructions are available in this reposi
 
 > Can I continue building on the benchmark or use this data for my own dataset?
 
-Yes. All data is published license free and can be used for your own research or projects. Please always reference this and/or the original source. For more questions on expanding the benchmark and collaborations, don't hesitate to contact (one of) the authors.
+Yes. All data is published licence free and can be used for your own research or projects. Please always reference this and/or the original source. For more questions on expanding the benchmark and collaborations, don't hesitate to contact (one of) the authors.

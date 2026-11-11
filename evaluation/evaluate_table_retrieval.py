@@ -14,28 +14,28 @@ from utils.custom_types import QueryType
 from utils.global_functions import load_dataset, load_model_from_path, parse_for_table_id
 
 
-def accuracy_at_each_k(predicted_tables: List[str], ground_truth: List[str], k: int) -> np.ndarray:
+def recall_at_each_k(predicted_tables: List[str], ground_truth: List[str], k: int) -> np.ndarray:
     """
-        Accuracy@1..k for a single question: the share of its ground-truth tables appearing in the
-        first j predictions, for every j up to k.
+        Recall@1..k for a single question: the share of its ground-truth tables appearing in the
+        first j predictions, for every j up to k. The question has perfect recall@j when this is 1.
 
         :param predicted_tables: ranked table predictions
         :param ground_truth: the question's ground-truth tables
         :param k: cut-off
-        :return: array of length k, where index j-1 holds accuracy@j
+        :return: array of length k, where index j-1 holds recall@j
     """
     hits = np.isin(predicted_tables[:k], list(ground_truth)).astype(float)
     found = np.cumsum(hits)
     if len(found) < k:  # the retriever returned fewer than k tables
         found = np.pad(found, (0, k - len(found)), constant_values=found[-1] if len(found) else 0.0)
-    return found / len(ground_truth)
+    return found / len(set(ground_truth))  # a table used twice (e.g. a self-join) has to be retrieved once
 
 
 def evaluate_table_retrieval(
         model_path: str,
         dataset_path: str,
         query_type: QueryType,
-        k: int = 5,
+        k: int = 20,
         model_kwargs: Optional[Dict] = None) -> Dict:
     """
         Evaluates table retrieval performance of a given model on a given test dataset.
@@ -43,10 +43,10 @@ def evaluate_table_retrieval(
         :param model_path: path to the model
         :param dataset_path: path to the dataset file
         :param query_type: type of query to evaluate ('sexp', 'sql' or 'pivot_sql')
-        :param k: The 'k' for accuracy@k calculation
+        :param k: The 'k' for recall@k calculation
         :param model_kwargs: optional keyword arguments for model instantiation
         :return: dictionary containing the used model (path and kwargs), dataset, query_type and
-                 EM + the accuracy@1..k curve
+                 EM + the recall@1..k and perfect recall@1..k curves
     """
     if model_kwargs is None:
         model_kwargs = {}
@@ -54,7 +54,8 @@ def evaluate_table_retrieval(
     model: BaseRetriever = load_model_from_path(model_path, **model_kwargs)
 
     exact_match = 0
-    acc_curve = np.zeros(k)
+    recall_curve = np.zeros(k)
+    perfect_recall_curve = np.zeros(k)
     total = len(dataset)
     perf_time = []
 
@@ -76,21 +77,24 @@ def evaluate_table_retrieval(
         if set(predicted_tables[:len(ground_truth_table)]) == set(ground_truth_table):
             exact_match += 1
 
-        # Accuracy@1..K
-        # The share of ground-truth tables found by each cut-off, so a model can be compared at the
-        # k that matters downstream (a prompt sees a handful of tables) without re-evaluating.
+        # Recall@1..K and perfect recall@1..K
+        # The share of ground-truth tables found by each cut-off, and whether all of them were found (as a
+        # JOIN question needs all its tables), so a model can be compared at the k that matters downstream
+        # (a prompt sees a handful of tables) without re-evaluating.
+        recall_at_k = recall_at_each_k(predicted_tables, ground_truth_table, k)
 
         # Test Marc Ponsen: problematic items
-        acc_at_k = accuracy_at_each_k(predicted_tables, ground_truth_table, k)
-        if acc_at_k[-1] == 0.0:
+        if recall_at_k[-1] == 0.0:
             with open('./evaluation/table_retriever_errors.jsonl', 'a+', encoding='utf-8') as f:
                 line = {"question": question, "ground_truth_table": ground_truth_table, "predicted_tables": predicted_tables}
                 f.write(f"{json.dumps(line)}\n")
 
-        acc_curve += accuracy_at_each_k(predicted_tables, ground_truth_table, k)
+        recall_curve += recall_at_k
+        perfect_recall_curve += (recall_at_k == 1.0)
 
     em_accuracy = exact_match / total if total > 0 else 0
-    acc_curve = acc_curve / total if total > 0 else np.zeros(k)
+    recall_curve = recall_curve / total if total > 0 else np.zeros(k)
+    perfect_recall_curve = perfect_recall_curve / total if total > 0 else np.zeros(k)
 
     results = {
         "model_path": model_path,
@@ -101,7 +105,8 @@ def evaluate_table_retrieval(
         "query_type": query_type,
         "metrics": {
             "exact_match_accuracy": em_accuracy,
-            "accuracy_at_k": list(acc_curve),
+            "recall_at_k": list(recall_curve),
+            "perfect_recall_at_k": list(perfect_recall_curve),
             "mean_perf_time_in_seconds": float(np.mean(perf_time)),
             "median_perf_time_in_seconds": float(np.median(perf_time)),
         },
@@ -113,26 +118,31 @@ def evaluate_table_retrieval(
 
 def plot_graph(json_files: List[str], k: int):
     result_df = pd.DataFrame(index=range(k))
+    perfect_df = pd.DataFrame(index=range(k))
     for file in json_files:
         with open(file) as f:
             results = json.load(f)
             metrics = results.get('metrics', {})
 
-            curve = metrics.get('accuracy_at_k')
+            curve = metrics.get('recall_at_k')
             if curve is None:
-                print(f"SKIPPING {os.path.basename(file)}: no accuracy_at_k. Re-run the evaluation.")
+                print(f"SKIPPING {os.path.basename(file)}: no recall_at_k. Re-run the evaluation.")
                 continue
 
             label = os.path.splitext(os.path.basename(file))[0]
             result_df[label] = pd.Series(curve[:k])
+            if 'perfect_recall_at_k' in metrics:
+                perfect_df[label] = pd.Series(metrics['perfect_recall_at_k'][:k])
 
-    # Generate graphs
+    # Generate graphs: recall solid, perfect recall dotted in the same color
     result_df = result_df.reindex(sorted(result_df.columns), axis=1)
     range_x = len(result_df.index)
     x_axis = np.arange(1, range_x + 1, 1)
     plt.figure(figsize=(10, 7))
     for func in result_df:
-        plt.plot(x_axis, result_df[func], label=func)
+        line, = plt.plot(x_axis, result_df[func], label=func)
+        if func in perfect_df:
+            plt.plot(x_axis, perfect_df[func], ':', color=line.get_color(), label=f"{func} (perfect recall)")
 
     max_tables = len(os.listdir(config.DB_ODATA3_FILES))
 
@@ -140,8 +150,8 @@ def plot_graph(json_files: List[str], k: int):
     plt.xlim([min(x_axis), max(x_axis)])
     plt.ylim([0.0, 1.0])
     plt.xlabel("Top K retrieved tables")
-    plt.ylabel("Accuracy")
-    plt.title("accuracy@K for entity retrieval methods")
+    plt.ylabel("Recall")
+    plt.title("recall@K and perfect recall@K for entity retrieval methods")
     plt.grid()
     plt.legend(bbox_to_anchor=(1.0, 1.0))
     plt.tight_layout()
@@ -161,8 +171,8 @@ if __name__ == "__main__":
                         help="Path to the testing question-answer pairs set.")
     parser.add_argument("--query_type", type=str, choices=get_args(QueryType), default='sql',
                         help="Type of query to evaluate.")
-    parser.add_argument("--k", "-k", type=int, default=5,
-                        help="Value of K for accuracy@K.")
+    parser.add_argument("--k", "-k", type=int, default=20,
+                        help="Value of K for recall@K and perfect recall@K.")
     parser.add_argument("--output_path", type=str,
                         default=f"evaluation/results/table_retrieval_{config.LANGUAGE}_results.json",
                         help="Path to save the results JSON file.")

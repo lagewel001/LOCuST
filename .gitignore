@@ -43,13 +43,13 @@ test-output.xml
 docs/build/
 
 # Research
+scripts/*
 notebooks/*
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints
 
 # Data and model files
-scripts/*
 data/*
 odata_graph/graphs/*
 evaluation/**/*.json*
@@ -77,7 +77,7 @@ experiments/*
 !experiments/
 !evaluation/results/
 !odata_graph/graphs/ut_graph.trig
-!odata_graph/graphs/frequenties.ttl
+!odata_graph/ontology/frequenties.ttl
 
 # Frontend
 .DS_Store

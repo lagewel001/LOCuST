@@ -960,13 +960,15 @@ class ColBERTTrainer(object):
                 continue
 
             metrics = result.get('metrics', {})
-            # accuracy_at_k is the full curve; its last point is the accuracy at the k the
-            # evaluation ran with, and its length is that k.
-            curve = metrics.get('accuracy_at_k')
+            # recall_at_k is the full curve; its last point is the recall at the k the evaluation ran with,
+            # and its length is that k.
+            curve = metrics.get('recall_at_k')
+            perfect_curve = metrics.get('perfect_recall_at_k')
             evaluations.append({'checkpoint': checkpoint,
                                 'dataset': os.path.basename(result.get('dataset_path', '?')),
                                 'em': metrics.get('exact_match_accuracy', 0.0),
-                                'a': curve[-1] if curve else None,
+                                'r': curve[-1] if curve else None,
+                                'pr': perfect_curve[-1] if perfect_curve else None,
                                 'k': len(curve) if curve else None})
         return evaluations
 
@@ -1057,14 +1059,14 @@ class ColBERTTrainer(object):
         evaluations = self._collect_evaluations(name, results_dir)
 
         lines += ["## Evaluation", "",
-                  "| Checkpoint | Dataset | EM | acc@k |", "| --- | --- | --- | --- |"]
+                  "| Checkpoint | Dataset | EM | R@k | PR@k |", "| --- | --- | --- | --- | --- |"]
         rows = []
         for evaluation in evaluations:
-            accuracy = (f"{evaluation['a']:.3f} (@{evaluation['k']})"
-                        if evaluation['a'] is not None else '-')
+            recall = f"{evaluation['r']:.3f} (@{evaluation['k']})" if evaluation['r'] is not None else '-'
+            perfect_recall = f"{evaluation['pr']:.3f} (@{evaluation['k']})" if evaluation['pr'] is not None else '-'
             rows.append(f"| `{evaluation['checkpoint']}` | `{evaluation['dataset']}` | "
-                        f"{evaluation['em']:.3f} | {accuracy} |")
-        lines += rows or ["| _TBD_ | _TBD_ | _TBD_ | _TBD_ |"]
+                        f"{evaluation['em']:.3f} | {recall} | {perfect_recall} |")
+        lines += rows or ["| _TBD_ | _TBD_ | _TBD_ | _TBD_ | _TBD_ |"]
         if not evaluations:
             lines += ["", "> No evaluation results found yet. Run the evaluation, then regenerate this "
                       "card with `--write_model_card` to fill the table in."]
