@@ -99,6 +99,20 @@ Where possible, we tried to mitigate or accommodate in the test/training data fo
 All questions and feedback is appreciated. Feel free to contact us by mailing to [l.lageweg@cbs.nl](mailto:l.lageweg@cbs.nl)
 or by opening a GitHub issue here.
 
+## Citation
+Please cite this repository if our work is helpful to you.
+```
+@misc{lageweg2026texttosqlbenchmarkofficialstatistics,
+      title={A Text-to-SQL Benchmark for Official Statistics}, 
+      author={Lucas Lageweg and Karen Goes and Tom van den Broek and Frank Pijpers and Paul Groth and Jan-Christoph Kalo},
+      year={2026},
+      eprint={2611.32646},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2611.32646}, 
+}
+```
+
 ## FAQ
 > Is the original data open source?
 
